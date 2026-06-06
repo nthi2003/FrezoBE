@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: frezo-server
+  profiles:
+    active: local
+  config:
+    import: "optional:consul:"
+
+  cloud:
+    consul:
+      enabled: false
+      config:
+        enabled: false
+        watch:
+          enabled: false
+      discovery:
+        enabled: false
+        register: false
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/frezo
+    username: postgres
+    password: ""
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: false
+
+app:
+  security:
+    encryption-key: "CHANGE_ME_PLEASE_32PLUS_CHARS_123456"
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:localhost}
+      port: ${CONSUL_PORT:8500}
+      config:
+        enabled: false
+        watch:
+          enabled: false
+      discovery:
+        enabled: false
+        register: false
+    service-registry:
+      auto-registration:
+        enabled: false
+
+server:
+  port: 7410
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    com.frezo: DEBUG

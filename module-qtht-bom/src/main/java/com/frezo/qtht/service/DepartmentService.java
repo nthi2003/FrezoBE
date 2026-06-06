@@ -1,0 +1,16 @@
+package com.frezo.qtht.service;
+
+import com.frezo.qtht.dto.request.DepartmentFilterRequest;
+import com.frezo.qtht.dto.request.DepartmentSaveRequest;
+import com.frezo.qtht.dto.response.DepartmentResponse;
+import java.util.Map;
+
+public interface DepartmentService {
+    Map<String, Object> all(DepartmentFilterRequest filter);
+
+    DepartmentResponse create(DepartmentSaveRequest request);
+
+    DepartmentResponse update(String id, DepartmentSaveRequest request);
+
+    void delete(String id);
+}

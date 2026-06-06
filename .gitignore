@@ -1,0 +1,60 @@
+########################
+# Maven
+########################
+target/
+*.class
+*.log
+*.lst
+
+########################
+# IntelliJ IDEA
+########################
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+########################
+# Eclipse / STS
+########################
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+########################
+# VS Code
+########################
+.vscode/
+
+########################
+# NetBeans
+########################
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+build/
+
+########################
+# OS files
+########################
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+########################
+# Temp / Swap
+########################
+*.swp
+*.swo
+*.pid

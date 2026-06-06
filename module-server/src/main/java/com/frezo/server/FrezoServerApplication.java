@@ -9,8 +9,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-
-
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 @SpringBootApplication
 @EnableCaching
@@ -50,7 +52,28 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class FrezoServerApplication {
 
     public static void main(String[] args) {
+        initializeDatabase();
         System.setProperty("spring.devtools.restart.enabled", "false");
         SpringApplication.run(FrezoServerApplication.class, args);
+    }
+
+    private static void initializeDatabase() {
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println("PostgreSQL driver not found: " + e.getMessage());
+            return;
+        }
+        try (Connection conn = DriverManager.getConnection(
+                "jdbc:postgresql://localhost:5432/postgres", "postgres", "");
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery("SELECT 1 FROM pg_database WHERE datname = 'frezo'");
+            if (!rs.next()) {
+                stmt.execute("CREATE DATABASE frezo");
+                System.out.println("Created database 'frezo'");
+            }
+        } catch (Exception e) {
+            System.err.println("Could not initialize database: " + e.getMessage());
+        }
     }
 }

@@ -3,9 +3,6 @@ spring:
     name: frezo-server
   profiles:
     active: local
-  config:
-    import: "optional:consul:"
-
   cloud:
     consul:
       enabled: false
@@ -30,6 +27,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: false

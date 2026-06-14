@@ -28,7 +28,7 @@ public class Customer extends BaseEntity implements PhoneEncryptable {
     @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(name = "phone_encrypted", columnDefinition = "VARBINARY(255)")
+    @Column(name = "phone_encrypted", columnDefinition = "bytea")
     private byte[] phoneEncrypted;
 
     @Column(name = "phone_hash", length = 64)

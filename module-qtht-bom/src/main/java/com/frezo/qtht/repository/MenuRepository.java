@@ -20,4 +20,6 @@ public interface MenuRepository extends JpaRepository<Menu, String> {
     List<Menu> findByAppCode(String appCode);
 
     Optional<Menu> findByCodeAndAppCode(String code, String appCode);
+
+    List<Menu> findByCodeIn(Collection<String> codes);
 }

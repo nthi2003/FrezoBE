@@ -25,4 +25,6 @@ public interface PersonService {
     boolean isAdmin(String id);
 
     String uploadAvatarTemp(String userName, org.springframework.web.multipart.MultipartFile file);
+
+    PersonResponse getById(String id);
 }

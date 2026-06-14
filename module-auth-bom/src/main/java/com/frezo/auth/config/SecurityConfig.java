@@ -41,8 +41,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/api-docs/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                                "/users/register", "/ws-endpoint/**", "/error", "/customer/**", "/voucher/**",
-                                "/internal/gateway/**")
+                                "/qtht/user/register", "/ws-endpoint/**", "/error", "/customer/**", "/voucher/**",
+                                "/qtht/internal-gateway/**")
                         .permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated())

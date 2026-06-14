@@ -107,6 +107,13 @@ public class PersonServiceImpl implements PersonService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PersonResponse getById(String id) {
+        Person person = findPersonById(id);
+        return personMapper.toResponse(person);
+    }
+
+    @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void delete(String id) {
         Person person = findPersonById(id);

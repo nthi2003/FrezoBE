@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tickets")
+@RequestMapping("/task/ticket")
 @RequiredArgsConstructor
 @Tag(name = "Ticket API", description = "Support Ticket Management APIs")
 public class TicketController {

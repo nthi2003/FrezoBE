@@ -13,5 +13,6 @@ public interface RoleMenuMapper {
 
     @Mapping(source = "role.id", target = "roleId")
     @Mapping(source = "menu.id", target = "menuId")
+    @Mapping(source = "menu.code", target = "menuCode")
     RoleMenuResponse toResponseDTO(RoleMenu roleMenu);
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ip-whitelist")
+@RequestMapping("/qtht/ip-whitelist")
 @RequiredArgsConstructor
 @Tag(name = "IP Whitelist", description = "Quản lý danh sách IP được phép truy cập")
 public class IpWhitelistController {
@@ -23,14 +23,14 @@ public class IpWhitelistController {
 
     @Operation(summary = "Lấy danh sách IP whitelist", description = "Lấy tất cả các IP đang được cho phép")
     @GetMapping
-    @CheckPermission(api = "/ip-whitelist", action = "VIEW")
+    @CheckPermission(api = "/qtht/ip-whitelist", action = "VIEW")
     public ResponseEntity<ApiResponse<List<IpWhitelist>>> getAllActive() {
         return ResponseEntity.ok(ApiResponse.success(ipWhitelistService.getAllActive()));
     }
 
     @Operation(summary = "Thêm IP vào whitelist", description = "Thêm một địa chỉ IP vào danh sách cho phép")
     @PostMapping
-    @CheckPermission(api = "/ip-whitelist", action = "CREATE")
+    @CheckPermission(api = "/qtht/ip-whitelist", action = "CREATE")
     public ResponseEntity<ApiResponse<IpWhitelist>> addToWhitelist(
             @RequestParam String ipAddress,
             @RequestParam(required = false) String description) {
@@ -40,7 +40,7 @@ public class IpWhitelistController {
 
     @Operation(summary = "Xóa IP khỏi whitelist", description = "Vô hiệu hóa một IP trong danh sách whitelist")
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/ip-whitelist", action = "DELETE")
+    @CheckPermission(api = "/qtht/ip-whitelist", action = "DELETE")
     public ResponseEntity<ApiResponse<String>> removeFromWhitelist(@PathVariable String id) {
         ipWhitelistService.removeFromWhitelist(id);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa IP khỏi whitelist"));

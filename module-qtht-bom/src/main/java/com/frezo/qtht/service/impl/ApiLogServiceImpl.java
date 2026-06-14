@@ -96,7 +96,8 @@ public class ApiLogServiceImpl implements ApiLogService {
                 String searchPattern = "%" + filter.getSearch().toLowerCase() + "%";
                 predicates.add(cb.or(
                     cb.like(cb.lower(root.get("uri")), searchPattern),
-                    cb.like(cb.lower(root.get("username")), searchPattern)
+                    cb.like(cb.lower(root.get("username")), searchPattern),
+                    cb.like(cb.lower(root.get("ipAddress")), searchPattern)
                 ));
             }
 
@@ -106,6 +107,26 @@ public class ApiLogServiceImpl implements ApiLogService {
 
             if (filter.getStatusCode() != null) {
                 predicates.add(cb.equal(root.get("statusCode"), filter.getStatusCode()));
+            }
+
+            if (filter.getIpAddress() != null && !filter.getIpAddress().isEmpty()) {
+                predicates.add(cb.like(root.get("ipAddress"), "%" + filter.getIpAddress() + "%"));
+            }
+
+            if (filter.getUsername() != null && !filter.getUsername().isEmpty()) {
+                predicates.add(cb.equal(root.get("username"), filter.getUsername()));
+            }
+
+            if (filter.getUri() != null && !filter.getUri().isEmpty()) {
+                predicates.add(cb.like(root.get("uri"), "%" + filter.getUri() + "%"));
+            }
+
+            if (filter.getDurationMin() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("duration"), filter.getDurationMin()));
+            }
+
+            if (filter.getDurationMax() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("duration"), filter.getDurationMax()));
             }
 
             if (filter.getFromDate() != null) {

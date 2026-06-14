@@ -11,6 +11,7 @@ import com.frezo.qtht.dto.response.UserResponse;
 import com.frezo.qtht.entity.Organization;
 import com.frezo.qtht.entity.Person;
 import com.frezo.qtht.entity.Role;
+import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.repository.RoleRepository;
 import com.frezo.qtht.service.UserAdminService;
@@ -50,6 +51,7 @@ public class UserAdminServiceImpl implements UserAdminService {
 
     private final UserRepository userRepository;
     private final PersonRepository personRepository;
+    private final OrganizationRepository organizationRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -60,7 +62,16 @@ public class UserAdminServiceImpl implements UserAdminService {
         validateRegisterRequest(request);
 
         User user = createUser(request);
-        Person person = createPerson(request);
+        Person person;
+
+        if (StringUtils.hasText(request.getPersonId())) {
+            person = personRepository.findById(request.getPersonId())
+                    .orElseThrow(() -> new QTHTException("exception.person.not.found", HttpStatus.BAD_REQUEST));
+            user.setName(person.getName());
+            user.setEmail(person.getEmail());
+        } else {
+            person = createPerson(request);
+        }
 
         user.setPersonId(person.getId());
         userRepository.save(user);
@@ -165,8 +176,13 @@ public class UserAdminServiceImpl implements UserAdminService {
             throw new QTHTException(ERR_USER_EXISTS, HttpStatus.BAD_REQUEST);
         }
 
-        if (personRepository.existsByEmail(request.getEmail())) {
-            throw new QTHTException(ERR_EMAIL_EXISTS, HttpStatus.BAD_REQUEST);
+        if (!StringUtils.hasText(request.getPersonId())) {
+            if (!StringUtils.hasText(request.getEmail()) || !StringUtils.hasText(request.getFullname())) {
+                throw new QTHTException("exception.email.fullname.required", HttpStatus.BAD_REQUEST);
+            }
+            if (personRepository.existsByEmail(request.getEmail())) {
+                throw new QTHTException(ERR_EMAIL_EXISTS, HttpStatus.BAD_REQUEST);
+            }
         }
     }
 
@@ -204,8 +220,16 @@ public class UserAdminServiceImpl implements UserAdminService {
     }
 
     private void assignRoleToUser(RegisterRequest request, User user) {
-        if (StringUtils.hasText(request.getRoleId())) {
-            Role role = roleRepository.findById(request.getRoleId())
+        List<String> roleCodes = request.getRoleIds();
+        if (roleCodes != null && !roleCodes.isEmpty()) {
+            for (String code : roleCodes) {
+                Role role = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(code, APP_CODE)
+                        .orElseThrow(
+                                () -> new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                saveUserRole(user, role.getId());
+            }
+        } else if (StringUtils.hasText(request.getRoleId())) {
+            Role role = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(request.getRoleId(), APP_CODE)
                     .orElseThrow(
                             () -> new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
             saveUserRole(user, role.getId());
@@ -326,6 +350,39 @@ public class UserAdminServiceImpl implements UserAdminService {
             map.put(user.getId(), getRolesByUserId(user.getId()));
         }
         return map;
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUser(String id, Map<String, Object> updates) {
+        User user = getUserByIdOrThrow(id);
+
+        if (updates.containsKey("username")) {
+            user.setUserName((String) updates.get("username"));
+        }
+        if (updates.containsKey("email")) {
+            user.setEmail((String) updates.get("email"));
+        }
+        if (updates.containsKey("fullName") || updates.containsKey("name")) {
+            String name = (String) updates.getOrDefault("fullName", updates.get("name"));
+            user.setName(name);
+        }
+        if (updates.containsKey("personId")) {
+            String newPersonId = (String) updates.get("personId");
+            if (StringUtils.hasText(newPersonId) && !newPersonId.equals(user.getPersonId())) {
+                user.setPersonId(newPersonId);
+            }
+        }
+
+        userRepository.save(user);
+
+        Person person = null;
+        if (user.getPersonId() != null) {
+            person = personRepository.findById(user.getPersonId()).orElse(null);
+        }
+
+        List<Role> roles = getRolesByUserId(user.getId());
+        return mapToUserResponse(user, person, roles);
     }
 
     private UserResponse mapToUserResponse(User user, Person person, List<Role> roles) {

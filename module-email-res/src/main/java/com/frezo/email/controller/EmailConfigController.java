@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/email-configs")
+@RequestMapping("/email/config")
 @RequiredArgsConstructor
 @Tag(name = "Email Config Management", description = "APIs for managing email configurations")
 public class EmailConfigController {

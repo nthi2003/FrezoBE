@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/qlht/departments")
+@RequestMapping("/qtht/department")
 @RequiredArgsConstructor
 @Tag(name = "DepartmentController", description = "Quản lý phòng ban")
 public class DepartmentController {
@@ -23,14 +23,14 @@ public class DepartmentController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách phòng ban (có tìm kiếm & lọc)")
-////    @CheckPermission(api = "/qlht/departments", action = "VIEW")
+////    @CheckPermission(api = "/qtht/department", action = "VIEW")
     public ApiResponse<Map<String, Object>> getAllDepartments(@ModelAttribute @Valid DepartmentFilterRequest request) {
         return ApiResponse.success(departmentService.all(request));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa phòng ban")
-////    @CheckPermission(api = "/qlht/departments", action = "DELETE")
+////    @CheckPermission(api = "/qtht/department", action = "DELETE")
     public ApiResponse<Void> deleteDepartment(@PathVariable String id) {
         departmentService.delete(id);
         return ApiResponse.success(null, "Xóa phòng ban thành công");
@@ -38,16 +38,30 @@ public class DepartmentController {
 
     @PostMapping
     @Operation(summary = "Thêm mới phòng ban")
-////    @CheckPermission(api = "/qlht/departments", action = "CREATE")
+////    @CheckPermission(api = "/qtht/department", action = "CREATE")
     public ApiResponse<Object> createDepartment(@RequestBody @Valid DepartmentSaveRequest request) {
         return ApiResponse.success(departmentService.create(request));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật phòng ban")
-////    @CheckPermission(api = "/qlht/departments", action = "UPDATE")
+////    @CheckPermission(api = "/qtht/department", action = "UPDATE")
     public ApiResponse<Object> updateDepartment(@PathVariable String id,
             @RequestBody @Valid DepartmentSaveRequest request) {
         return ApiResponse.success(departmentService.update(id, request));
+    }
+
+    @PutMapping("/{id}/activate")
+    @Operation(summary = "Kích hoạt phòng ban")
+    public ApiResponse<Void> activateDepartment(@PathVariable String id) {
+        departmentService.activate(id);
+        return ApiResponse.success(null, "Kích hoạt phòng ban thành công");
+    }
+
+    @PutMapping("/{id}/deactivate")
+    @Operation(summary = "Vô hiệu hóa phòng ban")
+    public ApiResponse<Void> deactivateDepartment(@PathVariable String id) {
+        departmentService.deactivate(id);
+        return ApiResponse.success(null, "Vô hiệu hóa phòng ban thành công");
     }
 }

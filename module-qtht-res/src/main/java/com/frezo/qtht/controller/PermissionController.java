@@ -15,14 +15,14 @@ import java.util.Collections;
 import java.util.List;
 
 @RestController
-@RequestMapping("/qlht/permissions")
+@RequestMapping("/qtht/permission")
 @RequiredArgsConstructor
 public class PermissionController {
 
     private final PermissionRepository permissionRepository;
 
     @GetMapping
-    @CheckPermission(api = "/qlht/permissions", action = "VIEW")
+    @CheckPermission(api = "/qtht/permission", action = "VIEW")
     public ApiResponse<List<MenuPermissionResponse>> getAll() {
         List<Permission> permissions = permissionRepository.findAll();
         List<MenuPermissionResponse> response = permissions.stream()
@@ -47,7 +47,7 @@ public class PermissionController {
     }
 
     @PostMapping
-    @CheckPermission(api = "/qlht/permissions", action = "CREATE")
+    @CheckPermission(api = "/qtht/permission", action = "CREATE")
     public ApiResponse<MenuPermissionResponse> create(@RequestBody MenuPermissionSaveRequest request) {
         Permission permission = Permission.builder()
                 .name(request.getName())
@@ -63,7 +63,7 @@ public class PermissionController {
     }
 
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/qlht/permissions", action = "DELETE")
+    @CheckPermission(api = "/qtht/permission", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable("id") String id) {
         permissionRepository.deleteById(id);
         return ApiResponse.success(null);

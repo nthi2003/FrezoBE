@@ -26,4 +26,6 @@ public interface UserAdminService {
 
     void inactived (String id);
     String resetPassword(String id);
+
+    UserResponse updateUser(String id, Map<String, Object> updates);
 }

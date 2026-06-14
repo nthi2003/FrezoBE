@@ -15,6 +15,11 @@
     <dependencies>
         <dependency>
             <groupId>com.frezo</groupId>
+            <artifactId>module-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.frezo</groupId>
             <artifactId>module-task-bom</artifactId>
             <version>1.0.0</version>
         </dependency>

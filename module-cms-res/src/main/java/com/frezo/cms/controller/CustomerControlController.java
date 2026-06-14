@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/cms/customers")
+@RequestMapping("/cms/customer")
 @RequiredArgsConstructor
 @Tag(name = "Customer Management API", description = "CMS Customer operations")
 public class CustomerControlController {

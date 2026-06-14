@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/email-templates")
+@RequestMapping("/email/template")
 @RequiredArgsConstructor
 @Tag(name = "Email Template Management", description = "APIs for managing email templates")
 public class EmailtemplateController {

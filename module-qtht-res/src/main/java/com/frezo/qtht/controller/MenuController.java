@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/qlht/menus")
+@RequestMapping("/qtht/menu")
 @RequiredArgsConstructor
 @Tag(name = "3. Quản lý Menu (QTHT)", description = "Các API quản lý sơ đồ menu, phân quyền hiển thị theo người dùng")
 public class MenuController {

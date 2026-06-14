@@ -14,6 +14,7 @@ import com.frezo.qtht.mapper.SettingMapper;
 import com.frezo.qtht.repository.SettingRepository;
 import com.frezo.qtht.service.SettingService;
 import com.frezo.util.web.Response;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -29,6 +30,14 @@ public class SettingServiceImpl implements SettingService {
     private final SettingRepository settingRepository;
     private final SettingMapper settingMapper;
     private final ObjectMapper objectMapper;
+
+    @Override
+    public List<SettingResponse> findAll() {
+        return settingRepository.findAll().stream()
+                .filter(s -> s.getIsDeleted() == null || !s.getIsDeleted())
+                .map(settingMapper::toResponse)
+                .toList();
+    }
 
     @Override
     @Transactional

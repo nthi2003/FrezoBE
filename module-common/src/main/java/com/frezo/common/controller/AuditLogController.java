@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/qtht/audit-logs")
+@RequestMapping("/qtht/audit-log")
 @RequiredArgsConstructor
 @Tag(name = "X. Audit Log", description = "API truy vấn lịch sử thay đổi dữ liệu")
 public class AuditLogController {

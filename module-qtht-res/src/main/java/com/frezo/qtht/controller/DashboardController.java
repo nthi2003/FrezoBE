@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/dashboard")
+@RequestMapping("/qtht/dashboard")
 @RequiredArgsConstructor
 @Tag(name = "Dashboard API", description = "Aggregated dashboard data")
 public class DashboardController {

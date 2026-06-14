@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/websocket-channels")
+@RequestMapping("/qtht/websocket-channel")
 public class WebSocketChannelController {
 
     @GetMapping

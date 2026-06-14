@@ -10,4 +10,5 @@ import lombok.*;
 public class RoleMenuResponse {
     private String roleId;
     private String menuId;
+    private String menuCode;
 }

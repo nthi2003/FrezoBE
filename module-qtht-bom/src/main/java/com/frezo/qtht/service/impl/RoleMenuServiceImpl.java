@@ -139,7 +139,7 @@ public class RoleMenuServiceImpl implements RoleMenuService {
     private void deleteRemovedPermissions(Role role, List<String> effectiveMenuIds) {
         List<RoleMenu> existingRoleMenus = roleMenuRepository.findByRole_Code(role.getCode());
         List<RoleMenu> toDelete = existingRoleMenus.stream()
-                .filter(rm -> rm.getMenu() != null && !effectiveMenuIds.contains(rm.getMenu().getId()))
+                .filter(rm -> rm.getMenu() != null && !effectiveMenuIds.contains(rm.getMenu().getCode()))
                 .toList();
 
         if (!toDelete.isEmpty()) {
@@ -149,19 +149,19 @@ public class RoleMenuServiceImpl implements RoleMenuService {
 
     private void addNewPermissions(Role role, List<String> effectiveMenuIds) {
         List<RoleMenu> existingRoleMenus = roleMenuRepository.findByRole_Code(role.getCode());
-        Set<String> existingMenuIds = existingRoleMenus.stream()
-                .map(rm -> rm.getMenu().getId())
+        Set<String> existingMenuCodes = existingRoleMenus.stream()
+                .map(rm -> rm.getMenu().getCode())
                 .collect(Collectors.toSet());
 
-        List<String> toAddMenuIds = effectiveMenuIds.stream()
-                .filter(id -> !existingMenuIds.contains(id))
+        List<String> toAddMenuCodes = effectiveMenuIds.stream()
+                .filter(code -> !existingMenuCodes.contains(code))
                 .toList();
 
-        if (toAddMenuIds.isEmpty()) {
+        if (toAddMenuCodes.isEmpty()) {
             return;
         }
 
-        List<Menu> menusToAdd = menuRepository.findAllById(toAddMenuIds);
+        List<Menu> menusToAdd = menuRepository.findByCodeIn(toAddMenuCodes);
         Map<String, Menu> parentMenuMap = fetchParentMenus(menusToAdd, role.getAppCode());
 
         List<RoleMenu> newRoleMenus = menusToAdd.stream()

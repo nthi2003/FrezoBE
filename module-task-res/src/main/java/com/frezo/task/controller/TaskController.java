@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/task/task")
 @RequiredArgsConstructor
 @Tag(name = "Task API", description = "Task Management APIs")
 public class TaskController {

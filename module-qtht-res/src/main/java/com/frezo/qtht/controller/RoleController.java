@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/qlht/roles")
+@RequestMapping("/qtht/role")
 @RequiredArgsConstructor
 @Tag(name = "2. Quản lý Role", description = "Các API dành cho quản trị viên thiết lập quyền hạn")
 public class RoleController {
@@ -26,21 +26,21 @@ public class RoleController {
 
     @Operation(summary = "Tạo mới Role", description = "Tạo một vai trò mới cho hệ thống dựa trên appCode")
     @PostMapping
-    @CheckPermission(api = "/qlht/roles", action = "CREATE")
+    @CheckPermission(api = "/qtht/role", action = "CREATE")
     public ResponseEntity<ApiResponse<RoleResponse>> create(@RequestBody RoleCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(roleService.create(request)));
     }
 
     @Operation(summary = "Cập nhật Role", description = "Chỉnh sửa thông tin vai trò hiện có")
     @PutMapping
-    @CheckPermission(api = "/qlht/roles", action = "UPDATE")
+    @CheckPermission(api = "/qtht/role", action = "UPDATE")
     public ResponseEntity<ApiResponse<RoleResponse>> update(@RequestBody RoleUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(roleService.update(request)));
     }
 
     @Operation(summary = "Xóa Role (soft delete)")
     @DeleteMapping
-    @CheckPermission(api = "/qlht/roles", action = "DELETE")
+    @CheckPermission(api = "/qtht/role", action = "DELETE")
     public ResponseEntity<Void> delete(
             @RequestParam("code") String code,
             @RequestParam("appCode") String appCode) {
@@ -50,7 +50,7 @@ public class RoleController {
 
     @Operation(summary = "Lấy danh sách Role", description = "Lấy toàn bộ danh sách Role, có thể lọc theo appCode")
     @GetMapping
-    @CheckPermission(api = "/qlht/roles", action = "VIEW")
+    @CheckPermission(api = "/qtht/role", action = "VIEW")
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getRoles(
             @RequestParam(name = "appCode", required = false) String appCode) {
         if (appCode != null) {

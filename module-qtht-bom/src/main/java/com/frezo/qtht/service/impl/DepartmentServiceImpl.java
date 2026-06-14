@@ -163,4 +163,22 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department saved = departmentRepository.save(department);
         return departmentMapper.toResponse(saved);
     }
+
+    @Override
+    @Transactional
+    public void activate(String id) {
+        Department department = findEntityById(id);
+        department.setStatus(DepartmentStatus.ACTIVE);
+        departmentRepository.save(department);
+        log.debug("Activated department: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void deactivate(String id) {
+        Department department = findEntityById(id);
+        department.setStatus(DepartmentStatus.INACTIVE);
+        departmentRepository.save(department);
+        log.debug("Deactivated department: {}", id);
+    }
 }

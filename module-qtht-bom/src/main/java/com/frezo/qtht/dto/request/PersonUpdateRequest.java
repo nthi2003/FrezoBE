@@ -1,6 +1,7 @@
 package com.frezo.qtht.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ public class PersonUpdateRequest {
     @JsonProperty("isAdmin")
     private Boolean isAdmin;
 
+    @NotNull(message = "Trạng thái không được để trống")
     @JsonProperty("activated")
     private Boolean activated;
     private String email;

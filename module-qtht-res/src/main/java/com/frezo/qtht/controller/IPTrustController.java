@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/qlht/ip-trust")
+@RequestMapping("/qtht/ip-trust")
 @RequiredArgsConstructor
 @Tag(name = "Quản lí danh sách white list ip", description = "Các API cho phép quản lí danh sách white list IP đặc biệt được phép thông qua")
 public class IPTrustController {

@@ -66,6 +66,13 @@ public class PersonController {
                         .build())
                 .toList());
     }
+
+    @Operation(summary = "Lấy thông tin nhân viên theo ID")
+    @GetMapping("/{id}")
+    public Response<?> getById(@PathVariable("id") String id) {
+        return Response.ok(personService.getById(id));
+    }
+
     @PutMapping("/{id}/activate")
     @Operation(summary = "activate person", description = "Kích hoạt thông tin cá nhân ")
     public Response<?> activate(@Parameter(description = "person") @PathVariable String id) {

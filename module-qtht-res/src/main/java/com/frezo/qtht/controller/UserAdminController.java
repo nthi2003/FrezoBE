@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @Slf4j
-@RequestMapping("/users")
+@RequestMapping("/qtht/user")
 @RequiredArgsConstructor
 @Tag(name = "4. Quản lý Người dùng (Users)", description = "Các API đăng ký tài khoản và thiết lập vai trò cho người dùng")
 public class UserAdminController {
@@ -35,7 +35,7 @@ public class UserAdminController {
 
     @Operation(summary = "Gán Role cho Người dùng", description = "Cấp quyền (Role) cho một người dùng cụ thể dựa trên appCode. Ví dụ: appCode = 'QTHT'")
     @PostMapping("/assign-role")
-    @CheckPermission(api = "/users/assign-role", action = "CREATE")
+    @CheckPermission(api = "/qtht/user/assign-role", action = "CREATE")
     public ResponseEntity<ApiResponse<String>> assignRole(
             @RequestParam("username") String username,
             @RequestParam("roleCode") String roleCode,
@@ -46,14 +46,14 @@ public class UserAdminController {
 
     @Operation(summary = "Lấy danh sách Role của người dùng", description = "Trả về danh sách các mã Role (String) mà người dùng đang sở hữu")
     @GetMapping("/{username}/roles")
-    @CheckPermission(api = "/users/{username}/roles", action = "VIEW")
+    @CheckPermission(api = "/qtht/user/{username}/roles", action = "VIEW")
     public ResponseEntity<ApiResponse<List<String>>> getUserRoles(@PathVariable("username") String username) {
         return ResponseEntity.ok(ApiResponse.success(userAdminService.getRoles(username)));
     }
 
     @Operation(summary = "Lấy danh sách tất cả người dùng", description = "Lấy danh sách người dùng với phân trang và tìm kiếm")
     @GetMapping("/all")
-    @CheckPermission(api = "/users/all", action = "VIEW")
+    @CheckPermission(api = "/qtht/user/all", action = "VIEW")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getAllUsers(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
@@ -64,13 +64,24 @@ public class UserAdminController {
 
     @Operation(summary = "Lấy thông tin chi tiết người dùng", description = "Lấy thông tin chi tiết của một người dùng theo ID")
     @GetMapping("/{id}")
-    @CheckPermission(api = "/users/{id}", action = "VIEW")
+    @CheckPermission(api = "/qtht/user/{id}", action = "VIEW")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable("id") String id) {
         return ResponseEntity.ok(ApiResponse.success(userAdminService.getUserById(id)));
     }
+
+    @Operation(summary = "Cập nhật thông tin người dùng", description = "Cập nhật thông tin cơ bản của người dùng")
+    @PutMapping("/{id}")
+    @CheckPermission(api = "/qtht/user/{id}", action = "UPDATE")
+    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+            @PathVariable("id") String id,
+            @RequestBody Map<String, Object> updates) {
+        UserResponse result = userAdminService.updateUser(id, updates);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
     @Operation(summary = "Bật trạng thái hoạt động", description = "Mở khóa tài khoản người dùng")
     @PutMapping("/{id}/active")
-    @CheckPermission(api = "/users/{id}/active", action = "UPDATE")
+    @CheckPermission(api = "/qtht/user/{id}/active", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> active(@PathVariable("id") String id) {
         userAdminService.actived(id);
         return ResponseEntity.ok(ApiResponse.success("Tài khoản đã được mở khóa thành công"));
@@ -78,7 +89,7 @@ public class UserAdminController {
 
     @Operation(summary = "Khóa tài khoản", description = "Khóa tài khoản người dùng (set status = 0)")
     @PutMapping("/{id}/lock")
-    @CheckPermission(api = "/users/{id}/lock", action = "UPDATE")
+    @CheckPermission(api = "/qtht/user/{id}/lock", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> inactive(@PathVariable("id") String id) {
         userAdminService.inactived(id);
         return ResponseEntity.ok(ApiResponse.success("Tài khoản đã bị khóa thành công"));
@@ -86,7 +97,7 @@ public class UserAdminController {
 
     @Operation(summary = "Reset mật khẩu", description = "Reset mật khẩu người dùng về mặc định (123456)")
     @PostMapping("/{id}/reset-password")
-    @CheckPermission(api = "/users/{id}/reset-password", action = "UPDATE")
+    @CheckPermission(api = "/qtht/user/{id}/reset-password", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> resetPassword(@PathVariable("id") String id) {
         String newPass = userAdminService.resetPassword(id);
         return ResponseEntity.ok(ApiResponse.success(newPass, "Mật khẩu đã được reset về mặc định"));

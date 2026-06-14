@@ -7,11 +7,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/qtht/notification")
 @RequiredArgsConstructor
 @Tag(name = "X. Thông báo (Notifications)", description = "API quản lý thông báo trong app")
 public class NotificationController {
@@ -20,7 +21,8 @@ public class NotificationController {
 
     @Operation(summary = "Lấy danh sách thông báo", description = "Lấy toàn bộ thông báo của người dùng hiện tại")
     @GetMapping("/my")
-    public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications(@RequestParam String username) {
+    public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications(Authentication authentication) {
+        String username = authentication.getName();
         return ResponseEntity.ok(ApiResponse.success(notificationService.getMyNotifications(username)));
     }
 

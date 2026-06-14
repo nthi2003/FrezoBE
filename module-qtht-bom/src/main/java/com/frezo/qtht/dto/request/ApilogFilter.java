@@ -14,4 +14,9 @@ public class ApilogFilter extends PagingBase {
     private String method;
     private Integer statusCode;
     private String search;
+    private String ipAddress;
+    private String username;
+    private String uri;
+    private Long durationMin;
+    private Long durationMax;
 }

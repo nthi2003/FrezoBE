@@ -13,4 +13,8 @@ public interface DepartmentService {
     DepartmentResponse update(String id, DepartmentSaveRequest request);
 
     void delete(String id);
+
+    void activate(String id);
+
+    void deactivate(String id);
 }

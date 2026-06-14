@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/internal/gateway")
+@RequestMapping("/qtht/internal-gateway")
 @RequiredArgsConstructor
 @Tag(name = "Internal Gateway API", description = "Các API nội bộ phục vụ cho API Gateway")
 public class InternalGatewayController {

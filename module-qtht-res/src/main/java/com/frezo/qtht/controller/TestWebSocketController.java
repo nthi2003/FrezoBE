@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/test-ws")
+@RequestMapping("/qtht/test-ws")
 @RequiredArgsConstructor
 public class TestWebSocketController {
 

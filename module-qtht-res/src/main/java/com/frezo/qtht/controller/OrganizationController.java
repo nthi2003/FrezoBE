@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/qlht/organization")
+@RequestMapping("/qtht/organization")
 @RequiredArgsConstructor
 public class OrganizationController {
 
@@ -26,28 +26,28 @@ public class OrganizationController {
 
     @Operation(summary = "Lấy danh sách tổ chức", description = "Lấy danh sách tổ chức phân trang và tìm kiếm")
     @GetMapping
-    @CheckPermission(api = "/qlht/organization", action = "VIEW")
+    @CheckPermission(api = "/qtht/organization", action = "VIEW")
     public ApiResponse<?> getAll(@ModelAttribute OrganizationFilterRequest filter) {
         return ApiResponse.success(organizationService.all(filter));
     }
 
     @Operation(summary = "Thêm mới tổ chức", description = "Thêm mới một tổ chức vào hệ thống")
     @PostMapping
-    @CheckPermission(api = "/qlht/organization", action = "CREATE")
+    @CheckPermission(api = "/qtht/organization", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody OrganizationAddRequest request) {
         return ApiResponse.success(organizationService.add(request));
     }
 
     @Operation(summary = "Cập nhật tổ chức", description = "Cập nhật thông tin của một tổ chức")
     @PutMapping("/{id}")
-    @CheckPermission(api = "/qlht/organization", action = "UPDATE")
+    @CheckPermission(api = "/qtht/organization", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody OrganizationEditRequest request) {
         return ApiResponse.success(organizationService.update(id, request));
     }
 
     @Operation(summary = "Xóa tổ chức", description = "Xóa mềm một tổ chức khỏi hệ thống")
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/qlht/organization", action = "DELETE")
+    @CheckPermission(api = "/qtht/organization", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         organizationService.delete(id);
         return ApiResponse.success("Xóa tổ chức thành công");

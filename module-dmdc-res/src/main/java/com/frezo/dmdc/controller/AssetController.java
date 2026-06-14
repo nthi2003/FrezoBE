@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/qlts/assets")
+@RequestMapping("/qlts/asset")
 @RequiredArgsConstructor
 @Tag(name = "12. Quản lý tài sản (QLTS)", description = "API quản lý tài sản, dựa trên danh mục với groupCode = 'QLTS'")
 public class AssetController {

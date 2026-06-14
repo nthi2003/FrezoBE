@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/auth/statistics")
+@RequestMapping("/auth/statistic")
 @RequiredArgsConstructor
 @Tag(name = "1. Xác thực (Auth)", description = "API thống kê hoạt động")
 public class UserActivityController {

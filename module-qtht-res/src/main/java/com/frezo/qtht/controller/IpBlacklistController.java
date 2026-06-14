@@ -9,9 +9,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/ip-blacklist")
+@RequestMapping("/qtht/ip-blacklist")
 @RequiredArgsConstructor
 @Tag(name = "IpBlacklistController", description = "Quản lý danh sách IP bị cấm")
 public class IpBlacklistController {
@@ -20,11 +21,12 @@ public class IpBlacklistController {
 
     @PostMapping("/ban")
     @Operation(summary = "Cấm truy cập một IP")
-    public ApiResponse<IpBlacklist> banIp(@RequestParam String ip,
-                                        @RequestParam String reason,
-                                        @RequestParam String bannedBy,
-                                        @RequestParam(required = false) Integer hours) {
-        return ApiResponse.success(ipBlacklistService.addBan(ip, reason, bannedBy, hours));
+    public ApiResponse<IpBlacklist> banIp(@RequestBody Map<String, Object> body) {
+        String ipAddress = (String) body.get("ipAddress");
+        String reason = (String) body.get("reason");
+        String bannedBy = (String) body.getOrDefault("bannedBy", "SYSTEM");
+        Integer hours = body.containsKey("hours") ? Integer.valueOf(body.get("hours").toString()) : null;
+        return ApiResponse.success(ipBlacklistService.addBan(ipAddress, reason, bannedBy, hours));
     }
 
     @DeleteMapping("/unban/{id}")

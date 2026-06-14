@@ -17,7 +17,7 @@ import com.frezo.qtht.dto.response.ApiLogStatsResponse;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/apilogs")
+@RequestMapping("/qtht/api-log")
 @RequiredArgsConstructor
 @Tag(name = "ApiLogController", description = "Quản lý API Logs")
 public class ApiLogController {

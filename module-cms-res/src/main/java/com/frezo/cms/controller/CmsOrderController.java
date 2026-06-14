@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/cms/orders")
+@RequestMapping("/cms/order")
 @RequiredArgsConstructor
 @Tag(name = "CMS Order API", description = "Order management for CMS")
 public class CmsOrderController {

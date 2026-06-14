@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/sessions")
+@RequestMapping("/auth/session")
 @RequiredArgsConstructor
 @Tag(name = "Session Management", description = "Quản lý phiên đăng nhập người dùng")
 public class SessionController {

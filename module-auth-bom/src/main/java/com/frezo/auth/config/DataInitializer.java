@@ -89,13 +89,8 @@ public class DataInitializer implements CommandLineRunner {
             // CHECK & SEED MENUS
             try {
                 // 1. Seed Menus
-                Integer menuCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM menu", Integer.class);
-                if (menuCount != null && menuCount == 0) {
-                    log.info("=== SEEDING MENU DATA ===");
-                    executeSqlScript("classpath:data/menu_data.sql");
-                } else {
-                    log.info("Menu table has data (count={}). Skipping seed.", menuCount);
-                }
+                log.info("=== CHECKING/SEEDING MENU DATA ===");
+                executeSqlScript("classpath:data/menu_data.sql");
 
                 // 2. Seed Roles (ADMIN, MANAGER, STAFF)
                 // Always try to seed roles (SQL handles duplicates)

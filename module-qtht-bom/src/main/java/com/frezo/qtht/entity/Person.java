@@ -63,7 +63,7 @@ public class Person extends BaseEntity {
 
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "org_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @JoinColumn(name = "org_id", referencedColumnName = "id")
     private Organization organization;
 
     @Column(name = "org_id", insertable = false, updatable = false)

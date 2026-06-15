@@ -27,6 +27,13 @@ public class ProductController {
         return ApiResponse.success(productService.filter(filterRequest));
     }
 
+    @Operation(summary = "Lấy danh sách tất cả sản phẩm", description = "Lấy toàn bộ danh sách sản phẩm")
+    @GetMapping
+    @CheckPermission(api = "/product", action = "VIEW")
+    public ApiResponse<?> getAll() {
+        return ApiResponse.success(productService.filter(new ProductFilterRequest()));
+    }
+
     @Operation(summary = "Lấy chi tiết sản phẩm", description = "Lấy thông tin chi tiết của một sản phẩm")
     @GetMapping("/{id}")
     @CheckPermission(api = "/product/{id}", action = "VIEW")

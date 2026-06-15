@@ -19,5 +19,6 @@ public class PersonFilterRequest extends PagingBase {
     private String jobTitle;
     private Boolean isAdmin;
     private String departmentId;
+    private String orgId;
 
 }

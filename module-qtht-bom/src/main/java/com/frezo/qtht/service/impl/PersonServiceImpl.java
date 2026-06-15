@@ -215,6 +215,26 @@ public class PersonServiceImpl implements PersonService {
                     .and(GenericSpecification.equalField("departmentId", filter.getDepartmentId()));
         }
 
+        if (filter.getActivated() != null) {
+            specification = specification
+                    .and(GenericSpecification.booleanField("activated", filter.getActivated()));
+        }
+
+        if (SystemUtils.isNotNullOrEmpty(filter.getGender())) {
+            specification = specification
+                    .and(GenericSpecification.equalField("gender", filter.getGender()));
+        }
+
+        if (SystemUtils.isNotNullOrEmpty(filter.getJobTitle())) {
+            specification = specification
+                    .and(GenericSpecification.equalField("jobTitle", filter.getJobTitle()));
+        }
+
+        if (SystemUtils.isNotNullOrEmpty(filter.getOrgId())) {
+            specification = specification
+                    .and(GenericSpecification.equalField("orgId", filter.getOrgId()));
+        }
+
         return specification;
     }
 }

@@ -376,6 +376,28 @@ public class UserAdminServiceImpl implements UserAdminService {
 
         userRepository.save(user);
 
+        if (updates.containsKey("roleIds")) {
+            Object roleIdsObj = updates.get("roleIds");
+            List<String> roleCodes = null;
+            if (roleIdsObj instanceof List) {
+                roleCodes = ((List<?>) roleIdsObj).stream()
+                        .map(Object::toString)
+                        .toList();
+            }
+
+            // Delete existing user roles
+            List<UserRole> existingUserRoles = userRoleRepository.findByUserId(user.getId());
+            userRoleRepository.deleteAll(existingUserRoles);
+
+            // Save new user roles
+            if (roleCodes != null) {
+                for (String code : roleCodes) {
+                    Optional<Role> roleOpt = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(code, APP_CODE);
+                    roleOpt.ifPresent(role -> saveUserRole(user, role.getId()));
+                }
+            }
+        }
+
         Person person = null;
         if (user.getPersonId() != null) {
             person = personRepository.findById(user.getPersonId()).orElse(null);

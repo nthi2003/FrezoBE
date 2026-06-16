@@ -97,34 +97,34 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       APP_SECURITY_ENCRYPTION_KEY: ${APP_SECURITY_ENCRYPTION_KEY:-CHANGE_ME_PLEASE_32PLUS_CHARS_123456}
 
-  # ─── AI Service (FastAPI) ─────────────────────────────────────────────────────
-  ai:
-    build:
-      context: ../FrezoAI
-    container_name: frezo-ai
-    ports:
-      - "8001:8001"
-    environment:
-      PYTHONUNBUFFERED: "1"
+  # # ─── AI Service (FastAPI) ─────────────────────────────────────────────────────
+  # ai:
+  #   build:
+  #     context: ../FrezoAI
+  #   container_name: frezo-ai
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     PYTHONUNBUFFERED: "1"
 
-  # ─── Spring Cloud Gateway ────────────────────────────────────────────────────
-  gateway:
-    build:
-      context: ../FrezoGW
-    container_name: frezo-gateway
-    depends_on:
-      consul:
-        condition: service_healthy
-      consul-config-loader:
-        condition: service_completed_successfully
-      app:
-        condition: service_started
-    ports:
-      - "7200:7200"
-    environment:
-      CONSUL_HOST: consul
-      CONSUL_PORT: 8500
-      SPRING_PROFILES_ACTIVE: docker
+  # # ─── Spring Cloud Gateway ────────────────────────────────────────────────────
+  # gateway:
+  #   build:
+  #     context: ../FrezoGW
+  #   container_name: frezo-gateway
+  #   depends_on:
+  #     consul:
+  #       condition: service_healthy
+  #     consul-config-loader:
+  #       condition: service_completed_successfully
+  #     app:
+  #       condition: service_started
+  #   ports:
+  #     - "7200:7200"
+  #   environment:
+  #     CONSUL_HOST: consul
+  #     CONSUL_PORT: 8500
+  #     SPRING_PROFILES_ACTIVE: docker
 
 volumes:
   consul-data:

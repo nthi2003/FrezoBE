@@ -35,6 +35,8 @@
         <module>module-product-res</module>
         <module>module-cms-bom</module>
         <module>module-cms-res</module>
+        <module>module-warehouse-bom</module>
+        <module>module-warehouse-res</module>
     </modules>
 
     <properties>

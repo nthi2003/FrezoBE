@@ -12,4 +12,6 @@ import lombok.NoArgsConstructor;
 public class SystemDetailsSettingResponse {
     private AttendanceSettingResponse attendance;
     private PayrollSettingResponse payroll;
+    private GeoAttendanceConfig geo;
 }
+

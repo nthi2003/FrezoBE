@@ -7,9 +7,9 @@
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -48,9 +48,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'FTECH_HO');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -90,9 +90,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'FTECH_HN');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -132,9 +132,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'FTECH_HCM');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -171,9 +171,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'DEPT_TECH_HN');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -210,9 +210,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'DEPT_HR_HN');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 
@@ -249,9 +249,9 @@ WHERE NOT EXISTS (SELECT 1 FROM organization WHERE code = 'DEPT_SALE_HN');
 INSERT INTO organization (
     id, code, name, name_en, short_name, description, 
     tax_code, logo_url, website, email, phone, fax, address, province_code, ward_code,
-    organization_type, scale, business_sector, established_date, status, 
+    type, scale, business_sector, established_date, status, 
     legal_representative_id, contact_person, contact_position, contact_email, contact_phone,
-    level, parent_id, path, order_index, is_delete, created_date, created_by, updated_date, updated_by
+    level, parent_id, path, order_index, is_deleted, created_date, created_by, updated_date, updated_by
 )
 SELECT 
     gen_random_uuid(), 

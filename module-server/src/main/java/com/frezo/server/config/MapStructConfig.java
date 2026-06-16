@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
         "com.frezo.qtbv.mapper",
         "com.frezo.task.mapper",
         "com.frezo.email.mapper",
+        "com.frezo.warehouse.mapper",
         "com.frezo.common.mapper"
 })
 public class MapStructConfig {

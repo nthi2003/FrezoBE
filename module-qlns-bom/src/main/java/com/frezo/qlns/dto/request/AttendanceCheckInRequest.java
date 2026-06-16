@@ -12,5 +12,9 @@ public class AttendanceCheckInRequest {
     private LocalDate attendanceDate;
     private LocalTime checkInTime;
     private String shiftType; // MORNING / AFTERNOON / FULL / NIGHT
+    private Double latitude;
+    private Double longitude;
+    private String wifiSsid;
+    private String wifiBssid;
     private String note;
 }

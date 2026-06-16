@@ -32,6 +32,7 @@ import java.sql.Statement;
         "com.frezo.task.entity",
         "com.frezo.qlns.entity",
         "com.frezo.customer.entity",
+        "com.frezo.warehouse.entity",
         "com.frezo.common.domain",
         "com.frezo.common.entity",
         "com.frezo.common.audit"
@@ -46,6 +47,7 @@ import java.sql.Statement;
         "com.frezo.task.repository",
         "com.frezo.qlns.repository",
         "com.frezo.customer.repository",
+        "com.frezo.warehouse.repository",
         "com.frezo.common.repository",
         "com.frezo.common.audit"
 })

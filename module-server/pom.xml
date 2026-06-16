@@ -67,6 +67,11 @@
             <artifactId>module-product-bom</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.frezo</groupId>
+            <artifactId>module-warehouse-bom</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <dependency>
             <groupId>com.frezo</groupId>
@@ -125,6 +130,11 @@
         <dependency>
             <groupId>com.frezo</groupId>
             <artifactId>module-product-res</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.frezo</groupId>
+            <artifactId>module-warehouse-res</artifactId>
             <version>1.0.0</version>
         </dependency>
 

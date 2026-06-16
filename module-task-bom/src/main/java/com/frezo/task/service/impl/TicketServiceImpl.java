@@ -1,5 +1,6 @@
 package com.frezo.task.service.impl;
 
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.task.dto.request.TicketRequest;
 import com.frezo.task.dto.response.TicketResponse;
@@ -39,7 +40,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public Response<TicketResponse> update(String id, TicketRequest request) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new QTHTException("Ticket not found"));
 
         ticketMapper.updateEntityFromRequest(request, ticket);
 
@@ -56,7 +57,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public void delete(String id) {
         if (!ticketRepository.existsById(id)) {
-            throw new RuntimeException("Ticket not found");
+            throw new QTHTException("Ticket not found");
         }
         ticketRepository.deleteById(id);
 
@@ -65,7 +66,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public Response<TicketResponse> findById(String id) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new QTHTException("Ticket not found"));
         return Response.ok(ticketMapper.toResponse(ticket));
     }
 
@@ -78,7 +79,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public Response<TicketResponse> updateStatus(String id, String status) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new QTHTException("Ticket not found"));
 
         try {
             ticket.setStatus(Ticket.TicketStatus.valueOf(status.toUpperCase()));
@@ -88,14 +89,14 @@ public class TicketServiceImpl implements TicketService {
             Ticket updatedTicket = ticketRepository.save(ticket);
             return Response.ok(ticketMapper.toResponse(updatedTicket));
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid ticket status");
+            throw new QTHTException("Invalid ticket status");
         }
     }
 
     @Override
     public Response<TicketResponse> assignTicket(String id, String assigneeId) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+                .orElseThrow(() -> new QTHTException("Ticket not found"));
         ticket.setAssigneeId(assigneeId);
         if (ticket.getStatus() == Ticket.TicketStatus.OPEN) {
             ticket.setStatus(Ticket.TicketStatus.IN_PROGRESS);

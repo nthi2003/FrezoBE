@@ -13,7 +13,15 @@ public class AttendanceResponse {
     private String personId;
     private LocalDate attendanceDate;
     private LocalTime checkInTime;
+    private Double checkInLatitude;
+    private Double checkInLongitude;
+    private String checkInWifiSsid;
+    private String checkInWifiBssid;
     private LocalTime checkOutTime;
+    private Double checkOutLatitude;
+    private Double checkOutLongitude;
+    private String checkOutWifiSsid;
+    private String checkOutWifiBssid;
     private Integer workMinutes;
     private Integer lateMinutes;
     private Integer overtimeMinutes;

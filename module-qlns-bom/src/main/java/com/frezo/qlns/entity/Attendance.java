@@ -43,8 +43,32 @@ public class Attendance extends BaseEntity {
     @Column(name = "check_in_time")
     private LocalTime checkInTime;
 
+    @Column(name = "check_in_latitude")
+    private Double checkInLatitude;
+
+    @Column(name = "check_in_longitude")
+    private Double checkInLongitude;
+
+    @Column(name = "check_in_wifi_ssid", length = 100)
+    private String checkInWifiSsid;
+
+    @Column(name = "check_in_wifi_bssid", length = 50)
+    private String checkInWifiBssid;
+
     @Column(name = "check_out_time")
     private LocalTime checkOutTime;
+
+    @Column(name = "check_out_latitude")
+    private Double checkOutLatitude;
+
+    @Column(name = "check_out_longitude")
+    private Double checkOutLongitude;
+
+    @Column(name = "check_out_wifi_ssid", length = 100)
+    private String checkOutWifiSsid;
+
+    @Column(name = "check_out_wifi_bssid", length = 50)
+    private String checkOutWifiBssid;
 
     /** Số phút làm việc thực tế */
     @Column(name = "work_minutes")

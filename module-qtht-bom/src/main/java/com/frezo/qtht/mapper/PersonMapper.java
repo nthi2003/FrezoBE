@@ -9,6 +9,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface PersonMapper {
     @Mapping(source = "organization.name", target = "orgName")
+    @Mapping(source = "department.name", target = "departmentName")
     PersonResponse toResponse(Person person);
 
     Person toEntity(PersonAddRequest request);

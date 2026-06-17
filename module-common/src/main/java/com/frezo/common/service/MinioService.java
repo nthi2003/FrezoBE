@@ -12,9 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -26,6 +28,35 @@ public class MinioService {
 
     @Value("${minio.bucket:frezo-bucket}")
     private String defaultBucket;
+
+    /**
+     * Tải file lên MinIO (với bucket tuỳ chỉnh)
+     *
+     * @param objectName Tên file/đường dẫn trên MinIO
+     * @param file       File cần tải lên
+     * @param bucket     Tên bucket MinIO
+     * @return URL có thể dùng để xem file
+     */
+    public String uploadFile(String objectName, MultipartFile file, String bucket) {
+        try {
+            createBucketIfNotExist(bucket);
+
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .stream(inputStream, file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+
+            return getPresignedUrl(objectName, bucket);
+        } catch (Exception e) {
+            log.error("Lỗi khi upload file lên Minio: ", e);
+            throw new RuntimeException("Không thể tải file lên hệ thống.");
+        }
+    }
 
     /**
      * Tải file lên MinIO
@@ -86,6 +117,29 @@ public class MinioService {
     }
 
     /**
+     * Lấy URL để xem file tạm thời (với bucket tuỳ chỉnh)
+     *
+     * @param objectName Tên file trên MinIO
+     * @param bucket     Tên bucket
+     * @return URL
+     */
+    public String getPresignedUrl(String objectName, String bucket) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucket)
+                            .object(objectName)
+                            .expiry(24, TimeUnit.HOURS)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy URL file từ Minio: ", e);
+            throw new RuntimeException("Không thể lấy dữ liệu ảnh.");
+        }
+    }
+
+    /**
      * Lấy URL để xem file tạm thời
      *
      * @param objectName Tên file trên MinIO
@@ -104,6 +158,34 @@ public class MinioService {
         } catch (Exception e) {
             log.error("Lỗi khi lấy URL file từ Minio: ", e);
             throw new RuntimeException("Không thể lấy dữ liệu ảnh.");
+        }
+    }
+
+    /**
+     * Lưu nội dung văn bản lên MinIO
+     *
+     * @param objectName Tên file/đường dẫn trên MinIO
+     * @param content    Nội dung văn bản
+     * @param bucket     Tên bucket
+     * @return URL có thể dùng để xem nội dung
+     */
+    public String saveContent(String objectName, String content, String bucket) {
+        try {
+            createBucketIfNotExist(bucket);
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .stream(inputStream, bytes.length, -1)
+                            .contentType("text/plain; charset=UTF-8")
+                            .build()
+            );
+            return getPresignedUrl(objectName, bucket);
+        } catch (Exception e) {
+            log.error("Lỗi khi lưu nội dung lên Minio: ", e);
+            throw new RuntimeException("Không thể lưu nội dung lên hệ thống.");
         }
     }
 

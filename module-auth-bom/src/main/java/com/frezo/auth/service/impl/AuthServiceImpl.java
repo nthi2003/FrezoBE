@@ -266,7 +266,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public List<LoginHistory> getLoginHistory(String username) {
-        return loginHistoryRepository.findByUserNameOrderByLoginTimeDesc(username);
+        return loginHistoryRepository.findTop3ByUserNameOrderByLoginTimeDesc(username);
     }
 
     private String resolveClientIp(HttpServletRequest request) {

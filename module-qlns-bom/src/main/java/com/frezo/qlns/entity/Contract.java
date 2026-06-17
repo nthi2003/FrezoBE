@@ -43,5 +43,24 @@ public class Contract extends BaseEntity {
 
     private String HtmlContract; // CHi tiết hồ sơ
 
+    private String employerName; // Tên công ty (Bên A)
+
+    private String employerAddress; // Địa chỉ công ty (Bên A)
+
+    private String employerTaxCode; // Mã số thuế (Bên A)
+
+    private String employeeIdNumber; // CCCD/Hộ chiếu (Bên B)
+
+    private LocalDate employeeDob; // Ngày sinh (Bên B)
+
+    private String jobPosition; // Vị trí/chức danh
+
+    private String workLocation; // Địa điểm làm việc
+
+    private Integer probationDays; // Thời hạn thử việc (ngày)
+
+    private String allowance; // Phụ cấp
+
+    private String aiStatus; // NONE | PROCESSING | SUCCESS | FAILED
 
 }

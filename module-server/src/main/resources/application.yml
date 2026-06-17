@@ -49,6 +49,8 @@ app:
     service-registry:
       auto-registration:
         enabled: false
+  ai:
+    service-url: ${AI_SERVICE_URL:http://localhost:8001}
 
 server:
   port: 7410

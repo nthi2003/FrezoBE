@@ -230,4 +230,18 @@ public class ContractServiceImpl implements ContractService {
 
         return contractMapper.toResponse(contract);
     }
+
+    @Override
+    public void updateAiStatus(String id, String aiStatus) {
+        Contract contract = findEntityById(id);
+        contract.setAiStatus(aiStatus);
+        contractRepository.save(contract);
+    }
+
+    @Override
+    public void updateHtmlContract(String id, String html) {
+        Contract contract = findEntityById(id);
+        contract.setHtmlContract(html);
+        contractRepository.save(contract);
+    }
 }

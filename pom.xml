@@ -48,6 +48,8 @@
         <lombok.version>1.18.30</lombok.version>
         <hibernate.version>6.3.1.Final</hibernate.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <tika.version>2.9.2</tika.version>
+        <commons-compress.version>1.26.0</commons-compress.version>
     </properties>
 
     <dependencyManagement>
@@ -104,6 +106,21 @@
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-gson</artifactId>
                 <version>1.43.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-parsers-standard-package</artifactId>
+                <version>${tika.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

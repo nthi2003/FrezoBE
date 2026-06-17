@@ -46,4 +46,7 @@ public class RegisterRequest {
     // Organization ID để link Person với Organization
     @JsonProperty("orgId")
     private String orgId;
+
+    @JsonProperty("departmentId")
+    private String departmentId;
 }

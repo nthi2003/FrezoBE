@@ -21,6 +21,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +56,33 @@ public class DepartmentServiceImpl implements DepartmentService {
         } catch (Exception e) {
             throw e;
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DepartmentResponse> getTree() {
+        List<Department> allDepts = departmentRepository.findAll(
+                Specification.where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE))
+        );
+        List<DepartmentResponse> responses = allDepts.stream()
+                .map(departmentMapper::toResponse)
+                .toList();
+
+        Map<String, DepartmentResponse> map = new HashMap<>();
+        List<DepartmentResponse> roots = new ArrayList<>();
+
+        for (DepartmentResponse dept : responses) {
+            dept.setChildren(new ArrayList<>());
+            map.put(dept.getId(), dept);
+        }
+        for (DepartmentResponse dept : responses) {
+            if (dept.getParentId() != null && map.containsKey(dept.getParentId())) {
+                map.get(dept.getParentId()).getChildren().add(dept);
+            } else {
+                roots.add(dept);
+            }
+        }
+        return roots;
     }
 
     @Override

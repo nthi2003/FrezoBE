@@ -3,7 +3,7 @@
 -- ============================================================
 
 -- 1. ADMIN
-INSERT INTO roles (id, code, name, description, app_code, status, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO roles (id, code, name, description, app_code, status, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     'ADMIN', 
@@ -21,7 +21,7 @@ WHERE NOT EXISTS (
 );
 
 -- 2. MANAGER
-INSERT INTO roles (id, code, name, description, app_code, status, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO roles (id, code, name, description, app_code, status, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     'MANAGER', 
@@ -39,7 +39,7 @@ WHERE NOT EXISTS (
 );
 
 -- 3. STAFF
-INSERT INTO roles (id, code, name, description, app_code, status, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO roles (id, code, name, description, app_code, status, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     'STAFF', 

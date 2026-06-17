@@ -9,8 +9,10 @@ import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -67,6 +69,13 @@ public class AuthController {
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<Object>> getProfile() {
         return ResponseEntity.ok(ApiResponse.success(authService.getProfile()));
+    }
+
+    @Operation(summary = "Upload avatar", description = "Upload ảnh đại diện cho người dùng, lưu tại MinIO path frezo-user/avatar/{userName}")
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        String username = SystemUtils.getCurrentUsername();
+        return ResponseEntity.ok(ApiResponse.success(authService.uploadAvatar(file, username)));
     }
 
     @Operation(summary = "Đăng xuất", description = "Đăng xuất tài khoản hiện tại")

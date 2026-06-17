@@ -4,6 +4,7 @@ import com.frezo.auth.config.CustomUserDetail;
 import com.frezo.auth.config.UserDetailService;
 import com.frezo.auth.dto.request.LoginRequest;
 import com.frezo.auth.dto.response.LoginResponse;
+import com.frezo.auth.entity.LoginHistory;
 import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.LoginHistoryRepository;
 import com.frezo.auth.repository.TokenBlacklistRepository;
@@ -31,6 +32,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.security.SecureRandom;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
@@ -251,7 +254,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void saveLoginHistory(String username, String ip, String userAgent, String status) {
-        com.frezo.auth.entity.LoginHistory history = com.frezo.auth.entity.LoginHistory.builder()
+        LoginHistory history = LoginHistory.builder()
                 .userName(username)
                 .ipAddress(ip)
                 .userAgent(userAgent)
@@ -262,7 +265,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public List<com.frezo.auth.entity.LoginHistory> getLoginHistory(String username) {
+    public List<LoginHistory> getLoginHistory(String username) {
         return loginHistoryRepository.findByUserNameOrderByLoginTimeDesc(username);
     }
 
@@ -317,10 +320,31 @@ public class AuthServiceImpl implements AuthService {
         return minioService.uploadFileFromPath(objectName, file);
     }
 
+    @Override
+    public String uploadAvatar(MultipartFile file, String username) {
+        try {
+            String extension = getExtension(file.getOriginalFilename());
+            String objectName = "frezo-user/avatar/" + username + extension;
+
+            String url = minioService.uploadFile(objectName, file);
+
+            // Save URL to user record
+            User user = userRepository.findByUserName(username)
+                    .orElseThrow(() -> new AuthException("User not found"));
+            user.setAvatarUrl(url);
+            userRepository.save(user);
+
+            log.info("Avatar uploaded for user {}: {}", username, objectName);
+            return url;
+        } catch (Exception e) {
+            log.error("Failed to upload avatar for user {}: {}", username, e.getMessage(), e);
+            throw new RuntimeException("Không thể tải ảnh đại diện: " + e.getMessage());
+        }
+    }
+
     private String getExtension(String filename) {
-        return filename.contains(".")
-                ? filename.substring(filename.lastIndexOf("."))
-                : ".png";
+        if (filename == null || !filename.contains(".")) return ".png";
+        return filename.substring(filename.lastIndexOf("."));
     }
 
     @Override

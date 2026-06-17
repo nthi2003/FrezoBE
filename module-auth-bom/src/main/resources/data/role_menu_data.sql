@@ -3,7 +3,7 @@
 -- Description: Lấy tất cả menu trong hệ thống và gán cho role ADMIN
 -- ============================================================
 
-INSERT INTO role_menu (id, role_id, menu_id, app_code, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     (SELECT id FROM roles WHERE code = 'ADMIN' AND app_code = 'QTHT' LIMIT 1), 
@@ -28,7 +28,7 @@ WHERE m.app_code = 'QTHT'
 -- ============================================================
 -- SCRIPT: Phân quyền cho MANAGER (Giống Admin nhưng trừ Cấu hình/Phân quyền)
 -- ============================================================
-INSERT INTO role_menu (id, role_id, menu_id, app_code, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     (SELECT id FROM roles WHERE code = 'MANAGER' AND app_code = 'QTHT' LIMIT 1), 
@@ -54,7 +54,7 @@ WHERE m.app_code = 'QTHT'
 -- ============================================================
 -- SCRIPT: Phân quyền cho STAFF (Chỉ dashboard và chấm công, công việc, tin tức)
 -- ============================================================
-INSERT INTO role_menu (id, role_id, menu_id, app_code, is_delete, created_date, created_by, updated_date, updated_by)
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT 
     gen_random_uuid(), 
     (SELECT id FROM roles WHERE code = 'STAFF' AND app_code = 'QTHT' LIMIT 1), 

@@ -57,6 +57,65 @@ public class MinioService {
     }
 
     /**
+     * Tải file lên MinIO (tự chọn bucket)
+     *
+     * @param objectName Tên file/đường dẫn trên MinIO
+     * @param file       File cần tải lên
+     * @param bucketName Bucket đích
+     * @return URL có thể dùng để xem file
+     */
+    public String uploadFile(String objectName, MultipartFile file, String bucketName) {
+        try {
+            createBucketIfNotExist(bucketName);
+
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .stream(inputStream, file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+
+            return getPresignedUrl(objectName, bucketName);
+        } catch (Exception e) {
+            log.error("Lỗi khi upload file lên Minio: ", e);
+            throw new RuntimeException("Không thể tải file lên hệ thống.");
+        }
+    }
+
+    /**
+     * Lưu nội dung text vào MinIO
+     *
+     * @param objectName Tên file/đường dẫn trên MinIO
+     * @param content    Nội dung text
+     * @param bucketName Bucket đích
+     * @return URL có thể dùng để xem file
+     */
+    public String saveContent(String objectName, String content, String bucketName) {
+        try {
+            createBucketIfNotExist(bucketName);
+
+            byte[] bytes = content.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            InputStream inputStream = new java.io.ByteArrayInputStream(bytes);
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .stream(inputStream, bytes.length, -1)
+                            .contentType("text/plain; charset=UTF-8")
+                            .build()
+            );
+
+            return getPresignedUrl(objectName, bucketName);
+        } catch (Exception e) {
+            log.error("Lỗi khi lưu nội dung lên Minio: ", e);
+            throw new RuntimeException("Không thể lưu nội dung lên hệ thống.");
+        }
+    }
+
+    /**
      * Tải file lên MinIO (từ java.io.File)
      *
      * @param objectName Tên file/đường dẫn trên MinIO (VD: username/avatar.png)
@@ -93,11 +152,15 @@ public class MinioService {
      * @return URL
      */
     public String getPresignedUrl(String objectName) {
+        return getPresignedUrl(objectName, defaultBucket);
+    }
+
+    public String getPresignedUrl(String objectName, String bucketName) {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket(defaultBucket)
+                            .bucket(bucketName)
                             .object(objectName)
                             .expiry(24, TimeUnit.HOURS)
                             .build()

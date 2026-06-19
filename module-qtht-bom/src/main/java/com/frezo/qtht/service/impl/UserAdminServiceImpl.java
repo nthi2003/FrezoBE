@@ -8,6 +8,7 @@ import com.frezo.auth.repository.UserRoleRepository;
 import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.qtht.dto.response.UserResponse;
+import com.frezo.qtht.entity.Department;
 import com.frezo.qtht.entity.Organization;
 import com.frezo.qtht.entity.Person;
 import com.frezo.qtht.entity.Role;
@@ -214,6 +215,12 @@ public class UserAdminServiceImpl implements UserAdminService {
             Organization org = new Organization();
             org.setId(request.getOrgId());
             person.setOrganization(org);
+        }
+
+        if (StringUtils.hasText(request.getDepartmentId())) {
+            Department dept = new Department();
+            dept.setId(request.getDepartmentId());
+            person.setDepartment(dept);
         }
 
         return personRepository.save(person);
@@ -429,6 +436,11 @@ public class UserAdminServiceImpl implements UserAdminService {
             if (person.getOrganization() != null) {
                 builder.orgId(person.getOrganization().getId());
                 builder.orgName(person.getOrganization().getName());
+            }
+
+            if (person.getDepartment() != null) {
+                builder.departmentId(person.getDepartment().getId());
+                builder.departmentName(person.getDepartment().getName());
             }
         }
 

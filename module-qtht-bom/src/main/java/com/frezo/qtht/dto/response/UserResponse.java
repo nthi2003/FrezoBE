@@ -29,6 +29,8 @@ public class UserResponse {
     private String personId;
     private String orgId;
     private String orgName;
+    private String departmentId;
+    private String departmentName;
     private List<String> roles; // Danh sách role codes
     private List<String> roleNames; // Danh sách role names
 }

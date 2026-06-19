@@ -28,4 +28,8 @@ public interface ContractService {
     ContractAsginWorkResponse getAssignWork(String contractId);
 
     ContractResponse reject(String id );
+
+    void updateAiStatus(String id, String aiStatus);
+
+    void updateHtmlContract(String id, String html);
 }

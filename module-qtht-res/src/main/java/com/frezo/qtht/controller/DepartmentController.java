@@ -1,8 +1,10 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.qtht.dto.request.DepartmentFilterRequest;
 import com.frezo.qtht.dto.request.DepartmentSaveRequest;
+import com.frezo.qtht.dto.response.DepartmentResponse;
 import com.frezo.qtht.service.DepartmentService;
 import com.frezo.qtht.config.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,6 +29,29 @@ public class DepartmentController {
 ////    @CheckPermission(api = "/qtht/department", action = "VIEW")
     public ApiResponse<Map<String, Object>> getAllDepartments(@ModelAttribute @Valid DepartmentFilterRequest request) {
         return ApiResponse.success(departmentService.all(request));
+    }
+
+    @GetMapping("/tree")
+    @Operation(summary = "Lấy cây phòng ban (phân cấp cha con)")
+    public ApiResponse<List<DepartmentResponse>> getTree() {
+        return ApiResponse.success(departmentService.getTree());
+    }
+
+    @GetMapping("/combobox")
+    @Operation(summary = "Danh sách phòng ban dạng combobox")
+    public ApiResponse<List<ComboboxResponse>> getCombobox() {
+        DepartmentFilterRequest filter = new DepartmentFilterRequest();
+        filter.setPageNumber(0);
+        filter.setPageSize(Integer.MAX_VALUE);
+        Map<String, Object> data = departmentService.all(filter);
+        List<DepartmentResponse> items = (List<DepartmentResponse>) data.get("items");
+        List<ComboboxResponse> result = items.stream()
+                .map(d -> ComboboxResponse.builder()
+                        .value(d.getId())
+                        .label(d.getName() + " (" + d.getCode() + ")")
+                        .build())
+                .toList();
+        return ApiResponse.success(result);
     }
 
     @DeleteMapping("/{id}")

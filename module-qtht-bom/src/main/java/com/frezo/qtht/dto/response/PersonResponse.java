@@ -40,5 +40,9 @@ public class PersonResponse {
 
     private String orgName;
 
+    private String departmentId;
+
+    private String departmentName;
+
     private String avatarUrl;
 }

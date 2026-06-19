@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface LoginHistoryRepository extends JpaRepository<LoginHistory, String> {
     List<LoginHistory> findByUserNameOrderByLoginTimeDesc(String userName);
+
+    List<LoginHistory> findTop3ByUserNameOrderByLoginTimeDesc(String userName);
 }

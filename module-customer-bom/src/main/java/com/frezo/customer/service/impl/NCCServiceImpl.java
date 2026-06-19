@@ -15,6 +15,7 @@ import com.frezo.qtbv.repository.CategoryRepository;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import com.frezo.common.exception.QTHTException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class NCCServiceImpl implements NCCService {
 
     private final NCCRepository nccRepository;
@@ -109,6 +111,17 @@ public class NCCServiceImpl implements NCCService {
         nccMapper.updateEntity(ncc, request);
         ncc = nccRepository.save(ncc);
 
+        List<NCCCertificate> oldCerts = certificateRepository.findByNccId(id);
+        for (NCCCertificate cert : oldCerts) {
+            if (cert.getFileUrl() != null) {
+                try {
+                    String objectName = minioService.extractObjectName(cert.getFileUrl());
+                    minioService.deleteFile(objectName);
+                } catch (Exception e) {
+                    log.error("Failed to delete certificate file from MinIO: {}", cert.getFileUrl(), e);
+                }
+            }
+        }
         certificateRepository.deleteByNccId(id);
         saveCertificates(id, request.getCertificates());
 
@@ -118,6 +131,17 @@ public class NCCServiceImpl implements NCCService {
     @Override
     @Transactional
     public void delete(String id) {
+        List<NCCCertificate> certs = certificateRepository.findByNccId(id);
+        for (NCCCertificate cert : certs) {
+            if (cert.getFileUrl() != null) {
+                try {
+                    String objectName = minioService.extractObjectName(cert.getFileUrl());
+                    minioService.deleteFile(objectName);
+                } catch (Exception e) {
+                    log.error("Failed to delete certificate file from MinIO: {}", cert.getFileUrl(), e);
+                }
+            }
+        }
         nccRepository.deleteById(id);
         certificateRepository.deleteByNccId(id);
     }

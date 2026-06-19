@@ -421,7 +421,7 @@ public class AuthServiceImpl implements AuthService {
         // Get Person info via reflection to avoid dependency
         if (user.getPersonId() != null) {
             try {
-                Class<?> personRepoClass = Class.forName("com.frezo.qtht.repository.PersonRepository");
+                Class<?> personRepoClass = Class.forName("PersonRepository");
                 Object personRepo = applicationContext.getBean(personRepoClass);
                 Method findById = personRepoClass.getMethod("findById", Object.class);
                 Optional<?> personOpt = (Optional<?>) findById.invoke(personRepo, user.getPersonId());

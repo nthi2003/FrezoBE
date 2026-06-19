@@ -5,6 +5,7 @@ import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -104,6 +105,38 @@ public class MinioService {
         } catch (Exception e) {
             log.error("Lỗi khi lấy URL file từ Minio: ", e);
             throw new RuntimeException("Không thể lấy dữ liệu ảnh.");
+        }
+    }
+
+
+    public void deleteFile(String objectName) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(objectName)
+                            .build()
+            );
+            log.info("Deleted file from MinIO: {}", objectName);
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa file khỏi Minio: ", e);
+            throw new RuntimeException("Không thể xóa file khỏi hệ thống.");
+        }
+    }
+
+
+    public String extractObjectName(String fileUrl) {
+        try {
+            java.net.URL url = new java.net.URL(fileUrl);
+            String path = url.getPath();
+            String bucketPath = "/" + defaultBucket + "/";
+            if (path.startsWith(bucketPath)) {
+                return path.substring(bucketPath.length());
+            }
+            throw new RuntimeException("Cannot extract object name from URL: " + fileUrl);
+        } catch (Exception e) {
+            log.error("Lỗi khi parse URL file: ", e);
+            throw new RuntimeException("Không thể xác định file cần xóa.");
         }
     }
 

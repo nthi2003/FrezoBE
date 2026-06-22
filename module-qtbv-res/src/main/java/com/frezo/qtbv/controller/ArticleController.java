@@ -30,6 +30,13 @@ public class ArticleController {
         return ApiResponse.success(articleService.filter(request));
     }
 
+    @Operation(summary = "Danh sách bài viết", description = "Lấy danh sách bài viết với bộ lọc")
+    @GetMapping
+    @CheckPermission(api = "/qtbv/articles", action = "VIEW")
+    public ApiResponse<?> list(@ModelAttribute ArticleFilterRequest request) {
+        return ApiResponse.success(articleService.filter(request));
+    }
+
     @Operation(summary = "Xem chi tiết bài viết", description = "Xem thông tin chi tiết của bài viết")
     @GetMapping("/{id}")
     @CheckPermission(api = "/qtbv/articles", action = "VIEW")

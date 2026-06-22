@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class EmailTemplateEditRequest extends EmailConfigEditRequest{
+public class EmailTemplateEditRequest extends EmailTemplateAddRequest {
 }

@@ -14,7 +14,7 @@ public class EmailConfigFilter  extends PagingBase {
     private String keyword;
     public String name;
     public String apiKey;
-    private String stmp;
+    private String smtp;
     private Short port;
     private String nameEmail;
 }

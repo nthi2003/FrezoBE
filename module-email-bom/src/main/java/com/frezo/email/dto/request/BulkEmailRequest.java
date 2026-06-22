@@ -5,18 +5,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmailTemplateAddRequest {
-    private String name;
-
-    private String code;
-
+public class BulkEmailRequest {
+    private String templateCode;
     private String subject;
-
-    private String content;
-
+    private String body;
+    private List<String> recipients;
+    private List<String> categoryCodes;
     private String description;
 }

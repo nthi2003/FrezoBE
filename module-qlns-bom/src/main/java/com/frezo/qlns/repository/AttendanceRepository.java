@@ -44,4 +44,18 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String>,
             @Param("personId") String personId,
             @Param("month") int month,
             @Param("year") int year);
+
+    @Query("SELECT DISTINCT a.personId FROM Attendance a WHERE " +
+           "FUNCTION('MONTH', a.attendanceDate) = :month AND " +
+           "FUNCTION('YEAR', a.attendanceDate) = :year")
+    List<String> findDistinctPersonIdByMonthAndYear(
+            @Param("month") int month,
+            @Param("year") int year);
+
+    @Query("FROM Attendance a WHERE " +
+           "FUNCTION('MONTH', a.attendanceDate) = :month AND " +
+           "FUNCTION('YEAR', a.attendanceDate) = :year")
+    List<Attendance> findByMonthAndYear(
+            @Param("month") int month,
+            @Param("year") int year);
 }

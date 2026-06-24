@@ -1,4 +1,4 @@
-package com.frezo.qlns.service.Impl;
+package com.frezo.qlns.service.impl;
 
 import com.frezo.common.constant.WebSocketChannels;
 import com.frezo.common.service.NotificationService;

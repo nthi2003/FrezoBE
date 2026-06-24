@@ -1,4 +1,4 @@
-package com.frezo.qlns.service.Impl;
+package com.frezo.qlns.service.impl;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;

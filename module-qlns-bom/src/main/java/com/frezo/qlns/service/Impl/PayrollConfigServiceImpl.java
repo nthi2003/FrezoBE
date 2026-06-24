@@ -1,4 +1,4 @@
-package com.frezo.qlns.service.Impl;
+package com.frezo.qlns.service.impl;
 
 import com.frezo.qlns.dto.request.PayrollConfigRequest;
 import com.frezo.qlns.dto.response.PayrollConfigResponse;

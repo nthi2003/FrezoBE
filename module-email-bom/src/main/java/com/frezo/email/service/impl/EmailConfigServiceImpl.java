@@ -55,7 +55,7 @@ public class EmailConfigServiceImpl implements EmailConfigService {
 
     public Response<?> edit(String id, EmailConfigEditRequest request) {
         EmailConfig exist = findEntityById(id);
-        validateRequest(request);
+        validateRequestEdit(id, request);
         emailConfigMapper.updateEntity(request, exist);
         EmailConfig saveEmail = emailConfigRepository.save(exist);
         return Response.ok(emailConfigMapper.toResponse(saveEmail));
@@ -78,7 +78,30 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         if (emailConfigRepository.existsByCode(request.getCode())) {
             throw new QTHTException("valid.code.exists");
         }
+        if (emailConfigRepository.existsByName(request.getName())) {
+            throw new QTHTException("valid.name.exists");
+        }
+        if (emailConfigRepository.existsBySmtp(request.getSmtp())) {
+            throw new QTHTException("valid.smtp.exists");
+        }
+        if (emailConfigRepository.existsByNameEmail(request.getNameEmail())) {
+            throw new QTHTException("valid.nameEmail.exists");
+        }
+    }
 
+    private void validateRequestEdit(String id, EmailConfigEditRequest request) {
+        if (emailConfigRepository.existsByCodeAndIdNot(request.getCode(), id)) {
+            throw new QTHTException("valid.code.exists");
+        }
+        if (emailConfigRepository.existsByNameAndIdNot(request.getName(), id)) {
+            throw new QTHTException("valid.name.exists");
+        }
+        if (emailConfigRepository.existsBySmtpAndIdNot(request.getSmtp(), id)) {
+            throw new QTHTException("valid.smtp.exists");
+        }
+        if (emailConfigRepository.existsByNameEmailAndIdNot(request.getNameEmail(), id)) {
+            throw new QTHTException("valid.nameEmail.exists");
+        }
     }
 
     @Transactional

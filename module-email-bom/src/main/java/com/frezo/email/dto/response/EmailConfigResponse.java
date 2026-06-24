@@ -17,4 +17,6 @@ public class EmailConfigResponse {
     private String smtp;
     private Short port;
     private String nameEmail;
+    private Boolean activated;
+    private String orgId;
 }

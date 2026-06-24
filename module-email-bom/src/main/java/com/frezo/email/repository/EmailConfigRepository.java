@@ -14,6 +14,20 @@ public interface EmailConfigRepository
 
     Boolean existsByCode(String code);
 
+    Boolean existsByName(String name);
+
+    Boolean existsBySmtp(String smtp);
+
+    Boolean existsByNameEmail(String nameEmail);
+
+    Boolean existsByCodeAndIdNot(String code, String id);
+
+    Boolean existsByNameAndIdNot(String name, String id);
+
+    Boolean existsBySmtpAndIdNot(String smtp, String id);
+
+    Boolean existsByNameEmailAndIdNot(String nameEmail, String id);
+
     List<EmailConfig> findByActivatedTrue();
 
     Optional<EmailConfig> findById(String id);

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@RestController("qthtSystemController")
 @RequestMapping("/qtht/system")
 @RequiredArgsConstructor
 @Tag(name = "9. Quản trị hệ thống", description = "API quản trị hệ thống, backup dữ liệu")

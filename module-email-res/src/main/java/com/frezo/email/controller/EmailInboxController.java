@@ -19,13 +19,14 @@ public class EmailInboxController {
 
     private final EmailInboxService emailInboxService;
 
-    @Operation(summary = "Lấy danh sách email trong hộp thư đến")
+    @Operation(summary = "Lấy danh sách email trong hộp thư", description = "folder: inbox, sent, drafts, trash, starred, spam")
     @GetMapping("/{configId}")
     public ResponseEntity<ApiResponse<List<EmailInboxResponse>>> getInbox(
             @PathVariable String configId,
+            @RequestParam(defaultValue = "inbox") String folder,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(ApiResponse.success(emailInboxService.fetchInbox(configId, page, size)));
+        return ResponseEntity.ok(ApiResponse.success(emailInboxService.fetchInbox(configId, folder, page, size)));
     }
 
     @Operation(summary = "Xem chi tiết một email")
@@ -44,4 +45,5 @@ public class EmailInboxController {
         emailInboxService.markAsRead(configId, uid);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
 }

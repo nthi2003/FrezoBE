@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface EmailInboxService {
 
-    List<EmailInboxResponse> fetchInbox(String configId, int page, int size);
+    List<EmailInboxResponse> fetchInbox(String configId, String folder, int page, int size);
 
     EmailInboxResponse fetchEmailById(String configId, long uid);
 

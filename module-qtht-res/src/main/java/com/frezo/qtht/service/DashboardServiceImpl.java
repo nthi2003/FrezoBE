@@ -15,7 +15,7 @@ import java.time.temporal.TemporalAdjusters;
 
 @Service
 @RequiredArgsConstructor
-public class DashboardServiceImpl implements DashboardService {
+public class DashboardServiceImpl extends DashboardService {
 
     private final PersonRepository personRepository;
     private final WarehouseRepository warehouseRepository;

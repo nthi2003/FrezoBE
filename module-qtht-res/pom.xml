@@ -29,5 +29,15 @@
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.frezo</groupId>
+            <artifactId>module-product-bom</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.frezo</groupId>
+            <artifactId>module-warehouse-bom</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 </project>

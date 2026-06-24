@@ -15,6 +15,15 @@ public class DashboardSummaryResponse {
     private long todayAttendance;
     private long newArticles;
     private List<ContractExpiryDTO> expiringContracts;
+    private long ordersToday;
+    private long ordersThisMonth;
+    private double ordersChangePercent;
+    private double revenueThisMonth;
+    private long totalEmployees;
+    private long newEmployees;
+    private long totalWarehouses;
+    private long lowStockProducts;
+    private long totalProductsInStock;
 
     @Data
     @Builder

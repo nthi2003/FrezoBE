@@ -7,7 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PayrollMapper {
-    
+
     @Mapping(target = "baseSalary", source = "basicSalary")
     @Mapping(target = "payMonth", source = "month")
     @Mapping(target = "payYear", source = "year")

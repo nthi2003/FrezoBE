@@ -16,5 +16,7 @@ public class EmailTemplateAddRequest {
 
     private String subject;
 
+    private String content;
+
     private String description;
 }

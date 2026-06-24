@@ -38,8 +38,8 @@ public class TagController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all tags")
-    public Response<List<TagResponse>> findAll() {
-        return tagService.findAll();
+    @Operation(summary = "Get all tags, optionally filtered by category")
+    public Response<List<TagResponse>> findAll(@RequestParam(required = false) String category) {
+        return tagService.findAll(category);
     }
 }

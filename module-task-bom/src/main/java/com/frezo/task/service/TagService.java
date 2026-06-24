@@ -13,5 +13,5 @@ public interface TagService {
 
     Response<Void> delete(String id);
 
-    Response<List<TagResponse>> findAll();
+    Response<List<TagResponse>> findAll(String category);
 }

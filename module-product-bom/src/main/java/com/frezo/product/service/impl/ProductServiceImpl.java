@@ -5,6 +5,7 @@ import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.PageResponse;
+import com.frezo.common.service.MinioService;
 import com.frezo.product.dto.request.ProductCreateRequest;
 import com.frezo.product.dto.request.ProductFilterRequest;
 import com.frezo.product.dto.request.ProductUpdateRequest;
@@ -28,6 +29,7 @@ import java.time.LocalDateTime;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -41,6 +43,7 @@ public class ProductServiceImpl implements ProductService {
     private final InventoryLogRepository inventoryLogRepository;
     private final MarketPriceRepository marketPriceRepository;
     private final ProductMapper productMapper;
+    private final MinioService minioService;
 
     @Override
     public PageResponse<ProductResponse> filter(ProductFilterRequest request) {
@@ -238,6 +241,16 @@ public class ProductServiceImpl implements ProductService {
             data.add(map);
         }
         return data;
+    }
+
+    @Override
+    public Map<String, Object> uploadImage(MultipartFile file) {
+        String objectName = "products/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String url = minioService.uploadFile(objectName, file, "freo-prod");
+        Map<String, Object> result = new HashMap<>();
+        result.put("url", url);
+        result.put("fileName", file.getOriginalFilename());
+        return result;
     }
 
     @Override

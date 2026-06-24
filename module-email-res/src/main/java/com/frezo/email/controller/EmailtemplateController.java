@@ -3,7 +3,9 @@ package com.frezo.email.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.email.dto.request.EmailTemplateFilter;
 import com.frezo.email.dto.request.EmailTemplateRequest;
+import com.frezo.email.dto.request.SendTestEmailRequest;
 import com.frezo.email.dto.response.EmailTemplateResponse;
+import com.frezo.email.service.EmailService;
 import com.frezo.email.service.EmailtemplateService;
 import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class EmailtemplateController {
 
     private final EmailtemplateService emailTemplateService;
+    private final EmailService emailService;
 
     @Operation(summary = "Get all email templates", description = "Returns a paginated list of email templates")
     @GetMapping("")
@@ -55,5 +58,15 @@ public class EmailtemplateController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable("id") String id) {
         emailTemplateService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "Send test email using template")
+    @PostMapping("/{id}/send-test")
+    public ResponseEntity<ApiResponse<String>> sendTest(
+            @PathVariable("id") String id,
+            @Valid @RequestBody SendTestEmailRequest request) {
+        EmailTemplateResponse template = emailTemplateService.view(id);
+        emailService.sendByTemplate(template.getCode(), request.getParams(), request.getRecipients());
+        return ResponseEntity.ok(ApiResponse.success("Email sent successfully"));
     }
 }

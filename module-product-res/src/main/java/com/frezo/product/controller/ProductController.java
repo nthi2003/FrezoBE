@@ -10,6 +10,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import com.frezo.qtht.config.CheckPermission;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/product")
@@ -101,5 +104,11 @@ public class ProductController {
     @GetMapping("/dashboard/market-comparison")
     public ApiResponse<?> getMarketComparison() {
         return ApiResponse.success(productService.getMarketComparison());
+    }
+
+    @Operation(summary = "Upload hình ảnh sản phẩm", description = "Upload ảnh lên MinIO bucket freo-prod")
+    @PostMapping("/upload-image")
+    public ApiResponse<Map<String, Object>> uploadImage(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.success(productService.uploadImage(file));
     }
 }

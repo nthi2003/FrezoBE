@@ -32,7 +32,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     public Map<String, Object> all (CategoryFilter filter) {
         Specification<Category> specification = createSpecification(filter);
-        Sort sort = Sort.by(Sort.Direction.DESC , "createdDate");
+        Sort sort = Sort.by(Sort.Direction.ASC , "orderIndex");
         Page<Category> entities = categoryRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(),sort));
         List<CategoryResponse> responses = entities.getContent().stream()

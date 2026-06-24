@@ -1,9 +1,7 @@
 package com.frezo.email.mapper;
 
-import com.frezo.email.dto.request.*;
-import com.frezo.email.dto.response.EmailConfigResponse;
+import com.frezo.email.dto.request.EmailTemplateRequest;
 import com.frezo.email.dto.response.EmailTemplateResponse;
-import com.frezo.email.entity.EmailConfig;
 import com.frezo.email.entity.EmailTemplate;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;

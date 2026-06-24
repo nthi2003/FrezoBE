@@ -4,6 +4,7 @@ import com.frezo.common.response.PageResponse;
 import com.frezo.product.dto.request.*;
 import com.frezo.product.dto.response.ProductDashboardStats;
 import com.frezo.product.dto.response.ProductResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -22,4 +23,6 @@ public interface ProductService {
     List<Map<String, Object>> getProfitChart(int days);
     List<Map<String, Object>> getPriceFluctuation();
     List<Map<String, Object>> getMarketComparison();
+
+    Map<String, Object> uploadImage(MultipartFile file);
 }

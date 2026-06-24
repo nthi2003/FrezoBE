@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class TagServiceImpl implements TagService {
     @Transactional
     public Response<TagResponse> edit(String id, TagRequest request) {
         Tag exist = findEntityById(id);
-        if (!exist.getCode().equals(request.getCode())) {
+        if (!Objects.equals(exist.getCode(), request.getCode())) {
             validateRequest(request);
         }
         tagMapper.updateEntity(request, exist);
@@ -55,8 +56,13 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional(readOnly = true)
-    public Response<List<TagResponse>> findAll() {
-        List<Tag> tags = tagRepository.findAll();
+    public Response<List<TagResponse>> findAll(String category) {
+        List<Tag> tags;
+        if (category != null && !category.isBlank()) {
+            tags = tagRepository.findByCategoryAndIsDeletedFalse(category);
+        } else {
+            tags = tagRepository.findAll();
+        }
         return Response.ok(tagMapper.toResponseList(tags));
     }
 

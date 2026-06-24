@@ -131,6 +131,13 @@ public class DataInitializer implements CommandLineRunner {
                      log.error("Error seeding organization data", e);
                 }
 
+                try {
+                    log.info("=== SEEDING CATEGORY DATA ===");
+                    executeSqlScript("classpath:data/category_data.sql");
+                } catch (Exception e) {
+                     log.error("Error seeding category data", e);
+                }
+
             } catch (Exception e) {
                 log.error("Error seeding data", e);
             }

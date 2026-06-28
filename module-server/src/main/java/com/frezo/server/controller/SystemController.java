@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@RestController
+@RestController("serverSystemController")
 @RequestMapping("/api/system")
 @Tag(name = "00. Hệ thống", description = "API kiểm tra trạng thái & thông tin ứng dụng")
 public class SystemController {

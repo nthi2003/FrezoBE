@@ -113,7 +113,7 @@ public class DataInitializer implements CommandLineRunner {
                          );
 
                          if (userRoleCount != null && userRoleCount == 0) {
-                             String insertUserRoleSql = "INSERT INTO user_role (id, user_id, role_id, status, is_delete, created_date, created_by, updated_date, updated_by) VALUES (?, ?, ?, ?, ?, NOW(), 'system', NOW(), 'system')";
+                             String insertUserRoleSql = "INSERT INTO user_role (id, user_id, role_id, status, is_deleted, created_date, created_by, updated_date, updated_by) VALUES (?, ?, ?, ?, ?, NOW(), 'system', NOW(), 'system')";
                              jdbcTemplate.update(insertUserRoleSql, java.util.UUID.randomUUID().toString(), admin.getId(), roleId, 1, false);
                              log.info(">>> SUCCESS: Linked User 'admin' to Role 'ADMIN'");
                          } else {

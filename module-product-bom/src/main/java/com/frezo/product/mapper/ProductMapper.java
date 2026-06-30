@@ -11,11 +11,14 @@ public interface ProductMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "isActive", constant = "true")
+    @Mapping(target = "categoryId", source = "category")
     Product toEntity(ProductCreateRequest request);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "categoryId", source = "category")
     void updateEntity(ProductUpdateRequest request, @MappingTarget Product product);
 
+    @Mapping(target = "category", source = "categoryId")
     ProductResponse toResponse(Product product);
 }

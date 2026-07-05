@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 public interface ProductRepository extends JpaRepository<Product, String>, JpaSpecificationExecutor<Product> {
     java.util.Optional<Product> findByCode(String code);
 
+    @org.springframework.data.jpa.repository.Query("SELECT MAX(p.code) FROM Product p")
+    String findMaxCode();
+
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(p) FROM Product p WHERE p.isActive = true AND p.isDeleted = false")
     long countActiveProducts();
 

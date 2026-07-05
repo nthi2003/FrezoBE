@@ -67,8 +67,18 @@ public class ProductServiceImpl implements ProductService {
     @AuditAction(value = "Thêm mới sản phẩm", entity = "Product", action = "CREATE")
     public ProductResponse create(ProductCreateRequest request) {
         Product product = productMapper.toEntity(request);
+        if (product.getCode() == null || product.getCode().isBlank()) {
+            product.setCode(generateProductCode());
+        }
         Product saved = productRepository.save(product);
         return productMapper.toResponse(saved);
+    }
+
+    private String generateProductCode() {
+        String maxCode = productRepository.findMaxCode();
+        if (maxCode == null) return "SP001";
+        int num = Integer.parseInt(maxCode.replaceAll("\\D+", "")) + 1;
+        return String.format("SP%03d", num);
     }
 
     @Override

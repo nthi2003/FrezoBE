@@ -75,7 +75,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new QTHTException("code.exist");
         } else if (categoryRepository.existsByNameAndIsDeletedFalse(request.getName())) {
             throw new QTHTException("name.exist");
-        } else if (categoryRepository.existsByNameEnAndIsDeletedFalse(request.getNameEn())) {
+        } else if (request.getNameEn() != null && categoryRepository.existsByNameEnAndIsDeletedFalse(request.getNameEn())) {
             throw new QTHTException("name.en.exist");
         }
 
@@ -89,8 +89,9 @@ public class CategoryServiceImpl implements CategoryService {
         Specification<Category> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted" , Boolean.FALSE));
         
-        if (SystemUtils.isNotNullOrEmpty(filter.getType())) {
-            specification = specification.and(GenericSpecification.equalField("groupCode", filter.getType()));
+        String groupCode = SystemUtils.isNotNullOrEmpty(filter.getGroupCode()) ? filter.getGroupCode() : filter.getType();
+        if (SystemUtils.isNotNullOrEmpty(groupCode)) {
+            specification = specification.and(GenericSpecification.equalField("groupCode", groupCode));
         }
 
         if (SystemUtils.isNotNullOrEmpty(filter.getKeyword())) {

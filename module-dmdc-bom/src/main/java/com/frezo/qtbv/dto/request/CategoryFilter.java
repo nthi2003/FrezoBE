@@ -12,4 +12,5 @@ public class CategoryFilter extends PagingBase {
     private String keyword;
     private Boolean active;
     private String type;
+    private String groupCode;
 }

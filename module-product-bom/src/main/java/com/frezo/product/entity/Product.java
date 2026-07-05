@@ -44,4 +44,13 @@ public class Product extends BaseEntity {
 
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Column(name = "price")
+    private Double price;
+
+    @Column(name = "rating")
+    private Double rating;
+
+    @Column(name = "is_new")
+    private Boolean isNew;
 }

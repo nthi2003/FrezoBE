@@ -37,6 +37,8 @@
         <module>module-cms-res</module>
         <module>module-warehouse-bom</module>
         <module>module-warehouse-res</module>
+        <module>module-fbautomation-bom</module>
+        <module>module-fbautomation-res</module>
     </modules>
 
     <properties>
@@ -96,6 +98,11 @@
                 <groupId>com.google.apis</groupId>
                 <artifactId>google-api-services-drive</artifactId>
                 <version>v3-rev20230822-2.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.apis</groupId>
+                <artifactId>google-api-services-sheets</artifactId>
+                <version>v4-rev20230928-2.0.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auth</groupId>

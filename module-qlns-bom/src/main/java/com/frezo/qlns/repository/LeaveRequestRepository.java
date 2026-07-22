@@ -17,6 +17,12 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Stri
 
     List<LeaveRequest> findByStatus(String status);
 
+    /** "Đơn của tôi" — mọi trạng thái, sort mới nhất trước. */
+    List<LeaveRequest> findByContractIdOrderByCreatedDateDesc(String contractId);
+
+    /** Alternate lookup theo personId (khi FE không có contractId trong tay). */
+    List<LeaveRequest> findByPersonIdOrderByCreatedDateDesc(String personId);
+
     @Query("SELECT COALESCE(SUM(lr.durationDays), 0) FROM LeaveRequest lr " +
            "WHERE lr.contractId = :contractId " +
            "AND lr.status = 'APPROVED' " +

@@ -14,4 +14,12 @@ public class FacebookLeadRequest {
     private String profileUrl;
     private String status;
     private String note;
+
+    // ---- Multi-channel inbox ----
+    private String source;   // FACEBOOK | LANDING | ZALO | MANUAL
+    private String subject;
+    private String message;
+    private String sourceIp;
+    private String referer;
+    private String assignedTo;
 }

@@ -48,4 +48,54 @@ public class FacebookLead extends BaseEntity {
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
+
+    // ============================================================
+    // Multi-channel inbox — inquiry giờ có thể đến từ nhiều nguồn,
+    // không chỉ FB group crawler.
+    // ============================================================
+
+    /**
+     * Nguồn lead: FACEBOOK | LANDING | ZALO | MANUAL.
+     * Default FACEBOOK để giữ backward compat với data cũ.
+     */
+    @Column(name = "source", length = 20)
+    @Builder.Default
+    private String source = "FACEBOOK";
+
+    /**
+     * Chủ đề / dịch vụ khách quan tâm (form landing có field này).
+     */
+    @Column(name = "subject", length = 255)
+    private String subject;
+
+    /**
+     * Nội dung tin nhắn khách gửi (dài hơn note).
+     */
+    @Column(name = "message", columnDefinition = "TEXT")
+    private String message;
+
+    /**
+     * IP client (audit / anti-spam) — chỉ set khi lead đến qua public endpoint.
+     */
+    @Column(name = "source_ip", length = 45)
+    private String sourceIp;
+
+    /**
+     * Referrer URL (landing page URL, Zalo OA ID, FB page ID, v.v.).
+     */
+    @Column(name = "referer", length = 500)
+    private String referer;
+
+    /**
+     * User assigned để xử lý inquiry (username).
+     */
+    @Column(name = "assigned_to", length = 100)
+    private String assignedTo;
+
+    /**
+     * ID của batch upload (nếu lead đến từ CSV/Excel import).
+     * Cho phép rollback nguyên batch nếu upload nhầm.
+     */
+    @Column(name = "import_batch_id", length = 36)
+    private String importBatchId;
 }

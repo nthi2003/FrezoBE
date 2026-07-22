@@ -1,62 +1,80 @@
 package com.frezo.auth.security;
 
-import io.jsonwebtoken.*;
+import com.frezo.auth.config.JwtProperties;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
+/**
+ * JWT sign / parse / validate.
+ * <p>
+ * <b>v1.1 fixes:</b>
+ * <ul>
+ *   <li>Secret & TTL đọc từ {@link JwtProperties} (validated) — KHÔNG hardcode default trong {@code @Value}.</li>
+ *   <li>Issuer + audience thêm vào token.</li>
+ *   <li>Log lỗi qua {@code log.warn} thay {@code log.error} cho các trường hợp client (invalid signature, expired).</li>
+ * </ul>
+ */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    @Value("${app.security.jwt.expiration:3600000}")
-    private long jwtExpirationInMs;
-
-    @Value("${app.security.jwt.refresh-expiration:604800000}")
-    private long refreshExpirationInMs;
-
-    @Value("${app.security.jwt.secret:SecretKeyForFTechBackendApplicationMustBeVeryLongAndSecure12345678}")
-    private String jwtSecret;
+    private final JwtProperties props;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        return Keys.hmacShaKeyFor(props.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String username) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + props.getExpiration());
 
         return Jwts.builder()
                 .setSubject(username)
-                .setIssuedAt(new Date())
+                .setIssuer(props.getIssuer())
+                .setAudience(props.getAudience())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public String generateToken(String username, java.util.List<String> roles) {
+    public String generateToken(String username, List<String> roles) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + props.getExpiration());
 
         return Jwts.builder()
                 .setSubject(username)
+                .setIssuer(props.getIssuer())
+                .setAudience(props.getAudience())
                 .claim("roles", roles)
-                .setIssuedAt(new Date())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public String generateToken(String username, java.util.List<String> roles, Short dataAction, String orgId,
-            String appCode, Boolean isAdmin) {
+    public String generateToken(String username, List<String> roles, Short dataAction, String orgId,
+                                 String appCode, Boolean isAdmin) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + props.getExpiration());
 
         Claims claims = Jwts.claims().setSubject(username);
+        claims.setIssuer(props.getIssuer());
+        claims.setAudience(props.getAudience());
         claims.put("roles", roles);
         claims.put("dataAction", dataAction);
         claims.put("orgid", orgId);
@@ -73,10 +91,11 @@ public class JwtTokenProvider {
 
     public String generateRefreshToken(String username) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + refreshExpirationInMs);
+        Date expiryDate = new Date(now.getTime() + props.getRefreshExpiration());
 
         return Jwts.builder()
                 .setSubject(username)
+                .setIssuer(props.getIssuer())
                 .claim("isRefresh", true)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -101,18 +120,21 @@ public class JwtTokenProvider {
                 .getBody();
     }
 
+    /**
+     * Validate JWT — log warn cho client error, chỉ log error cho system error.
+     */
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(authToken);
             return true;
         } catch (SecurityException | MalformedJwtException ex) {
-            log.error("Invalid JWT signature");
+            log.warn("Invalid JWT signature: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token");
+            log.warn("Expired JWT token: {}", ex.getMessage());
         } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token");
+            log.warn("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty");
+            log.warn("JWT claims string is empty: {}", ex.getMessage());
         }
         return false;
     }

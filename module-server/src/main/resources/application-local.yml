@@ -1,0 +1,37 @@
+# =====================================================================
+# LOCAL DEVELOPMENT PROFILE ONLY
+# =====================================================================
+# ⚠️  KHÔNG DÙNG CHO STAGING / PRODUCTION.
+# Staging / prod bắt buộc set env var APP_SECURITY_JWT_SECRET riêng
+# và KHÔNG có file này.
+#
+# File này tồn tại để developer local chạy được ngay không cần export env.
+# Trong CI / staging / prod, dùng SPRING_PROFILES_ACTIVE=staging|prod
+# và set các env var qua secret manager (Vault, AWS Secrets, K8s Secret).
+# =====================================================================
+
+app:
+  security:
+    # Local dev JWT secret — 64 bytes cho HS512. THAY KHI VỀ CÁ NHÂN nếu muốn.
+    jwt:
+      secret: "local-dev-only-jwt-secret-CHANGE-ME-in-prod-min-64-bytes-frezo!!"
+
+  cors:
+    # Local dev — thêm nhiều origin cho tiện test
+    # (profile này REPLACE list trong application.yml — giữ đủ Expo web + ERP)
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:3000
+      - http://localhost:4200
+      - http://localhost:8080
+      - http://localhost:8081   # Expo web / Metro
+      - http://127.0.0.1:8081
+      - http://localhost:19006 # Expo web (legacy default)
+      - http://127.0.0.1:19006
+      - http://localhost:3001
+
+logging:
+  level:
+    com.frezo: DEBUG
+    org.hibernate.SQL: DEBUG              # bật log SQL cho dev
+    org.hibernate.orm.jdbc.bind: TRACE    # bật log parameter binding

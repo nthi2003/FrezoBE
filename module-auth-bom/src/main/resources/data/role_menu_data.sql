@@ -67,7 +67,14 @@ SELECT
     'system'
 FROM menu m
 WHERE m.app_code = 'QTHT'
-  AND m.code IN ('DASHBOARD', 'QLHT_ATTENDANCE', 'QLHT_CV', 'QLHT_ARTICLE', 'QLHT_EVENT', 'QLHT_TICKET')
+  -- Leaves + domain parents so FE tree can nest (orphan children → root otherwise)
+  AND m.code IN (
+      'DASHBOARD',
+      'MENU_HRM', 'QLHT_ATTENDANCE',
+      'MENU_TASK', 'QLHT_CV', 'QLHT_TICKET',
+      'MENU_GROWTH', 'QLHT_EVENT',
+      'MENU_QTHT', 'QLHT_ARTICLE'
+  )
   AND NOT EXISTS (
       SELECT 1 
       FROM role_menu rm 

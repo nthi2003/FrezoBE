@@ -5,12 +5,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+/**
+ * Create article contract (SA-ART-001 / CYCLE-QTLV-ART).
+ * <ul>
+ *   <li>{@code code} — optional; blank/null → server auto-gen {@code QTBV-YYYYMMDD-###}</li>
+ *   <li>{@code title}, {@code content} — required</li>
+ *   <li>{@code organizationId}, {@code managerId}, {@code publishScope}, {@code isPublic} — optional</li>
+ * </ul>
+ */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArticleCreateRequest {
-    @NotBlank(message = "Mã bài viết không được để trống")
+    /** Optional. When blank/null, BE generates {@code QTBV-YYYYMMDD-###}. */
     @JsonProperty("code")
     private String code;
 

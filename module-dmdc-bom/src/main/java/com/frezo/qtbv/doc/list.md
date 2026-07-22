@@ -2,26 +2,48 @@
 
 ## Tổng quan
 
-Hệ thống sử dụng bảng `categories` để lưu trữ các danh mục (tài sản, thiết bị, v.v...). Mỗi danh mục thuộc về một nhóm (`CategoryGroup`) được xác định qua `group_code`.
+Từ 2026-07: module **Quản lý tài sản** đã tách thành entity riêng `asset` (xem
+`Asset.java` + `AssetController.java`). Tuy nhiên các **loại tài sản** (Laptop, Bàn,
+Ghế, Xe, ...) vẫn dùng chung bảng `categories` với `group_code = 'LoaiTaiSan'` để tận
+dụng trang `/admin/category-management` có sẵn.
+
+> **Migration ⚠️**: các seed cũ dùng `group_code = 'QLTS'` đã được `AssetDataInitializer`
+> tự động chuyển sang `LoaiTaiSan` khi khởi động. Không dùng `QLTS` cho seed mới.
 
 ## Cấu trúc nhóm (CategoryGroup)
 
-| STT | Code | Tên nhóm | cat_group | Mục đích |
-|-----|------|----------|-----------|----------|
-| 1 | QLTS | Quản lý tài sản | 1 | Nhóm chứa các danh mục tài sản |
-| 2 | ChucDanh | Chức danh | 2 | Nhóm chứa các chức danh (Giám đốc, Trưởng phòng...) |
-| 3 | DonVi | Đơn vị | 3 | Nhóm chứa các đơn vị (Phòng Kinh doanh, Phòng Kỹ thuật...) |
-| 4 | LoaiTaiSan | Loại tài sản | 4 | Nhóm chứa loại tài sản (Máy tính, Xe, Bàn ghế...) |
+| STT | Code | Tên nhóm | Mục đích |
+|-----|------|----------|----------|
+| 1 | LoaiTaiSan | Loại Tài Sản | Danh mục loại tài sản (LAPTOP, DESK, CHAIR, VEHICLE...) — dùng cho dropdown "Loại" khi tạo Asset |
+| 2 | ChucDanh   | Chức Danh    | Giám đốc, Trưởng phòng, Nhân viên... — **canonical** (QA-QLNS-001). Legacy seed `TITLE` migrate → `ChucDanh` lúc boot (`category_data.sql`). Query: `GET /qtht/category?groupCode=ChucDanh` (`type` = alias). Item codes mẫu: `TTL_*`. |
+| 3 | DonVi      | Đơn Vị       | Phòng Kinh doanh, Phòng Kỹ thuật... |
+| 4 | DanhMucSP  | Danh Mục SP  | Nhóm sản phẩm (dùng cho module product) |
 
 ## Cơ chế query
 
-### 1. Lấy danh sách tài sản (View tài sản)
+### 1. Lấy danh sách loại tài sản (dropdown)
 
-Khi muốn hiển thị danh sách tài sản cho module **Quản lý tài sản**, cần filter với `group_code = 'QLTS'`:
+FE:
+
+```ts
+useCategories('LoaiTaiSan')
+```
+
+BE query tương đương:
 
 ```sql
--- Query lấy tất cả tài sản
-SELECT * FROM categories 
-WHERE group_code = 'QLTS' 
-  AND is_deleted = 0
+SELECT * FROM categories
+WHERE group_code = 'LoaiTaiSan'
+  AND is_deleted = false
 ORDER BY order_index;
+```
+
+### 2. Lấy danh sách tài sản thực (Asset)
+
+Không dùng `categories` — đã có API riêng:
+
+```
+GET /qlts/assets?keyword=&status=&categoryCode=&assignedPersonId=&page=&size=
+```
+
+Trong đó `categoryCode` là `code` của một Category thuộc group `LoaiTaiSan` (vd `LAPTOP`).

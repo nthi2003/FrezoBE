@@ -12,13 +12,17 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import lombok.extern.slf4j.Slf4j;
+
+/** Giới hạn kích thước body log (ký tự) — tránh persist blob quá lớn xuống DB. */
+class ApiLogConstants {
+    static final int MAX_BODY_LEN = 4000;
+}
 
 /// ThiNVQ  Filter - bắt IP + wrap request/response
 @Component
@@ -62,7 +66,20 @@ public class ApiLogFilter extends OncePerRequestFilter {
         long startTime = System.currentTimeMillis();
         LocalDateTime effFrom = LocalDateTime.now();
 
-        ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
+        // ---- Wrap request để cache body ----
+        // Với multipart (file upload), KHÔNG dùng cached wrapper để tránh copy file lớn.
+        // Với GET/HEAD/DELETE/OPTIONS thì body thường trống nên cũng skip để đỡ overhead.
+        HttpServletRequest requestForChain = request;
+        CachedBodyHttpServletRequest cachedRequest = null;
+        if (shouldCacheRequestBody(request)) {
+            try {
+                cachedRequest = new CachedBodyHttpServletRequest(request);
+                requestForChain = cachedRequest;
+            } catch (Exception e) {
+                log.warn("Cannot cache request body for {} — fallback to raw request", request.getRequestURI());
+            }
+        }
+
         ContentCachingResponseWrapper wrappedResponse = new ContentCachingResponseWrapper(response);
 
         ApiLog apiLog = ApiLog.builder()
@@ -73,7 +90,7 @@ public class ApiLogFilter extends OncePerRequestFilter {
                 .effFrom(effFrom)
                 .build();
 
-        // Lưu bản ghi lúc bắt đầu gọi (tạo record time call lúc)
+        // Lưu bản ghi lúc bắt đầu gọi — vẫn tồn tại record kể cả khi request crash
         try {
             apiLogService.saveLog(apiLog);
         } catch (Exception e) {
@@ -81,39 +98,18 @@ public class ApiLogFilter extends OncePerRequestFilter {
         }
 
         try {
-            filterChain.doFilter(wrappedRequest, wrappedResponse);
+            filterChain.doFilter(requestForChain, wrappedResponse);
         } finally {
             long duration = System.currentTimeMillis() - startTime;
             LocalDateTime effTo = LocalDateTime.now();
 
-            String requestBody = null;
-            byte[] reqBytes = wrappedRequest.getContentAsByteArray();
-            if (reqBytes.length > 0) {
-                try {
-                    String charset = wrappedRequest.getCharacterEncoding();
-                    if (charset == null || charset.isBlank()) {
-                        charset = StandardCharsets.UTF_8.name();
-                    }
-                    requestBody = new String(reqBytes, charset);
-                    if (requestBody.length() > 2000)
-                        requestBody = requestBody.substring(0, 2000) + "...[truncated]";
-                } catch (Exception e) { requestBody = "[error parsing body]"; }
-            }
-            String responseBody = null;
-            byte[] resBytes = wrappedResponse.getContentAsByteArray();
-            if (resBytes.length > 0) {
-                try {
-                    String charset = wrappedResponse.getCharacterEncoding();
-                    if (charset == null || charset.isBlank()) {
-                        charset = StandardCharsets.UTF_8.name();
-                    }
-                    responseBody = new String(resBytes, charset);
-                    if (responseBody.length() > 2000)
-                        responseBody = responseBody.substring(0, 2000) + "...[truncated]";
-                } catch (Exception e) { responseBody = "[error parsing body]"; }
-            }
+            // ---- Extract request body ----
+            // Với cached wrapper thì body luôn có sẵn (không phụ thuộc downstream đã đọc chưa).
+            String requestBody = extractRequestBody(cachedRequest, request);
 
-            // Cập nhật thông tin khi kết thúc call (nhưng call thì cũng phải lưu)
+            // ---- Extract response body ----
+            String responseBody = extractResponseBody(wrappedResponse);
+
             apiLog.setStatusCode(wrappedResponse.getStatus());
             apiLog.setDuration(duration);
             apiLog.setRequestBody(requestBody);
@@ -126,8 +122,75 @@ public class ApiLogFilter extends OncePerRequestFilter {
                 log.error("Error updating API log", e);
             }
 
-            wrappedResponse.copyBodyToResponse();
+            try {
+                wrappedResponse.copyBodyToResponse();
+            } catch (Exception e) {
+                log.error("Error copying response body", e);
+            }
         }
+    }
+
+    /**
+     * Có nên eager-cache request body không?
+     * - GET/HEAD/DELETE/OPTIONS: body thường trống → skip
+     * - multipart/form-data: file upload lớn → skip để tránh double memory
+     * - Content-Length = 0: chắc chắn không có body → skip
+     */
+    private boolean shouldCacheRequestBody(HttpServletRequest req) {
+        String method = req.getMethod();
+        if ("GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)
+                || "DELETE".equalsIgnoreCase(method) || "OPTIONS".equalsIgnoreCase(method)) {
+            return false;
+        }
+        String ct = req.getContentType();
+        if (ct != null && ct.toLowerCase().startsWith("multipart/")) {
+            return false;
+        }
+        // Với chunked transfer, contentLength = -1 → vẫn cần cache
+        int len = req.getContentLength();
+        return len != 0;
+    }
+
+    private String extractRequestBody(CachedBodyHttpServletRequest cachedReq, HttpServletRequest rawReq) {
+        // Ưu tiên cached bytes vì chúng ta biết chắc đã đọc đủ
+        if (cachedReq != null) {
+            byte[] bytes = cachedReq.getCachedBody();
+            if (bytes == null || bytes.length == 0) {
+                return isBodylessMethod(rawReq.getMethod()) ? null : "[empty body]";
+            }
+            return toBodyString(bytes, cachedReq.getCharacterEncoding());
+        }
+        // Multipart hoặc method không có body — chỉ note metadata
+        String ct = rawReq.getContentType();
+        if (ct != null && ct.toLowerCase().startsWith("multipart/")) {
+            return "[multipart upload — body skipped, size=" + rawReq.getContentLength() + " bytes]";
+        }
+        return null;
+    }
+
+    private String extractResponseBody(ContentCachingResponseWrapper wrappedResponse) {
+        byte[] resBytes = wrappedResponse.getContentAsByteArray();
+        if (resBytes.length == 0) return null;
+        return toBodyString(resBytes, wrappedResponse.getCharacterEncoding());
+    }
+
+    private String toBodyString(byte[] bytes, String charset) {
+        try {
+            String cs = (charset == null || charset.isBlank()) ? StandardCharsets.UTF_8.name() : charset;
+            String body = new String(bytes, cs);
+            if (body.length() > ApiLogConstants.MAX_BODY_LEN) {
+                return body.substring(0, ApiLogConstants.MAX_BODY_LEN)
+                        + "\n\n...[truncated — total " + body.length() + " chars]";
+            }
+            return body;
+        } catch (Exception e) {
+            return "[error parsing body: " + e.getMessage() + "]";
+        }
+    }
+
+    private boolean isBodylessMethod(String method) {
+        return "GET".equalsIgnoreCase(method) || "HEAD".equalsIgnoreCase(method)
+                || "DELETE".equalsIgnoreCase(method) || "OPTIONS".equalsIgnoreCase(method);
     }
 
     private String getClientIp(HttpServletRequest request) {

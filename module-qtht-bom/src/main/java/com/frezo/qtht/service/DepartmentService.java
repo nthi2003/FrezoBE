@@ -1,13 +1,18 @@
 package com.frezo.qtht.service;
 
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.DepartmentFilterRequest;
 import com.frezo.qtht.dto.request.DepartmentSaveRequest;
 import com.frezo.qtht.dto.response.DepartmentResponse;
+
 import java.util.List;
-import java.util.Map;
 
 public interface DepartmentService {
-    Map<String, Object> all(DepartmentFilterRequest filter);
+
+    /**
+     * v1.1 (Batch F): return type-safe {@link PageResponse} thay cho {@code Map<String,Object>}.
+     */
+    PageResponse<DepartmentResponse> all(DepartmentFilterRequest filter);
 
     List<DepartmentResponse> getTree();
 

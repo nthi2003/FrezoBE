@@ -3,25 +3,44 @@ package com.frezo.server;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
-
+/**
+ * Bootstrap Frezo Backend.
+ * <p>
+ * <b>v1.1 fixes (Batch B):</b>
+ * <ul>
+ *   <li>Xoá {@code DriverManager.getConnection(...)} tự tạo database — không phải trách nhiệm của bootstrap class.
+ *       Database phải tồn tại trước khi app khởi động (init qua Docker Compose / infra script / Flyway sẽ handle schema).</li>
+ *   <li>Thêm {@code @ConfigurationPropertiesScan("com.frezo")} — auto-detect mọi {@code @ConfigurationProperties}
+ *       thay vì phải khai báo thủ công (@EnableConfigurationProperties(...) từng lớp).</li>
+ *   <li>Thêm {@code @EnableAsync} — cho {@code @Async} email / notification / export.</li>
+ * </ul>
+ * <p>
+ * <b>Setup Postgres lần đầu (thay thế cho code cũ):</b>
+ * <pre>
+ * # macOS/Linux:
+ * createdb -U postgres frezo
+ *
+ * # Windows PowerShell (với psql):
+ * psql -U postgres -c "CREATE DATABASE frezo"
+ *
+ * # Docker Compose: đã có sẵn trong docker-compose.yml (service postgres tự tạo DB frezo)
+ * </pre>
+ */
 @SpringBootApplication
 @EnableCaching
 @EnableJpaAuditing
 @EnableScheduling
+@EnableAsync
+@ConfigurationPropertiesScan(basePackages = "com.frezo")
 @ComponentScan(basePackages = { "com.frezo" })
-//@MapperScan is not used here to keep configuration centralized in MapStructConfig
-
-
 @EntityScan(basePackages = {
         "com.frezo.auth.entity",
         "com.frezo.qtht.entity",
@@ -34,9 +53,16 @@ import java.sql.Statement;
         "com.frezo.customer.entity",
         "com.frezo.warehouse.entity",
         "com.frezo.fbautomation.entity",
+        "com.frezo.accounting.entity",
+        "com.frezo.crm.entity",
+        "com.frezo.approval.entity",
+        "com.frezo.event.entity",
         "com.frezo.common.domain",
         "com.frezo.common.entity",
-        "com.frezo.common.audit"
+        "com.frezo.common.audit",
+        // Generic Workflow Engine (Definition / Step / Instance / Task) —
+        // dùng chung cho mọi module có approval flow.
+        "com.frezo.common.workflow.entity"
 })
 @EnableJpaRepositories(basePackages = {
         "com.frezo.auth.repository",
@@ -50,34 +76,18 @@ import java.sql.Statement;
         "com.frezo.customer.repository",
         "com.frezo.warehouse.repository",
         "com.frezo.fbautomation.repository",
+        "com.frezo.accounting.repository",
+        "com.frezo.crm.repository",
+        "com.frezo.approval.repository",
+        "com.frezo.event.repository",
         "com.frezo.common.repository",
-        "com.frezo.common.audit"
+        "com.frezo.common.audit",
+        "com.frezo.common.workflow.repository"
 })
 public class FrezoServerApplication {
 
     public static void main(String[] args) {
-        initializeDatabase();
         System.setProperty("spring.devtools.restart.enabled", "false");
         SpringApplication.run(FrezoServerApplication.class, args);
-    }
-
-    private static void initializeDatabase() {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            System.err.println("PostgreSQL driver not found: " + e.getMessage());
-            return;
-        }
-        try (Connection conn = DriverManager.getConnection(
-                "jdbc:postgresql://localhost:5432/postgres", "postgres", "");
-             Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery("SELECT 1 FROM pg_database WHERE datname = 'frezo'");
-            if (!rs.next()) {
-                stmt.execute("CREATE DATABASE frezo");
-                System.out.println("Created database 'frezo'");
-            }
-        } catch (Exception e) {
-            System.err.println("Could not initialize database: " + e.getMessage());
-        }
     }
 }

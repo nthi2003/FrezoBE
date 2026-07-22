@@ -14,6 +14,21 @@ import java.util.Map;
 public class ServiceHelper {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * @deprecated Từ v1.1, dùng {@link com.frezo.common.response.PageResponse#from(Page)} để có typed pagination response.
+     * <p>Trả {@code Map<String,Object>} mất type-safety, buộc controller phải unchecked cast, không autocomplete trong FE.
+     * <p>Migration:
+     * <pre>
+     * // Cũ
+     * List&lt;DepartmentResponse&gt; items = ...;
+     * return ServiceHelper.createResponse1(page, size, entityPage, items);   // Map&lt;String,Object&gt;
+     *
+     * // Mới
+     * Page&lt;DepartmentResponse&gt; page = entityPage.map(mapper::toResponse);
+     * return PageResponse.from(page);                                       // PageResponse&lt;DepartmentResponse&gt;
+     * </pre>
+     */
+    @Deprecated(since = "1.1", forRemoval = true)
     public static <R> Map<String, Object> createResponse1(
             Integer pageNumber, Integer pageSize, Page<?> entities, List<R> items) {
         Map<String, Object> data = new HashMap<>();

@@ -40,6 +40,53 @@ spring:
 app:
   security:
     encryption-key: "CHANGE_ME_PLEASE_32PLUS_CHARS_123456"
+    # JWT — bắt buộc set env APP_SECURITY_JWT_SECRET (min 64 bytes). Không có default → app fail-fast startup.
+    # Sinh secret an toàn: openssl rand -base64 64
+    jwt:
+      secret: ${APP_SECURITY_JWT_SECRET:}
+      expiration: 3600000              # 1 giờ
+      refresh-expiration: 604800000    # 7 ngày
+      issuer: frezo
+      audience: frezo-app
+
+    # @CheckPermission aspect toggle — KHÔNG tắt production trừ tình huống rollback khẩn.
+    check-permission:
+      enabled: true
+      fail-open-on-error: false       # deny nếu aspect gặp lỗi (secure default)
+      log-audit: true                 # audit log mọi allow / deny
+
+  # CORS — whitelist origins. CẤM ["*"] cho production. Default cho local dev.
+  cors:
+    allowed-origins:
+      - http://localhost:5173   # ERP (Vite default)
+      - http://localhost:3000
+      - http://localhost:4200
+      - http://localhost:3001   # Landing page (vite.config.js port)
+      - http://localhost:8081   # Expo web / Metro (+ landing @frezo/landing)
+      - http://127.0.0.1:8081
+      - http://localhost:19006 # Expo web (legacy default)
+      - http://127.0.0.1:19006
+    allowed-methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    allowed-headers:
+      - Authorization
+      - Content-Type
+      - Accept
+      - Accept-Language
+      - X-Correlation-Id
+      - X-Client-Version
+      - Idempotency-Key
+      - If-Match
+    exposed-headers:
+      - Authorization
+      - X-Correlation-Id
+      - X-RateLimit-Limit
+      - X-RateLimit-Remaining
+      - X-RateLimit-Reset
+      - Retry-After
+      - Location
+    allow-credentials: true
+    max-age: 3600
+
   cloud:
     consul:
       host: ${CONSUL_HOST:localhost}
@@ -57,10 +104,98 @@ app:
   ai:
     service-url: ${AI_SERVICE_URL:http://localhost:8001}
 
+# ============================================================
+# Zalo Official Account webhook (public inbox)
+# BẮT BUỘC set env cho prod. Dev có thể để trống → verify tự skip.
+# ------------------------------------------------------------
+# Cách lấy credentials:
+#   1. Đăng ký OA tại https://oa.zalo.me (miễn phí)
+#   2. Tạo app tại https://developers.zalo.me → App ID + Secret
+#   3. Config Webhook URL = https://<domain>/api/public/inbox/zalo/webhook
+#   4. Bật verify-enabled=true khi đã có secret
+# ============================================================
+zalo:
+  oa:
+    app-id: ${ZALO_OA_APP_ID:}
+    secret: ${ZALO_OA_SECRET:}
+    verify-enabled: ${ZALO_OA_VERIFY_ENABLED:false}
+
+# ============================================================
+# Frezo MKT Suite — cấu hình marketing/CSKH module
+# ------------------------------------------------------------
+# social.fb.page-token: Meta Graph API Page Access Token (long-lived).
+#   Cách lấy: developers.facebook.com → App → Graph API Explorer → chọn Page
+#   → Generate Access Token với permission `pages_manage_posts` → exchange
+#   long-lived token qua endpoint /oauth/access_token.
+#   Chưa có token thì scheduler sẽ chuyển bài SCHEDULED sang PUBLISHING (chờ
+#   đăng thủ công) + gửi notification cho author.
+#
+# affiliate.base-url: base URL để sinh short link {baseUrl}/r/{code}.
+#   Prod: đổi sang domain thật (VD https://frezo.io) để link đẹp.
+# ============================================================
+frezo:
+  social:
+    fb:
+      page-token: ${FB_PAGE_TOKEN:}
+      default-page-id: ${FB_PAGE_ID:}
+  affiliate:
+    base-url: ${AFFILIATE_BASE_URL:http://localhost:7410/api}
+  # ----------------------------------------------------------
+  # Inbox / CSKH — danh sách username được ghim thông báo khi có
+  # lead mới từ landing page hoặc Zalo OA. Comma-separated.
+  # Prod: config danh sách nhân viên CSKH.
+  # Dev: default = admin (đảm bảo bell luôn nhận).
+  # ----------------------------------------------------------
+  inbox:
+    notify-users: ${INBOX_NOTIFY_USERS:admin}
+  # ----------------------------------------------------------
+  # Workflow xin nghỉ phép — chuỗi duyệt 2 tầng:
+  #   NV tạo → QL trực tiếp duyệt → HR duyệt chốt
+  #
+  # hr-users: danh sách username HR nhận notification cấp 2.
+  #   Prod nên set: LEAVE_HR_USERS=hr_hoa,hr_lan,hr_minh
+  #   Dev default = admin.
+  #
+  # QL trực tiếp được resolve tự động từ Person → Department.managerId,
+  # KHÔNG cần config ở đây.
+  # ----------------------------------------------------------
+  leave:
+    hr-users: ${LEAVE_HR_USERS:admin}
+
 server:
   port: 7410
   servlet:
     context-path: /api
+
+# Actuator — dev bật full endpoint. Prod override qua application-prod.yml (chỉ health, info, prometheus).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers,env,configprops,mappings,beans
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: true
+    os:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: 1.1.0
+    description: Frezo Backend — enterprise ERP suite
 
 logging:
   level:

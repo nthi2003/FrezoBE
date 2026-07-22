@@ -8,6 +8,7 @@ import lombok.Data;
 public class AttendanceFilter {
     private String contractId;
     private String personId;
+    private String departmentId;
     private Integer month;
     private Integer year;
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

@@ -23,4 +23,13 @@ public interface StockBalanceRepository extends JpaRepository<StockBalance, Stri
 
     @Query("SELECT COUNT(DISTINCT s.productId) FROM StockBalance s")
     long countDistinctProductId();
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityAvailable), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumAvailableByProductAndWarehouse(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId);
 }

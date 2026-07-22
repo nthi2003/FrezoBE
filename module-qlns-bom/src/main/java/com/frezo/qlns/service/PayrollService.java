@@ -2,6 +2,7 @@ package com.frezo.qlns.service;
 
 import com.frezo.common.response.PageResponse;
 import com.frezo.qlns.dto.request.PayrollFilter;
+import com.frezo.qlns.dto.response.PayrollCalculateAllResponse;
 import com.frezo.qlns.dto.response.PayrollDetailResponse;
 import com.frezo.qlns.dto.response.PayrollResponse;
 
@@ -11,7 +12,7 @@ public interface PayrollService {
 
     PayrollResponse calculateMonthlyPayroll(String personId, Integer month, Integer year);
 
-    void calculateAllPayroll(Integer month, Integer year);
+    PayrollCalculateAllResponse calculateAllPayroll(Integer month, Integer year);
 
     PayrollResponse updateBonus(String id, Double bonus, Double deduction, String note);
 

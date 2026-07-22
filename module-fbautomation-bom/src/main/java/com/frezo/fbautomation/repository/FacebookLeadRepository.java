@@ -18,4 +18,11 @@ public interface FacebookLeadRepository
     boolean existsByProfileUrl(String profileUrl);
 
     long countByStatus(String status);
+
+    // ---- Multi-channel inbox filters ----
+    List<FacebookLead> findBySource(String source);
+
+    List<FacebookLead> findByStatusAndSource(String status, String source);
+
+    long countBySource(String source);
 }

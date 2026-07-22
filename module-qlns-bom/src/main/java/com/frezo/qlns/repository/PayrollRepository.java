@@ -5,9 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PayrollRepository extends JpaRepository<Payroll, String>, JpaSpecificationExecutor<Payroll> {
     Optional<Payroll> findByPersonIdAndMonthAndYear(String personId, Integer month, Integer year);
+
+    List<Payroll> findByMonthAndYearAndIsDeletedFalse(Integer month, Integer year);
+
+    List<Payroll> findByPersonIdAndYearAndIsDeletedFalseOrderByMonthAsc(String personId, Integer year);
 }

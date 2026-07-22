@@ -1,0 +1,5 @@
+# Profile marker — kích hoạt seed demo Accounting (và có thể dùng chung với local).
+# Usage: SPRING_PROFILES_ACTIVE=seed
+# hoặc: SPRING_PROFILES_ACTIVE=local,seed
+#
+# Beans: AccountingDataInitializer, ContractDataInitializer (@Profile({"local","seed"}))

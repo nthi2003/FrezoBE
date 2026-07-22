@@ -10,35 +10,26 @@
     <packaging>pom</packaging>
 
     <name>Frezo Backend</name>
-    <description>Frezo Backend Multi-module Project</description>
+    <description>Frezo Backend Multi-module Project - Phase 1 consolidation: flattened bom+res, CMS removed</description>
 
     <modules>
         <module>module-common</module>
         <module>module-auth-bom</module>
-        <module>module-auth-res</module>
         <module>module-qtbv-bom</module>
-        <module>module-qtbv-res</module>
         <module>module-dmdc-bom</module>
-        <module>module-dmdc-res</module>
         <module>module-qtht-bom</module>
-        <module>module-qtht-res</module>
-        <module>module-server</module>
         <module>module-email-bom</module>
-        <module>module-email-res</module>
         <module>module-task-bom</module>
-        <module>module-task-res</module>
         <module>module-qlns-bom</module>
-        <module>module-qlns-res</module>
         <module>module-customer-bom</module>
-        <module>module-customer-res</module>
         <module>module-product-bom</module>
-        <module>module-product-res</module>
-        <module>module-cms-bom</module>
-        <module>module-cms-res</module>
         <module>module-warehouse-bom</module>
-        <module>module-warehouse-res</module>
         <module>module-fbautomation-bom</module>
-        <module>module-fbautomation-res</module>
+        <module>module-accounting-bom</module>
+        <module>module-crm-bom</module>
+        <module>module-approval-bom</module>
+        <module>module-event-bom</module>
+        <module>module-server</module>
     </modules>
 
     <properties>
@@ -52,6 +43,13 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <tika.version>2.9.2</tika.version>
         <commons-compress.version>1.26.0</commons-compress.version>
+        <!-- Test � Batch G -->
+        <testcontainers.version>1.19.7</testcontainers.version>
+        <rest-assured.version>5.4.0</rest-assured.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <!-- Coverage threshold � n?i trong qu� tr�nh migration, target 0.80 -->
+        <jacoco.line.min>0.30</jacoco.line.min>
+        <jacoco.branch.min>0.20</jacoco.branch.min>
     </properties>
 
     <dependencyManagement>
@@ -102,7 +100,7 @@
             <dependency>
                 <groupId>com.google.apis</groupId>
                 <artifactId>google-api-services-sheets</artifactId>
-                <version>v4-rev20230928-2.0.0</version>
+                <version>v4-rev20230526-2.0.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.auth</groupId>
@@ -128,6 +126,21 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${commons-compress.version}</version>
+            </dependency>
+
+            <!-- Test � Batch G -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -184,7 +197,7 @@
     </dependencies>
 
     <build>
-        <!-- Plugin Management: Cấu hình chung cho tất cả modules -->
+        <!-- Plugin Management: C?u h�nh chung cho t?t c? modules -->
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -198,9 +211,9 @@
                         <compilerArgs>
                             <arg>-parameters</arg>
                         </compilerArgs>
-                        <!-- Annotation Processors: Thứ tự QUAN TRỌNG -->
+                        <!-- Annotation Processors: Th? t? QUAN TR?NG -->
                         <annotationProcessorPaths>
-                            <!-- 1. Lombok trước -->
+                            <!-- 1. Lombok tr??c -->
                             <path>
                                 <groupId>org.projectlombok</groupId>
                                 <artifactId>lombok</artifactId>
@@ -221,14 +234,118 @@
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
+
+                <!-- Surefire (unit test) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <argLine>@{argLine} -Xshare:off</argLine>
+                        <excludes>
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IntegrationTest.java</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+
+                <!-- Failsafe (integration test � *IT.java, *IntegrationTest.java) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <argLine>@{argLine} -Xshare:off</argLine>
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*IntegrationTest.java</include>
+                        </includes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!-- JaCoCo coverage � ch?y: mvn verify jacoco:report -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>check</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <rule>
+                                        <element>BUNDLE</element>
+                                        <limits>
+                                            <limit>
+                                                <counter>LINE</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.line.min}</minimum>
+                                            </limit>
+                                            <limit>
+                                                <counter>BRANCH</counter>
+                                                <value>COVEREDRATIO</value>
+                                                <minimum>${jacoco.branch.min}</minimum>
+                                            </limit>
+                                        </limits>
+                                    </rule>
+                                </rules>
+                                <excludes>
+                                    <exclude>**/*Application.class</exclude>
+                                    <exclude>**/dto/**</exclude>
+                                    <exclude>**/entity/**</exclude>
+                                    <exclude>**/config/**</exclude>
+                                    <exclude>**/*Mapper.class</exclude>
+                                    <exclude>**/*Properties.class</exclude>
+                                </excludes>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
-        <!-- Default plugins cho parent (nếu cần) -->
+        <!-- Default plugins cho parent (n?u c?n) -->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

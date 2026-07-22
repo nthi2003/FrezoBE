@@ -54,4 +54,20 @@ public class PayrollPeriod extends BaseEntity {
 
     @Column(name = "note", length = 500)
     private String note;
+
+    /**
+     * ID {@code WorkflowInstance} đang lái kỳ lương này. Nullable để backward-compat:
+     * <ul>
+     *   <li>Null → chưa có workflow (kỳ tạo trước khi engine wire vào, hoặc chưa lock)</li>
+     *   <li>!= null → đang duyệt qua Workflow Engine (theo definition {@code PAYROLL_DEFAULT}
+     *       hoặc admin chọn khác). Approve/reject sẽ đi qua {@code WorkflowService} thay
+     *       vì set status trực tiếp.</li>
+     * </ul>
+     */
+    @Column(name = "workflow_instance_id", length = 36)
+    private String workflowInstanceId;
+
+    /** ID ApprovalRequest (module-approval) — thay dần workflow_instance_id. */
+    @Column(name = "approval_request_id", length = 36)
+    private String approvalRequestId;
 }

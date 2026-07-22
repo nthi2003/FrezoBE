@@ -9,5 +9,4 @@ import org.springframework.stereotype.Repository;
 public interface ContractRepository extends JpaRepository<Contract, String>, JpaSpecificationExecutor<Contract> {
 
     Boolean existsByCode(String code);
-
 }

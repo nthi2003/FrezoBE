@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/qtht/audit-log")
+// Accept cả path singular (constant cũ FE) và plural (service call FE hiện tại) → tránh 404 khi FE drift
+@RequestMapping({"/qtht/audit-log", "/qtht/audit-logs"})
 @RequiredArgsConstructor
 @Tag(name = "X. Audit Log", description = "API truy vấn lịch sử thay đổi dữ liệu")
 public class AuditLogController {

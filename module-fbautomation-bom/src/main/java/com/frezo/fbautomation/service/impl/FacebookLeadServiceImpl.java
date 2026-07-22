@@ -27,14 +27,41 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
     private final CustomerRepository customerRepository;
 
     @Override
-    public List<FacebookLeadResponse> getAll(String status) {
+    public List<FacebookLeadResponse> getAll(String status, String source) {
+        boolean noStatus = status == null || status.isBlank() || "all".equalsIgnoreCase(status);
+        boolean noSource = source == null || source.isBlank() || "all".equalsIgnoreCase(source);
+
         List<FacebookLead> leads;
-        if (status == null || status.isBlank() || "all".equals(status)) {
+        if (noStatus && noSource) {
             leads = leadRepository.findAll();
-        } else {
+        } else if (noStatus) {
+            leads = leadRepository.findBySource(source.toUpperCase());
+        } else if (noSource) {
             leads = leadRepository.findByStatus(status);
+        } else {
+            leads = leadRepository.findByStatusAndSource(status, source.toUpperCase());
         }
-        return leads.stream().map(leadMapper::toResponse).toList();
+        return leads.stream()
+                .sorted((a, b) -> {
+                    // Mới nhất lên đầu — BE thường trả theo createdDate desc cho inbox.
+                    if (a.getCreatedDate() == null) return 1;
+                    if (b.getCreatedDate() == null) return -1;
+                    return b.getCreatedDate().compareTo(a.getCreatedDate());
+                })
+                .map(leadMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public FacebookLeadResponse assign(String id, String username) {
+        FacebookLead lead = findById(id);
+        lead.setAssignedTo(username);
+        if (lead.getStatus() == null || "NEW".equals(lead.getStatus())) {
+            lead.setStatus("ASSIGNED");
+        }
+        FacebookLead saved = leadRepository.save(lead);
+        return leadMapper.toResponse(saved);
     }
 
     @Override

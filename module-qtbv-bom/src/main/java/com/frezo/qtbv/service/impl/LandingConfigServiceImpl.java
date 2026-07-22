@@ -42,6 +42,28 @@ public class LandingConfigServiceImpl implements LandingConfigService {
         current.setWorkingHours(config.getWorkingHours());
         current.setNewsletterTitle(config.getNewsletterTitle());
         current.setNewsletterSubtitle(config.getNewsletterSubtitle());
+
+        // ---- SEO / Meta ----
+        current.setSeoTitle(config.getSeoTitle());
+        current.setSeoDescription(config.getSeoDescription());
+        current.setSeoKeywords(config.getSeoKeywords());
+        current.setOgImageUrl(config.getOgImageUrl());
+        current.setFaviconUrl(config.getFaviconUrl());
+        current.setHeroImageUrl(config.getHeroImageUrl());
+        current.setCanonicalUrl(config.getCanonicalUrl());
+
+        // ---- Social links ----
+        current.setFacebookUrl(config.getFacebookUrl());
+        current.setInstagramUrl(config.getInstagramUrl());
+        current.setYoutubeUrl(config.getYoutubeUrl());
+        current.setTiktokUrl(config.getTiktokUrl());
+        current.setZaloUrl(config.getZaloUrl());
+
+        // ---- Analytics ----
+        current.setGtmId(config.getGtmId());
+        current.setGa4Id(config.getGa4Id());
+        current.setFbPixelId(config.getFbPixelId());
+
         return landingConfigRepository.save(current);
     }
 }

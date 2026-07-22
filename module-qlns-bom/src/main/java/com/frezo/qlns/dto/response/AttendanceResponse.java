@@ -11,6 +11,12 @@ public class AttendanceResponse {
     private String id;
     private String contractId;
     private String personId;
+    /** Enriched for admin roster / daily list */
+    private String personName;
+    private String departmentId;
+    private String departmentName;
+    /** OK | LATE | NOT_CHECKED_IN | CHECKED_OUT | ABSENT | … */
+    private String displayStatus;
     private LocalDate attendanceDate;
     private LocalTime checkInTime;
     private Double checkInLatitude;

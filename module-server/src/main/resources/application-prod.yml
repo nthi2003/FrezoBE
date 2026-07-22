@@ -1,0 +1,120 @@
+# =====================================================================
+# PRODUCTION PROFILE
+# =====================================================================
+# Active bằng: SPRING_PROFILES_ACTIVE=prod
+#
+# MỌI env var ở đây PHẢI được set qua secret manager (Vault, AWS Secrets,
+# K8s Secret). KHÔNG hardcode default trong file này — thiếu env sẽ fail-fast.
+# =====================================================================
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}           # jdbc:postgresql://prod-db.internal:5432/frezo
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000        # 5 phút
+      connection-timeout: 30000   # 30s
+      max-lifetime: 1800000       # 30 phút
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      # CẤM 'update' / 'create' / 'create-drop' cho production.
+      # Chỉ 'validate' (schema đúng theo entity) hoặc 'none' (không kiểm tra).
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false           # tắt Open Session in View — chống lazy-load trong controller
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 50          # batch insert / update
+          fetch_size: 100
+        order_inserts: true
+        order_updates: true
+        default_batch_fetch_size: 20   # giảm N+1 cho @ManyToOne LAZY
+
+  flyway:
+    enabled: true                 # BẬT sau khi baseline schema xong (xem db/migration/README.md)
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-migration-naming: true
+    validate-on-migrate: true
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+app:
+  security:
+    jwt:
+      secret: ${APP_SECURITY_JWT_SECRET}    # BẮT BUỘC — không có default → fail-fast
+      expiration: ${APP_SECURITY_JWT_EXPIRATION:3600000}
+      refresh-expiration: ${APP_SECURITY_JWT_REFRESH_EXPIRATION:604800000}
+      issuer: frezo
+      audience: frezo-app-prod
+
+    encryption-key: ${APP_SECURITY_ENCRYPTION_KEY}   # BẮT BUỘC — dùng cho PII field encryption
+
+    check-permission:
+      enabled: true
+      fail-open-on-error: false   # deny khi lỗi (secure default)
+      log-audit: true
+
+  cors:
+    # CẤM ["*"] — whitelist explicit
+    allowed-origins:
+      - https://app.frezo.vn
+      - https://admin.frezo.vn
+    allowed-methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+    allow-credentials: true
+    max-age: 3600
+
+# Actuator — chỉ expose endpoint an toàn cho prod
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: when-authorized
+      probes:
+        enabled: true             # /actuator/health/liveness, /actuator/health/readiness cho K8s
+    metrics:
+      access: read-only
+  metrics:
+    tags:
+      application: frezo-backend
+      env: prod
+
+server:
+  port: ${SERVER_PORT:7410}
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    min-response-size: 1024
+  http2:
+    enabled: true
+  tomcat:
+    max-threads: 200
+    accept-count: 100
+    max-connections: 8192
+
+logging:
+  level:
+    root: INFO
+    com.frezo: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN
+  pattern:
+    # Format chuẩn (thay bằng logback-spring.xml JSON ở Batch E)
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] traceId=%X{traceId:-} user=%X{user:-} %logger{40} - %msg%n"

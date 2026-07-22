@@ -11,6 +11,17 @@ import java.util.Collection;
 import java.util.List;
 
 
+/**
+ * @deprecated Từ v1.1, sử dụng {@link com.frezo.common.response.ApiResponse} + {@link com.frezo.common.response.PageResponse} thay cho wrapper này.
+ * <p>Vấn đề của {@code Response<T>}:
+ * <ul>
+ *   <li>Tồn tại song song với {@code ApiResponse<T>} gây inconsistent API contract giữa các controller.</li>
+ *   <li>Schema khác nhau ({@code statusCode/success/message/messageCode/data/total} vs {@code code/success/message/messageCode/data/total/token/traceId/timestamp/path}).</li>
+ * </ul>
+ * <p>Migration: xem {@code FrezoBE/API_DESIGN_STANDARD.md §11 — Migration checklist}.
+ * <br>Sẽ xoá ở v2.0.
+ */
+@Deprecated(since = "1.1", forRemoval = true)
 @Data
 @Builder
 public class Response<T> {

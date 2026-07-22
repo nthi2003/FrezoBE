@@ -9,6 +9,12 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, String>, JpaSpecificationExecutor<User> {
+
     Optional<User> findByUserName(String userName);
 
+    /**
+     * Resolve username từ personId — dùng bởi Ticket/Payroll/Leave notifications
+     * (nơi entity chỉ giữ personId nhưng notification cần username).
+     */
+    Optional<User> findByPersonId(String personId);
 }

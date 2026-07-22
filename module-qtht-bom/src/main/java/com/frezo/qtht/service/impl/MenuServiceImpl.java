@@ -5,6 +5,7 @@ import com.frezo.auth.entity.UserRole;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.auth.repository.UserRoleRepository;
 import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.qtht.dto.request.MenuSaveRequest;
 import com.frezo.qtht.dto.response.MenuResponse;
 import com.frezo.qtht.entity.Menu;
@@ -44,38 +45,41 @@ public class MenuServiceImpl implements MenuService {
     private final RoleRepository roleRepository;
     private final MenuMapper menuMapper;
 
+    /**
+     * Trả về menu sidebar cho user hiện tại.
+     * <p>
+     * <b>v1.1 fixes (Batch H):</b>
+     * <ul>
+     *   <li>XOÁ backdoor {@code username.equalsIgnoreCase("admin")} → không còn cho phép bất kỳ user tên "admin"
+     *       nào tự động full menu. Muốn full → phải set {@code Person.isAdmin=true} hoặc gán role có code {@code ADMIN}.</li>
+     *   <li>Migrate {@code AppException("exception.user.not_found")} → {@code AppException(QthtErrorCode.USER_NOT_FOUND)}.</li>
+     * </ul>
+     */
     @Override
     @Cacheable(value = CACHE_NAME, key = "#username", unless = "#result == null || #result.isEmpty()")
     public List<MenuResponse> getMenusForUser(String username) {
 
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new AppException("exception.user.not_found", username));
+                .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND, username));
 
+        // 1) SUPER_ADMIN qua Person.isAdmin (bypass tất cả)
         boolean isAdmin = false;
         if (user.getPersonId() != null) {
             isAdmin = personRepository.findByIdAndIsDeletedFalse(user.getPersonId())
-                    .map(person -> {
-                        return Boolean.TRUE.equals(person.getIsAdmin());
-                    })
+                    .map(person -> Boolean.TRUE.equals(person.getIsAdmin()))
                     .orElse(false);
         } else if (user.getEmail() != null) {
             isAdmin = personRepository.findByEmail(user.getEmail())
-                    .map(person -> {
-                        return Boolean.TRUE.equals(person.getIsAdmin());
-                    })
+                    .map(person -> Boolean.TRUE.equals(person.getIsAdmin()))
                     .orElse(false);
         }
-
-        if (!isAdmin && "admin".equalsIgnoreCase(username)) {
-            isAdmin = true;
-        }
-
 
         if (isAdmin) {
             List<Menu> allMenus = menuRepository.findByIsDeletedFalse();
             return menuMapper.toSidebarResponseList(allMenus);
         }
 
+        // 2) User có role ADMIN / SUPER_ADMIN → full menu
         List<UserRole> userRoles = userRoleRepository.findByUserIdAndIsDeletedFalse(user.getId());
         if (userRoles.isEmpty()) {
             return Collections.emptyList();
@@ -91,19 +95,16 @@ public class MenuServiceImpl implements MenuService {
                 .map(com.frezo.qtht.entity.Role::getCode)
                 .toList();
 
+        boolean hasAdminRole = roleCodes.stream()
+                .anyMatch(role -> "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role));
 
-        if (roleCodes.stream()
-                .anyMatch(role -> "ADMIN".equalsIgnoreCase(role) || "SUPER_ADMIN".equalsIgnoreCase(role))) {
-            isAdmin = true;
-        }
-
-        if (isAdmin) {
+        if (hasAdminRole) {
             List<Menu> allMenus = menuRepository.findByIsDeletedFalse();
             return menuMapper.toSidebarResponseList(allMenus);
         }
 
+        // 3) Role thường → build menu theo role_menu mapping
         List<Menu> menus = roleMenuRepository.findMenusByRoleCodes(roleCodes);
-
         return menuMapper.toSidebarResponseList(menus);
     }
 

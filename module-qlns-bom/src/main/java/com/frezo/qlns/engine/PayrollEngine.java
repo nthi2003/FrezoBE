@@ -48,10 +48,19 @@ public class PayrollEngine {
     }
 
     private void calculateGrossPay(PayrollResult result, PayrollInput input) {
-        BigDecimal salaryPerDay = result.getBasicSalary()
-                .divide(BigDecimal.valueOf(result.getStandardDays()), 10, RoundingMode.HALF_UP);
+        // Guard ÷0 / null — tránh ArithmeticException → 500 cả calculate-all batch
+        BigDecimal basic = nonNull(result.getBasicSalary());
+        result.setBasicSalary(basic);
+        int standardDays = result.getStandardDays() != null && result.getStandardDays() > 0
+                ? result.getStandardDays() : 26;
+        result.setStandardDays(standardDays);
+        int hoursPerDay = input.getStandardHoursPerDay() != null && input.getStandardHoursPerDay() > 0
+                ? input.getStandardHoursPerDay() : 8;
+
+        BigDecimal salaryPerDay = basic
+                .divide(BigDecimal.valueOf(standardDays), 10, RoundingMode.HALF_UP);
         BigDecimal salaryPerHour = salaryPerDay
-                .divide(BigDecimal.valueOf(input.getStandardHoursPerDay()), 10, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(hoursPerDay), 10, RoundingMode.HALF_UP);
 
         BigDecimal actualSalary = salaryPerDay.multiply(result.getActualWorkingDays());
         result.setActualSalary(actualSalary);
@@ -88,6 +97,7 @@ public class PayrollEngine {
 
     private void calculateInsurance(PayrollResult result, PayrollInput input) {
         InsuranceConfig ic = input.getInsuranceConfig();
+        // Early-return case: giữ ZERO defaults thay vì null → tránh NPE ở calculateNetPay/calculateTax.
         if (ic == null) return;
 
         BigDecimal insuranceSalary = result.getInsuranceSalary();
@@ -95,9 +105,10 @@ public class PayrollEngine {
             insuranceSalary = ic.getMaxInsuranceSalary();
         }
 
-        BigDecimal si = insuranceSalary.multiply(ic.getSocialInsuranceRate()).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal hi = insuranceSalary.multiply(ic.getHealthInsuranceRate()).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal ui = insuranceSalary.multiply(ic.getUnemploymentInsuranceRate()).setScale(0, RoundingMode.HALF_UP);
+        // Guard từng rate — có config nhưng thiếu 1-2 rate không được crash cả pipeline.
+        BigDecimal si = insuranceSalary.multiply(nonNull(ic.getSocialInsuranceRate())).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal hi = insuranceSalary.multiply(nonNull(ic.getHealthInsuranceRate())).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal ui = insuranceSalary.multiply(nonNull(ic.getUnemploymentInsuranceRate())).setScale(0, RoundingMode.HALF_UP);
 
         result.setSocialInsurance(si);
         result.setHealthInsurance(hi);
@@ -109,7 +120,7 @@ public class PayrollEngine {
         PayrollConfig pc = input.getPayrollConfig();
         if (pc == null || pc.getUnionDueRate() == null) return;
 
-        BigDecimal fee = result.getGrossSalary().multiply(pc.getUnionDueRate()).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal fee = nonNull(result.getGrossSalary()).multiply(pc.getUnionDueRate()).setScale(0, RoundingMode.HALF_UP);
         if (pc.getMaxUnionDue() != null && fee.compareTo(pc.getMaxUnionDue()) > 0) {
             fee = pc.getMaxUnionDue();
         }
@@ -122,22 +133,23 @@ public class PayrollEngine {
 
         TaxConfig baseConfig = taxBrackets.get(0);
 
-        BigDecimal personalDeduction = baseConfig.getPersonalDeduction() != null ? baseConfig.getPersonalDeduction() : BigDecimal.ZERO;
-        BigDecimal dependentDeduction = baseConfig.getDependentDeduction() != null ? baseConfig.getDependentDeduction() : BigDecimal.ZERO;
-        BigDecimal dependentTotal = dependentDeduction.multiply(BigDecimal.valueOf(input.getDependentCount()));
+        BigDecimal personalDeduction = nonNull(baseConfig.getPersonalDeduction());
+        BigDecimal dependentDeduction = nonNull(baseConfig.getDependentDeduction());
+        int dep = input.getDependentCount() != null ? input.getDependentCount() : 0;
+        BigDecimal dependentTotal = dependentDeduction.multiply(BigDecimal.valueOf(dep));
 
-        BigDecimal taxableIncome = result.getGrossSalary()
-                .subtract(result.getTotalInsurance())
+        BigDecimal taxableIncome = nonNull(result.getGrossSalary())
+                .subtract(nonNull(result.getTotalInsurance()))
                 .subtract(personalDeduction)
                 .subtract(dependentTotal)
-                .subtract(result.getUnionFee())
+                .subtract(nonNull(result.getUnionFee()))
                 .max(BigDecimal.ZERO);
 
         result.setTaxableIncome(taxableIncome);
 
         BigDecimal taxAmount = BigDecimal.ZERO;
         for (TaxConfig bracket : taxBrackets) {
-            if (bracket.getFromAmount() == null) continue;
+            if (bracket.getFromAmount() == null || bracket.getRate() == null) continue;
             if (taxableIncome.compareTo(bracket.getFromAmount()) <= 0) break;
 
             BigDecimal bracketIncome;
@@ -155,14 +167,19 @@ public class PayrollEngine {
     }
 
     private void calculateNetPay(PayrollResult result) {
-        BigDecimal totalDeductions = result.getTotalInsurance()
-                .add(result.getTaxIncome())
-                .add(result.getUnionFee())
-                .add(result.getAdvanceDeduction() != null ? result.getAdvanceDeduction() : BigDecimal.ZERO)
-                .add(result.getOtherDeductions() != null ? result.getOtherDeductions() : BigDecimal.ZERO);
+        BigDecimal totalDeductions = nonNull(result.getTotalInsurance())
+                .add(nonNull(result.getTaxIncome()))
+                .add(nonNull(result.getUnionFee()))
+                .add(nonNull(result.getAdvanceDeduction()))
+                .add(nonNull(result.getOtherDeductions()));
 
         result.setTotalDeductions(totalDeductions);
-        result.setNetSalary(result.getGrossSalary().subtract(totalDeductions).max(BigDecimal.ZERO));
+        result.setNetSalary(nonNull(result.getGrossSalary()).subtract(totalDeductions).max(BigDecimal.ZERO));
+    }
+
+    /** Null-safe helper cho phép các nhánh early-return (thiếu config) không làm crash chain tính toán. */
+    private static BigDecimal nonNull(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
     }
 
     @Data
@@ -192,34 +209,36 @@ public class PayrollEngine {
 
     @Data
     public static class PayrollResult {
-        private BigDecimal basicSalary;
-        private BigDecimal insuranceSalary;
-        private Integer standardDays;
-        private Integer workingDays;
-        private BigDecimal actualWorkingDays;
-        private Integer leavesPaid;
-        private Integer leavesUnpaid;
-        private Integer totalLateMinutes;
-        private BigDecimal overtimeHoursNormal;
-        private BigDecimal overtimeHoursWeekend;
-        private BigDecimal overtimeHoursHoliday;
-        private BigDecimal allowance;
-        private BigDecimal bonus;
-        private BigDecimal advanceDeduction;
-        private BigDecimal otherDeductions;
+        private BigDecimal basicSalary          = BigDecimal.ZERO;
+        private BigDecimal insuranceSalary      = BigDecimal.ZERO;
+        private Integer    standardDays         = 26;
+        private Integer    workingDays          = 0;
+        private BigDecimal actualWorkingDays    = BigDecimal.ZERO;
+        private Integer    leavesPaid           = 0;
+        private Integer    leavesUnpaid         = 0;
+        private Integer    totalLateMinutes     = 0;
+        private BigDecimal overtimeHoursNormal  = BigDecimal.ZERO;
+        private BigDecimal overtimeHoursWeekend = BigDecimal.ZERO;
+        private BigDecimal overtimeHoursHoliday = BigDecimal.ZERO;
+        private BigDecimal allowance            = BigDecimal.ZERO;
+        private BigDecimal bonus                = BigDecimal.ZERO;
+        private BigDecimal advanceDeduction     = BigDecimal.ZERO;
+        private BigDecimal otherDeductions      = BigDecimal.ZERO;
 
-        private BigDecimal actualSalary;
-        private BigDecimal overtimePay;
-        private BigDecimal latePenalty;
-        private BigDecimal grossSalary;
-        private BigDecimal socialInsurance;
-        private BigDecimal healthInsurance;
-        private BigDecimal unemploymentInsurance;
-        private BigDecimal totalInsurance;
-        private BigDecimal unionFee;
-        private BigDecimal taxableIncome;
-        private BigDecimal taxIncome;
-        private BigDecimal totalDeductions;
-        private BigDecimal netSalary;
+        // Các chỉ số phát sinh trong pipeline — luôn khởi tạo ZERO để calculateNetPay không NPE
+        // khi 1 trong các nhánh (insurance/union/tax) bị early-return do thiếu config.
+        private BigDecimal actualSalary            = BigDecimal.ZERO;
+        private BigDecimal overtimePay             = BigDecimal.ZERO;
+        private BigDecimal latePenalty             = BigDecimal.ZERO;
+        private BigDecimal grossSalary             = BigDecimal.ZERO;
+        private BigDecimal socialInsurance         = BigDecimal.ZERO;
+        private BigDecimal healthInsurance         = BigDecimal.ZERO;
+        private BigDecimal unemploymentInsurance   = BigDecimal.ZERO;
+        private BigDecimal totalInsurance          = BigDecimal.ZERO;
+        private BigDecimal unionFee                = BigDecimal.ZERO;
+        private BigDecimal taxableIncome           = BigDecimal.ZERO;
+        private BigDecimal taxIncome               = BigDecimal.ZERO;
+        private BigDecimal totalDeductions         = BigDecimal.ZERO;
+        private BigDecimal netSalary               = BigDecimal.ZERO;
     }
 }

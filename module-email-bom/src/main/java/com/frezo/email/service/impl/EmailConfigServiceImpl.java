@@ -48,6 +48,11 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         validateRequest(request);
         EmailConfig emailConfig = emailConfigMapper.toEntity(request);
         emailConfig.setIsDeleted(false);
+        // Bulk/send dùng findByActivatedTrue() — tạo mới mặc định chưa active;
+        // user phải gọi PUT /email/config/{id}/activate (hoặc nút Activate trên UI).
+        if (emailConfig.getActivated() == null) {
+            emailConfig.setActivated(false);
+        }
         EmailConfig saveEmail = emailConfigRepository.save(emailConfig);
         return Response.ok(emailConfigMapper.toResponse(saveEmail));
 

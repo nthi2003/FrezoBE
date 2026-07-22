@@ -13,4 +13,7 @@ public interface UserRoleRepository extends JpaRepository<UserRole, String> {
     List<UserRole> findByUserId(String userId);
 
     List<UserRole> findByUserIdAndIsDeletedFalse(String userId);
+
+    /** Resolve users theo role — dùng ApproverResolver (Approval MVP). */
+    List<UserRole> findByRoleIdAndIsDeletedFalse(String roleId);
 }

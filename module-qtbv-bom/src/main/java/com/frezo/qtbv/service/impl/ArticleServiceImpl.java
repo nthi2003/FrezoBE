@@ -4,6 +4,7 @@ import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.service.CodeSequenceService;
 import com.frezo.qtbv.common.ArticleStatus;
 import com.frezo.qtbv.common.PublishScope;
 import com.frezo.qtbv.config.SecurityHelper;
@@ -28,7 +29,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,21 +53,23 @@ public class ArticleServiceImpl implements ArticleService {
     private static final String ERR_STATUS_INVALID_REVIEW = "article.status.invalid.review";
     private static final String ERR_ARTICLE_NOT_FOUND = "article.not.found";
 
+    private static final DateTimeFormatter ARTICLE_DAY = DateTimeFormatter.BASIC_ISO_DATE;
+
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final SecurityHelper helper;
     private final ArticleRevisionRepository articleRevisionRepository;
+    private final CodeSequenceService codeSequenceService;
 
     @Override
     @Transactional
     public ArticleResponse create(ArticleCreateRequest request) {
-        if (Boolean.TRUE.equals(articleRepository.existsByCode(request.getCode()))) {
-            throw new AppException(ERR_ARTICLE_CODE_EXISTS, HttpStatus.BAD_REQUEST, request.getCode());
-        }
+        String code = resolveArticleCode(request.getCode());
 
         Article article = articleMapper.toEntityFromCreateRequest(request);
         String currentUserId = helper.getCurrentUserId();
 
+        article.setCode(code);
         article.setAuthorId(currentUserId);
         article.setManagerId(request.getManagerId());
         article.setStatus(ArticleStatus.DRAFT);
@@ -80,6 +85,32 @@ public class ArticleServiceImpl implements ArticleService {
         ArticleResponse response = articleMapper.toDto(saved);
         response.setHeartCount(0L);
         return response;
+    }
+
+    /**
+     * Auto-gen {@code QTBV-YYYYMMDD-###} when client omits/blank code (BE-ART-001).
+     * Non-blank client code: trim + upper, reject if duplicate.
+     */
+    private String resolveArticleCode(String rawCode) {
+        if (rawCode != null && !rawCode.isBlank()) {
+            String code = rawCode.trim().toUpperCase();
+            if (Boolean.TRUE.equals(articleRepository.existsByCode(code))) {
+                throw new AppException(ERR_ARTICLE_CODE_EXISTS, HttpStatus.BAD_REQUEST, code);
+            }
+            return code;
+        }
+
+        String dayPrefix = "QTBV-" + LocalDate.now().format(ARTICLE_DAY);
+        // CodeSequenceService → "{prefix}-{###}" e.g. QTBV-20260721-001
+        String generated = codeSequenceService.nextCode(dayPrefix, 3);
+        if (Boolean.TRUE.equals(articleRepository.existsByCode(generated))) {
+            // Rare race with legacy/manual codes — advance seq once more
+            generated = codeSequenceService.nextCode(dayPrefix, 3);
+            if (Boolean.TRUE.equals(articleRepository.existsByCode(generated))) {
+                throw new AppException(ERR_ARTICLE_CODE_EXISTS, HttpStatus.CONFLICT, generated);
+            }
+        }
+        return generated;
     }
 
     @Override

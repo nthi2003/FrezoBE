@@ -19,6 +19,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String>,
 
     List<Attendance> findByPersonIdAndAttendanceDateBetween(String personId, LocalDate from, LocalDate to);
 
+    List<Attendance> findByAttendanceDateAndIsDeletedFalse(LocalDate attendanceDate);
+
     @Query("SELECT COUNT(a) FROM Attendance a WHERE a.personId = :personId " +
            "AND FUNCTION('MONTH', a.attendanceDate) = :month " +
            "AND FUNCTION('YEAR', a.attendanceDate) = :year " +

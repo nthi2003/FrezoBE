@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.JobApplicationRequest;
 import com.frezo.qlns.dto.response.JobApplicationResponse;
 import com.frezo.qlns.service.JobApplicationService;
@@ -59,9 +60,10 @@ public class JobApplicationController {
         return ApiResponse.ok(jobApplicationService.reject(id, reason));
     }
 
-    @Operation(summary = "Hire — chuyển thẳng HIRED (từ OFFER hoặc nội bộ)")
+    @Operation(summary = "Hire — HIRED + (policy A) bắt buộc User+Role trong body")
     @PostMapping("/{id}/hire")
-    public ApiResponse<JobApplicationResponse> hire(@PathVariable String id) {
-        return ApiResponse.ok(jobApplicationService.markHired(id));
+    public ApiResponse<JobApplicationResponse> hire(@PathVariable String id,
+                                                    @RequestBody(required = false) HireRequest hireRequest) {
+        return ApiResponse.ok(jobApplicationService.markHired(id, hireRequest));
     }
 }

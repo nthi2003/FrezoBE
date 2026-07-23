@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.OfferRequest;
 import com.frezo.qlns.dto.response.OfferResponse;
 import com.frezo.qlns.service.OfferService;
@@ -33,10 +34,11 @@ public class OfferController {
         return ApiResponse.ok(offerService.send(id));
     }
 
-    @Operation(summary = "Ứng viên chấp nhận Offer — tự chuyển Application sang HIRED")
+    @Operation(summary = "Ứng viên chấp nhận Offer — auto HIRED (policy A: body User+Role)")
     @PostMapping("/{id}/accept")
-    public ApiResponse<OfferResponse> accept(@PathVariable String id) {
-        return ApiResponse.ok(offerService.accept(id));
+    public ApiResponse<OfferResponse> accept(@PathVariable String id,
+                                             @RequestBody(required = false) HireRequest hireRequest) {
+        return ApiResponse.ok(offerService.accept(id, hireRequest));
     }
 
     @Operation(summary = "Ứng viên từ chối Offer")

@@ -39,7 +39,14 @@ public enum RecruitmentErrorCode implements ErrorCode {
     OFFER_NOT_FOUND("recruitment.offer.not.found", HttpStatus.NOT_FOUND,
             "Offer không tồn tại"),
     OFFER_STATUS_INVALID("recruitment.offer.status.invalid", HttpStatus.CONFLICT,
-            "Offer không ở trạng thái cho phép thao tác này");
+            "Offer không ở trạng thái cho phép thao tác này"),
+
+    /** LNK-06 policy A: thiếu username/password khi hire. */
+    HIRE_USER_REQUIRED("recruitment.hire.user.required", HttpStatus.BAD_REQUEST,
+            "Hire bắt buộc tạo User — gửi username + password (+ roleCode)"),
+    /** LNK-06 policy A: thiếu role. */
+    HIRE_ROLE_REQUIRED("recruitment.hire.role.required", HttpStatus.BAD_REQUEST,
+            "Hire bắt buộc gán Role — gửi roleCode (vd. STAFF)");
 
     private final String key;
     private final HttpStatus status;

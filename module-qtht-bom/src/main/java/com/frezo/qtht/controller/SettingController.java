@@ -30,7 +30,7 @@ public class SettingController {
     @PostMapping
     @CheckPermission(api = "/qtht/setting", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody SettingAddRequest request) {
-        return ApiResponse.success(settingService.add(request));
+        return settingService.add(request);
     }
 
     @Operation(summary = "Cập nhật cấu hình", description = "Cập nhật các flag tính năng cho tổ chức")
@@ -38,7 +38,7 @@ public class SettingController {
     @CheckPermission(api = "/qtht/setting", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody SettingEditRequest request) {
         request.setId(id);
-        return ApiResponse.success(settingService.edit(request));
+        return settingService.edit(request);
     }
 
     @Operation(summary = "Lấy cấu hình theo orgId", description = "Lấy thông tin cấu hình tính năng của một tổ chức cụ thể")

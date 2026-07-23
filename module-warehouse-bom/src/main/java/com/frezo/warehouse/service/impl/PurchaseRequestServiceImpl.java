@@ -21,6 +21,7 @@ import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.service.PurchaseRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +46,10 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
     private final StockAlertRepository alertRepository;
     private final ReorderRuleRepository reorderRuleRepository;
     private final ApprovalCreator approvalCreator;
+
+    /** LNK-05: true = bắt buộc flow PURCHASE_REQUEST; false = bypass DRAFT→APPROVED + badge. */
+    @Value("${warehouse.pr.approval.required:true}")
+    private boolean approvalRequired;
 
     @Override
     @Transactional
@@ -199,6 +204,18 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         if (lines.isEmpty()) {
             throw new AppException(CommonErrorCode.INVALID_REQUEST, "PR chưa có dòng");
         }
+
+        // LNK-05 flag OFF → bypass Approval (FE badge via approvalBypassed)
+        if (!approvalRequired) {
+            pr.setStatus("APPROVED");
+            pr.setSubmittedAt(LocalDateTime.now());
+            pr.setApprovalRequestId(null);
+            PurchaseRequestDto dto = toDto(prRepository.save(pr));
+            dto.setApprovalBypassed(true);
+            log.info("[PR] submit bypass approval (warehouse.pr.approval.required=false) id={}", id);
+            return dto;
+        }
+
         String summary = "PR " + pr.getCode() + " · " + lines.size() + " dòng";
         ApprovalRequest ar = approvalCreator.create(
                 SubjectType.PURCHASE_REQUEST.name(),
@@ -210,7 +227,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         pr.setApprovalRequestId(ar.getId());
         pr.setStatus("PENDING");
         pr.setSubmittedAt(LocalDateTime.now());
-        return toDto(prRepository.save(pr));
+        PurchaseRequestDto dto = toDto(prRepository.save(pr));
+        dto.setApprovalBypassed(false);
+        return dto;
     }
 
     private void saveLines(String prId, List<PurchaseRequestSaveRequest.Line> lines) {

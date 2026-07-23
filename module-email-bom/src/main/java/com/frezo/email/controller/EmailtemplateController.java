@@ -7,7 +7,6 @@ import com.frezo.email.dto.request.SendTestEmailRequest;
 import com.frezo.email.dto.response.EmailTemplateResponse;
 import com.frezo.email.service.EmailService;
 import com.frezo.email.service.EmailtemplateService;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,16 +34,14 @@ public class EmailtemplateController {
     @Operation(summary = "Add new email template")
     @PostMapping("")
     public ResponseEntity<ApiResponse<?>> add(@Valid @RequestBody EmailTemplateRequest request) {
-        Response<?> response = emailTemplateService.add(request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailTemplateService.add(request));
     }
 
     @Operation(summary = "Edit existing email template")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> edit(@PathVariable("id") String id,
             @Valid @RequestBody EmailTemplateRequest request) {
-        Response<?> response = emailTemplateService.edit(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailTemplateService.edit(id, request));
     }
 
     @Operation(summary = "View email template details")

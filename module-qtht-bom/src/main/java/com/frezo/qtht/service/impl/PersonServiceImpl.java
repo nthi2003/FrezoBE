@@ -15,7 +15,7 @@ import com.frezo.qtht.repository.DepartmentRepository;
 import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.PersonService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -75,19 +75,19 @@ public class PersonServiceImpl implements PersonService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public Response<PersonResponse> createPerson(PersonAddRequest request) {
+    public ApiResponse<PersonResponse> createPerson(PersonAddRequest request) {
         validateCodeUniqueness(request.getCode());
 
         Person person = buildPersonFromRequest(request);
         Person savedPerson = personRepository.save(person);
 
         PersonResponse response = personMapper.toResponse(savedPerson);
-        return Response.ok(response);
+        return ApiResponse.ok(response);
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public Response<PersonResponse> updatePerson(String id, PersonUpdateRequest request) {
+    public ApiResponse<PersonResponse> updatePerson(String id, PersonUpdateRequest request) {
         Person person = findPersonById(id);
 
         personMapper.updateEntity(person, request);
@@ -95,7 +95,7 @@ public class PersonServiceImpl implements PersonService {
         setDepartment(person, request.getDepartmentId());
 
         Person saved = personRepository.save(person);
-        return Response.ok(personMapper.toResponse(saved));
+        return ApiResponse.ok(personMapper.toResponse(saved));
     }
 
     @Override

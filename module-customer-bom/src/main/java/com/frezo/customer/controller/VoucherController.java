@@ -2,7 +2,7 @@ package com.frezo.customer.controller;
 
 import com.frezo.customer.entity.Voucher;
 import com.frezo.customer.service.impl.VoucherServiceImpl;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,39 +20,39 @@ public class VoucherController {
 
     @Operation(summary = "Danh sách voucher")
     @GetMapping
-    public Response<?> getAll(
+    public ApiResponse<?> getAll(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String discountType,
             @RequestParam(required = false) Integer pageNumber,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Response.ok(voucherService.getAll(keyword, status, discountType, pageNumber, pageSize));
+        return ApiResponse.ok(voucherService.getAll(keyword, status, discountType, pageNumber, pageSize));
     }
 
     @Operation(summary = "Tạo voucher mới")
     @PostMapping
-    public Response<?> create(@RequestBody Voucher request) {
-        return Response.ok(voucherService.create(request));
+    public ApiResponse<?> create(@RequestBody Voucher request) {
+        return ApiResponse.ok(voucherService.create(request));
     }
 
     @Operation(summary = "Cập nhật voucher")
     @PutMapping("/{id}")
-    public Response<?> update(@PathVariable String id, @RequestBody Voucher request) {
-        return Response.ok(voucherService.update(id, request));
+    public ApiResponse<?> update(@PathVariable String id, @RequestBody Voucher request) {
+        return ApiResponse.ok(voucherService.update(id, request));
     }
 
     @Operation(summary = "Xóa voucher")
     @DeleteMapping("/{id}")
-    public Response<?> delete(@PathVariable String id) {
+    public ApiResponse<?> delete(@PathVariable String id) {
         voucherService.delete(id);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 
     @Operation(summary = "Kiểm tra mã voucher hợp lệ")
     @GetMapping("/validate")
-    public Response<?> validate(
+    public ApiResponse<?> validate(
             @RequestParam String code,
             @RequestParam BigDecimal orderValue) {
-        return Response.ok(voucherService.validate(code, orderValue));
+        return ApiResponse.ok(voucherService.validate(code, orderValue));
     }
 }

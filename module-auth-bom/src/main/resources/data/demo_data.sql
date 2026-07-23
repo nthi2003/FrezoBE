@@ -317,6 +317,17 @@ FROM (VALUES
 ) AS v(code, name, api_key, smtp, port, name_email)
 WHERE NOT EXISTS (SELECT 1 FROM email_configs e WHERE e.code = v.code);
 
+-- LNK-09: upsert — nếu row đã có (activated=false / sai host) → ép activated + MailHog local
+UPDATE email_configs
+SET activated = true,
+    smtp = 'localhost',
+    port = 1025,
+    name_email = COALESCE(NULLIF(name_email, ''), 'noreply@frezo.local'),
+    is_deleted = false,
+    updated_date = NOW(),
+    updated_by = 'system'
+WHERE code = 'MAILHOG_LOCAL';
+
 -- ============================================================
 -- 14) CATEGORY GROUP 'LoaiSanPham' + 8 loại sản phẩm cho trang /loai-san-pham
 -- ============================================================

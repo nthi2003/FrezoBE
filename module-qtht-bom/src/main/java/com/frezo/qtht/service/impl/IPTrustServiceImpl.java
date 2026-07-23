@@ -13,7 +13,7 @@ import com.frezo.qtht.entity.IPTrust;
 import com.frezo.qtht.mapper.IpTrustMapper;
 import com.frezo.qtht.repository.IpTrustRepository;
 import com.frezo.qtht.service.IPTrustService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -53,12 +53,12 @@ public class IPTrustServiceImpl implements IPTrustService {
 
     }
 
-    public Response<IpTrustResponse> add(IpTrustAddRequest request) {
+    public ApiResponse<IpTrustResponse> add(IpTrustAddRequest request) {
 
         validateRequest(request);
         IPTrust ipTrust = ipTrustMapper.toEntity(request);
         IPTrust saveipTrust = ipTrustRepository.save(ipTrust);
-        return Response.ok(ipTrustMapper.toResponse(saveipTrust));
+        return ApiResponse.ok(ipTrustMapper.toResponse(saveipTrust));
 
     }
 
@@ -71,12 +71,12 @@ public class IPTrustServiceImpl implements IPTrustService {
         }
 
     }
-    public Response<IpTrustResponse> edit(String id, IpTrustEditRequest request) {
+    public ApiResponse<IpTrustResponse> edit(String id, IpTrustEditRequest request) {
         IPTrust exist = findEntityById(id);
         validateRequest(request);
         ipTrustMapper.updateEntity(request, exist);
         IPTrust saveipTrust = ipTrustRepository.save(exist);
-        return Response.ok(ipTrustMapper.toResponse(saveipTrust));
+        return ApiResponse.ok(ipTrustMapper.toResponse(saveipTrust));
     }
 
     public IpTrustResponse view (String id) {
@@ -84,10 +84,10 @@ public class IPTrustServiceImpl implements IPTrustService {
         return  ipTrustMapper.toResponse(ipTrust);
     }
 
-    public Response<?> delete(String id) {
+    public ApiResponse<?> delete(String id) {
         IPTrust exits = findEntityById(id);
         exits.setIsDeleted(true);
-        return Response.ok(ipTrustRepository.save(exits));
+        return ApiResponse.ok(ipTrustRepository.save(exits));
     }
     private IPTrust findEntityById(String id) {
         return ipTrustRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));

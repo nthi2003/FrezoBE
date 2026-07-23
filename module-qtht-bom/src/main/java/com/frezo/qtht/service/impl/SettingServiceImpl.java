@@ -13,7 +13,6 @@ import com.frezo.qtht.entity.Setting;
 import com.frezo.qtht.mapper.SettingMapper;
 import com.frezo.qtht.repository.SettingRepository;
 import com.frezo.qtht.service.SettingService;
-import com.frezo.util.web.Response;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

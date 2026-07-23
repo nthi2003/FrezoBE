@@ -6,7 +6,7 @@ import com.frezo.email.entity.EmailGroup;
 import com.frezo.email.mapper.EmailGroupMapper;
 import com.frezo.email.repository.EmailGroupRepository;
 import com.frezo.email.service.EmailGroupService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -32,19 +32,19 @@ public class EmailGroupServiceImpl implements EmailGroupService {
     }
 
     @Override
-    public Response<EmailGroupResponse> create(EmailGroupRequest request) {
+    public ApiResponse<EmailGroupResponse> create(EmailGroupRequest request) {
         EmailGroup entity = emailGroupMapper.toEntity(request);
         entity = emailGroupRepository.save(entity);
-        return Response.ok(emailGroupMapper.toResponse(entity));
+        return ApiResponse.ok(emailGroupMapper.toResponse(entity));
     }
 
     @Override
-    public Response<EmailGroupResponse> update(String id, EmailGroupRequest request) {
+    public ApiResponse<EmailGroupResponse> update(String id, EmailGroupRequest request) {
         EmailGroup entity = emailGroupRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Email group not found: " + id));
         emailGroupMapper.updateEntity(request, entity);
         entity = emailGroupRepository.save(entity);
-        return Response.ok(emailGroupMapper.toResponse(entity));
+        return ApiResponse.ok(emailGroupMapper.toResponse(entity));
     }
 
     @Override

@@ -64,13 +64,12 @@ public class PayrollDataCollector {
     }
 
     /**
-     * HĐ đủ điều kiện tính lương: {@code activated=true} hoặc {@code status=ACTIVE}
-     * (khớp seed/backfill {@code ContractDataInitializer}).
+     * HĐ đủ điều kiện tính lương: {@code activated=true} <b>và</b> {@code status=ACTIVE}
+     * (khớp seed/backfill {@code ContractDataInitializer} + QA-BE-PAY-001).
      */
     public boolean isEligibleContract(Contract c) {
         if (c == null) return false;
-        if (Boolean.TRUE.equals(c.getActivated())) return true;
-        return c.getStatus() == StatusContarct.ACTIVE;
+        return Boolean.TRUE.equals(c.getActivated()) && c.getStatus() == StatusContarct.ACTIVE;
     }
 
     /**

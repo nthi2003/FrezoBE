@@ -35,14 +35,14 @@ public class OrganizationController {
     @PostMapping
     @CheckPermission(api = "/qtht/organization", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody OrganizationAddRequest request) {
-        return ApiResponse.success(organizationService.add(request));
+        return organizationService.add(request);
     }
 
     @Operation(summary = "Cập nhật tổ chức", description = "Cập nhật thông tin của một tổ chức")
     @PutMapping("/{id}")
     @CheckPermission(api = "/qtht/organization", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody OrganizationEditRequest request) {
-        return ApiResponse.success(organizationService.update(id, request));
+        return organizationService.update(id, request);
     }
 
     @Operation(summary = "Xóa tổ chức", description = "Xóa mềm một tổ chức khỏi hệ thống")

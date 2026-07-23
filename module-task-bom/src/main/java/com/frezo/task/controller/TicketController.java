@@ -3,7 +3,7 @@ package com.frezo.task.controller;
 import com.frezo.task.dto.request.TicketRequest;
 import com.frezo.task.dto.response.TicketResponse;
 import com.frezo.task.service.TicketService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,14 +21,14 @@ public class TicketController {
 
     @PostMapping
     @Operation(summary = "Create a new ticket")
-    public Response<TicketResponse> create(@RequestBody TicketRequest request) {
-        return ticketService.create(request);
+    public ApiResponse<TicketResponse> create(@RequestBody TicketRequest request) {
+        return ApiResponse.ok(ticketService.create(request));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing ticket")
-    public Response<TicketResponse> update(@PathVariable String id, @RequestBody TicketRequest request) {
-        return ticketService.update(id, request);
+    public ApiResponse<TicketResponse> update(@PathVariable String id, @RequestBody TicketRequest request) {
+        return ApiResponse.ok(ticketService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -39,25 +39,25 @@ public class TicketController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a ticket by ID")
-    public Response<TicketResponse> findById(@PathVariable String id) {
-        return ticketService.findById(id);
+    public ApiResponse<TicketResponse> findById(@PathVariable String id) {
+        return ApiResponse.ok(ticketService.findById(id));
     }
 
     @GetMapping
     @Operation(summary = "Get all tickets")
-    public Response<List<TicketResponse>> findAll() {
-        return ticketService.findAll();
+    public ApiResponse<List<TicketResponse>> findAll() {
+        return ApiResponse.ok(ticketService.findAll());
     }
 
     @PatchMapping("/{id}/assign/{assigneeId}")
     @Operation(summary = "Assign a ticket to a user")
-    public Response<TicketResponse> assign(@PathVariable String id, @PathVariable String assigneeId) {
-        return ticketService.assignTicket(id, assigneeId);
+    public ApiResponse<TicketResponse> assign(@PathVariable String id, @PathVariable String assigneeId) {
+        return ApiResponse.ok(ticketService.assignTicket(id, assigneeId));
     }
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update ticket status")
-    public Response<TicketResponse> updateStatus(@PathVariable String id, @RequestParam String status) {
-        return ticketService.updateStatus(id, status);
+    public ApiResponse<TicketResponse> updateStatus(@PathVariable String id, @RequestParam String status) {
+        return ApiResponse.ok(ticketService.updateStatus(id, status));
     }
 }

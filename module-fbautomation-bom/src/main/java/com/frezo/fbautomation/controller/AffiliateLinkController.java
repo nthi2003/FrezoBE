@@ -3,7 +3,7 @@ package com.frezo.fbautomation.controller;
 import com.frezo.fbautomation.dto.request.AffiliateLinkRequest;
 import com.frezo.fbautomation.dto.response.AffiliateLinkResponse;
 import com.frezo.fbautomation.service.AffiliateLinkService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,48 +36,48 @@ public class AffiliateLinkController {
     private final AffiliateLinkService service;
 
     @GetMapping
-    public Response<List<AffiliateLinkResponse>> list(
+    public ApiResponse<List<AffiliateLinkResponse>> list(
             @RequestParam(required = false) String campaign,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String kolName) {
-        return Response.ok(service.list(campaign, status, kolName));
+        return ApiResponse.ok(service.list(campaign, status, kolName));
     }
 
     @GetMapping("/{id}")
-    public Response<AffiliateLinkResponse> get(@PathVariable String id) {
-        return Response.ok(service.get(id));
+    public ApiResponse<AffiliateLinkResponse> get(@PathVariable String id) {
+        return ApiResponse.ok(service.get(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo affiliate link mới")
-    public Response<AffiliateLinkResponse> create(@RequestBody @Valid AffiliateLinkRequest req) {
-        return Response.ok(service.create(req));
+    public ApiResponse<AffiliateLinkResponse> create(@RequestBody @Valid AffiliateLinkRequest req) {
+        return ApiResponse.ok(service.create(req));
     }
 
     @PutMapping("/{id}")
-    public Response<AffiliateLinkResponse> update(
+    public ApiResponse<AffiliateLinkResponse> update(
             @PathVariable String id,
             @RequestBody @Valid AffiliateLinkRequest req) {
-        return Response.ok(service.update(id, req));
+        return ApiResponse.ok(service.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public Response<Void> delete(@PathVariable String id) {
+    public ApiResponse<Void> delete(@PathVariable String id) {
         service.delete(id);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 
     @GetMapping("/dashboard")
     @Operation(summary = "Dashboard tổng hợp affiliate")
-    public Response<Map<String, Object>> dashboard() {
-        return Response.ok(service.dashboard());
+    public ApiResponse<Map<String, Object>> dashboard() {
+        return ApiResponse.ok(service.dashboard());
     }
 
     @PostMapping("/{code}/convert")
     @Operation(summary = "Ghi nhận conversion (gọi từ order/lead flow)")
-    public Response<Boolean> recordConversion(
+    public ApiResponse<Boolean> recordConversion(
             @PathVariable String code,
             @RequestParam(required = false) BigDecimal value) {
-        return Response.ok(service.recordConversion(code, value));
+        return ApiResponse.ok(service.recordConversion(code, value));
     }
 }

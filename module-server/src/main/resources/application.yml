@@ -200,3 +200,18 @@ info:
 logging:
   level:
     com.frezo: DEBUG
+
+# ============================================================
+# LNK-05 / LNK-06 — rule cứng (không "có thể")
+# ============================================================
+warehouse:
+  pr:
+    approval:
+      # true = bắt buộc flow PURCHASE_REQUEST; false = bypass DRAFT→APPROVED + approvalBypassed
+      required: ${WAREHOUSE_PR_APPROVAL_REQUIRED:true}
+
+qlns:
+  recruitment:
+    hire:
+      # true = policy A (bắt buộc User+Role khi hire); false = policy B (chỉ Person/stage)
+      require-user-account: ${QLNS_HIRE_REQUIRE_USER_ACCOUNT:true}

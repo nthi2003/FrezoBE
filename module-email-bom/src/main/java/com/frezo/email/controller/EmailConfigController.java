@@ -5,7 +5,6 @@ import com.frezo.email.dto.request.EmailConfigAddRequest;
 import com.frezo.email.dto.request.EmailConfigEditRequest;
 import com.frezo.email.dto.request.EmailConfigFilter;
 import com.frezo.email.service.EmailConfigService;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,16 +30,14 @@ public class EmailConfigController {
     @Operation(summary = "Add new email configuration")
     @PostMapping("")
     public ResponseEntity<ApiResponse<?>> add(@Valid @RequestBody EmailConfigAddRequest request) {
-        Response<?> response = emailConfigService.add(request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailConfigService.add(request));
     }
 
     @Operation(summary = "Edit existing email configuration")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> edit(@PathVariable("id") String id,
             @Valid @RequestBody EmailConfigEditRequest request) {
-        Response<?> response = emailConfigService.edit(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailConfigService.edit(id, request));
     }
 
     @Operation(summary = "Deactivate email configuration")

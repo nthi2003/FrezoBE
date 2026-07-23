@@ -13,7 +13,7 @@ import com.frezo.email.mapper.EmailConfigMapper;
 import com.frezo.email.repository.EmailConfigRepository;
 import com.frezo.email.service.EmailConfigService;
 import com.frezo.email.service.EmailService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -44,7 +44,7 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
     }
 
-    public Response<?> add(EmailConfigAddRequest request) {
+    public ApiResponse<?> add(EmailConfigAddRequest request) {
         validateRequest(request);
         EmailConfig emailConfig = emailConfigMapper.toEntity(request);
         emailConfig.setIsDeleted(false);
@@ -54,16 +54,16 @@ public class EmailConfigServiceImpl implements EmailConfigService {
             emailConfig.setActivated(false);
         }
         EmailConfig saveEmail = emailConfigRepository.save(emailConfig);
-        return Response.ok(emailConfigMapper.toResponse(saveEmail));
+        return ApiResponse.ok(emailConfigMapper.toResponse(saveEmail));
 
     }
 
-    public Response<?> edit(String id, EmailConfigEditRequest request) {
+    public ApiResponse<?> edit(String id, EmailConfigEditRequest request) {
         EmailConfig exist = findEntityById(id);
         validateRequestEdit(id, request);
         emailConfigMapper.updateEntity(request, exist);
         EmailConfig saveEmail = emailConfigRepository.save(exist);
-        return Response.ok(emailConfigMapper.toResponse(saveEmail));
+        return ApiResponse.ok(emailConfigMapper.toResponse(saveEmail));
     }
 
     private Specification<EmailConfig> createSpecification(EmailConfigFilter filter) {
@@ -121,7 +121,13 @@ public class EmailConfigServiceImpl implements EmailConfigService {
     @Transactional
     public void activate(String id) {
         EmailConfig emailConfig = findEntityById(id);
-
+        // LNK-09: chỉ 1 config activated — deactivate các config khác trước
+        for (EmailConfig other : emailConfigRepository.findByActivatedTrue()) {
+            if (!id.equals(other.getId())) {
+                other.setActivated(false);
+                emailConfigRepository.save(other);
+            }
+        }
         emailConfig.setActivated(true);
         emailConfigRepository.save(emailConfig);
     }

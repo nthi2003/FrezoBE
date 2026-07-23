@@ -6,7 +6,7 @@ import com.frezo.fbautomation.entity.FacebookLead;
 import com.frezo.fbautomation.repository.FacebookLeadRepository;
 import com.frezo.fbautomation.service.public_endpoint.PublicLeadRateLimiter;
 import com.frezo.fbautomation.service.public_endpoint.ZaloWebhookVerifier;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -81,7 +81,7 @@ public class PublicLeadController {
      */
     @Operation(summary = "Landing page contact form submit")
     @PostMapping("/leads")
-    public ResponseEntity<Response<Map<String, Object>>> submitLandingLead(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> submitLandingLead(
             @Valid @RequestBody PublicLeadRequest req,
             HttpServletRequest http) {
 
@@ -91,21 +91,21 @@ public class PublicLeadController {
         // ---- Anti-spam checks (fail silently: trả 200 để bot không biết) ----
         if (req.get_hp() != null && !req.get_hp().isBlank()) {
             log.warn("[public-lead] Honeypot triggered ip={} name={}", ip, req.getName());
-            return ResponseEntity.ok(Response.ok(Map.of("ok", true))); // giả success
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("ok", true))); // giả success
         }
         if (req.get_ts() != null && (System.currentTimeMillis() - req.get_ts()) < 1500) {
             log.warn("[public-lead] Submitted too fast ip={} delta={}ms", ip, System.currentTimeMillis() - req.get_ts());
-            return ResponseEntity.ok(Response.ok(Map.of("ok", true))); // giả success
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("ok", true))); // giả success
         }
         if ((req.getPhone() == null || req.getPhone().isBlank())
                 && (req.getEmail() == null || req.getEmail().isBlank())) {
             return ResponseEntity.badRequest().body(
-                    Response.error("Vui lòng cung cấp SĐT hoặc email để chúng tôi liên hệ"));
+                    ApiResponse.error("Vui lòng cung cấp SĐT hoặc email để chúng tôi liên hệ"));
         }
         if (!rateLimiter.allow(ip)) {
             log.warn("[public-lead] Rate limit hit ip={}", ip);
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
-                    Response.error("Bạn gửi quá nhanh, vui lòng thử lại sau vài phút."));
+                    ApiResponse.error("Bạn gửi quá nhanh, vui lòng thử lại sau vài phút."));
         }
 
         FacebookLead lead = FacebookLead.builder()
@@ -134,7 +134,7 @@ public class PublicLeadController {
         result.put("ok", true);
         result.put("id", saved.getId());
         result.put("message", "Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất.");
-        return ResponseEntity.ok(Response.ok(result));
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     /**
@@ -205,7 +205,7 @@ public class PublicLeadController {
 
     @Operation(summary = "Zalo OA webhook — nhận tin nhắn từ khách")
     @PostMapping("/zalo/webhook")
-    public ResponseEntity<Response<Map<String, Object>>> onZaloEvent(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> onZaloEvent(
             @RequestBody Map<String, Object> event,
             @RequestHeader(value = "X-ZEvent-Signature", required = false) String signature,
             HttpServletRequest http) {
@@ -217,13 +217,13 @@ public class PublicLeadController {
         if (!zaloVerifier.verify(event, signature)) {
             log.warn("[zalo-webhook] Invalid signature — reject event");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    Response.error("Invalid signature"));
+                    ApiResponse.error("Invalid signature"));
         }
 
         String eventName = String.valueOf(event.getOrDefault("event_name", ""));
         // Zalo gửi nhiều loại event; chỉ handle "user_send_text" / "user_send_link" thành lead.
         if (!eventName.startsWith("user_send_")) {
-            return ResponseEntity.ok(Response.ok(Map.of("ok", true, "ignored", eventName)));
+            return ResponseEntity.ok(ApiResponse.ok(Map.of("ok", true, "ignored", eventName)));
         }
 
         @SuppressWarnings("unchecked")
@@ -252,7 +252,7 @@ public class PublicLeadController {
         FacebookLead saved = leadRepository.save(lead);
         notifyCskhStaff(saved, "ZALO");
 
-        return ResponseEntity.ok(Response.ok(Map.of("ok", true, "id", saved.getId())));
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("ok", true, "id", saved.getId())));
     }
 
     // ---- Utils ----

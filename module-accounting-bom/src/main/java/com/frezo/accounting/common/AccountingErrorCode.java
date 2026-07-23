@@ -17,6 +17,8 @@ public enum AccountingErrorCode implements ErrorCode {
     PERIOD_NOT_FOUND("accounting.period.not_found", HttpStatus.NOT_FOUND, "Không tìm thấy kỳ kế toán"),
     PERIOD_CLOSED("accounting.period.closed", HttpStatus.CONFLICT, "Kỳ kế toán đã bị khóa, không thể ghi sổ"),
     PERIOD_ALREADY_CLOSED("accounting.period.already_closed", HttpStatus.CONFLICT, "Kỳ kế toán đã ở trạng thái đóng"),
+    PERIOD_LOCKED("accounting.period.locked", HttpStatus.CONFLICT,
+            "Kỳ kế toán đã khóa cứng (LOCKED) — không thể đóng/mở lại từ UI"),
 
     JOURNAL_NOT_FOUND("accounting.journal.not_found", HttpStatus.NOT_FOUND, "Chứng từ không tồn tại"),
     JOURNAL_UNBALANCED("accounting.journal.unbalanced", HttpStatus.BAD_REQUEST, "Tổng phát sinh Nợ khác Có"),

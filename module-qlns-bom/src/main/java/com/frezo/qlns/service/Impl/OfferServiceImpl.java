@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.Impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.OfferRequest;
 import com.frezo.qlns.dto.response.OfferResponse;
 import com.frezo.qlns.entity.JobApplication;
@@ -61,12 +62,18 @@ public class OfferServiceImpl implements OfferService {
     @Override
     @Transactional
     public OfferResponse accept(String id) {
+        return accept(id, null);
+    }
+
+    @Override
+    @Transactional
+    public OfferResponse accept(String id, HireRequest hireRequest) {
         Offer e = requireStatus(id, Set.of(RecruitmentConstants.OFFER_SENT, RecruitmentConstants.OFFER_DRAFT));
         e.setStatus(RecruitmentConstants.OFFER_ACCEPTED);
         e.setRespondedAt(LocalDateTime.now());
         Offer saved = offerRepository.save(e);
-        // Auto chuyển Application → HIRED và (nếu đủ quantity) close Requisition.
-        jobApplicationService.markHired(saved.getApplicationId());
+        // Auto Application → HIRED (LNK-06: kèm HireRequest khi policy A)
+        jobApplicationService.markHired(saved.getApplicationId(), hireRequest);
         return toResponse(saved);
     }
 

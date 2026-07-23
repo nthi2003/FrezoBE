@@ -1,5 +1,6 @@
 package com.frezo.approval.service;
 
+import com.frezo.approval.common.ApprovalErrorCode;
 import com.frezo.approval.entity.ApprovalFlow;
 import com.frezo.approval.entity.ApprovalFlowStep;
 import com.frezo.approval.entity.ApprovalRequest;
@@ -9,7 +10,6 @@ import com.frezo.approval.repository.ApprovalFlowStepRepository;
 import com.frezo.approval.repository.ApprovalRequestRepository;
 import com.frezo.approval.repository.ApprovalStepRepository;
 import com.frezo.common.exception.AppException;
-import com.frezo.common.exception.CommonErrorCode;
 import com.frezo.common.helper.SystemUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -45,7 +45,7 @@ public class ApprovalCreator {
         List<ApprovalFlowStep> templates = flowStepRepository
                 .findByFlowIdAndIsDeletedFalseOrderByStepOrderAsc(flow.getId());
         if (templates.isEmpty()) {
-            throw new AppException(CommonErrorCode.INVALID_REQUEST, "Flow chưa có bước duyệt");
+            throw new AppException(ApprovalErrorCode.FLOW_EMPTY, flow.getCode());
         }
 
         String by = requestedBy != null ? requestedBy : SystemUtils.getCurrentUsername();
@@ -98,16 +98,14 @@ public class ApprovalCreator {
         if (flowId != null && !flowId.isBlank()) {
             return flowRepository.findById(flowId)
                     .filter(f -> Boolean.FALSE.equals(f.getIsDeleted()))
-                    .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Flow không tồn tại"));
+                    .orElseThrow(() -> new AppException(ApprovalErrorCode.FLOW_NOT_FOUND, flowId));
         }
         if (flowCode != null && !flowCode.isBlank()) {
             return flowRepository.findByCodeAndActiveTrueAndIsDeletedFalse(flowCode)
                     .or(() -> flowRepository.findByCodeAndIsDeletedFalse(flowCode))
-                    .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND,
-                            "Không có flow code " + flowCode));
+                    .orElseThrow(() -> new AppException(ApprovalErrorCode.FLOW_NOT_FOUND, flowCode));
         }
         return flowRepository.findFirstBySubjectTypeAndActiveTrueAndIsDeletedFalse(subjectType)
-                .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND,
-                        "Không có flow active cho " + subjectType));
+                .orElseThrow(() -> new AppException(ApprovalErrorCode.FLOW_NOT_FOUND, subjectType));
     }
 }

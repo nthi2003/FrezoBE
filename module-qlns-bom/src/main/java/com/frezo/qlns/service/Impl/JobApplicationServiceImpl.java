@@ -1,6 +1,10 @@
 package com.frezo.qlns.service.Impl;
 
+import com.frezo.auth.dto.request.RegisterRequest;
+import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.exception.AppException;
+import com.frezo.common.exception.QTHTException;
+import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.JobApplicationRequest;
 import com.frezo.qlns.dto.response.JobApplicationResponse;
 import com.frezo.qlns.entity.Candidate;
@@ -12,10 +16,14 @@ import com.frezo.qlns.repository.CandidateRepository;
 import com.frezo.qlns.repository.JobApplicationRepository;
 import com.frezo.qlns.repository.RequisitionRepository;
 import com.frezo.qlns.service.JobApplicationService;
+import com.frezo.qtht.repository.PersonRepository;
+import com.frezo.qtht.service.UserAdminService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -25,22 +33,27 @@ import java.util.Set;
 
 /**
  * CRUD + workflow đơn ứng tuyển.
- * <p>Logic quan trọng:
- * <ul>
- *   <li>Không cho apply mới nếu requisition đã CLOSED / FILLED.</li>
- *   <li>Không cho apply trùng (candidate × requisition đã tồn tại).</li>
- *   <li>Move stage chỉ cho phép theo {@link RecruitmentConstants#STAGE_TRANSITIONS}.</li>
- *   <li>Khi chuyển sang HIRED, nếu tổng HIRED ≥ quantity của requisition → auto FILLED.</li>
- * </ul>
+ * <p>LNK-06: khi {@code qlns.recruitment.hire.require-user-account=true} (policy A),
+ * hire phải kèm User+Role; idempotent nếu username đã có.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobApplicationServiceImpl implements JobApplicationService {
 
+    private static final String APP_CODE = "QTHT";
+    private static final String ERR_USER_ROLE_EXISTS = "exception.userRole.exists";
+
     private final JobApplicationRepository applicationRepository;
     private final RequisitionRepository requisitionRepository;
     private final CandidateRepository candidateRepository;
+    private final UserAdminService userAdminService;
+    private final UserRepository userRepository;
+    private final PersonRepository personRepository;
+
+    /** LNK-06 policy A (default) = bắt buộc User+Role khi hire. */
+    @Value("${qlns.recruitment.hire.require-user-account:true}")
+    private boolean requireUserAccount;
 
     @Override
     @Transactional
@@ -98,6 +111,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             throw new AppException(RecruitmentErrorCode.APPLICATION_STAGE_INVALID,
                     app.getStage(), targetStage);
         }
+        if (RecruitmentConstants.STAGE_HIRED.equals(targetStage) && requireUserAccount) {
+            throw new AppException(RecruitmentErrorCode.HIRE_USER_REQUIRED);
+        }
         app.setStage(targetStage);
         JobApplication saved = applicationRepository.save(app);
         if (RecruitmentConstants.STAGE_HIRED.equals(targetStage)) {
@@ -127,6 +143,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     @Transactional
     public JobApplicationResponse markHired(String id) {
+        return markHired(id, null);
+    }
+
+    @Override
+    @Transactional
+    public JobApplicationResponse markHired(String id, HireRequest hireRequest) {
         JobApplication app = findOrThrow(id);
         if (RecruitmentConstants.STAGE_HIRED.equals(app.getStage())) {
             return toResponseLight(app);
@@ -134,10 +156,64 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         if (Set.of(RecruitmentConstants.STAGE_REJECTED).contains(app.getStage())) {
             throw new AppException(RecruitmentErrorCode.APPLICATION_FINAL_STAGE);
         }
+
+        if (requireUserAccount) {
+            ensureHireUserAccount(app, hireRequest);
+        }
+
         app.setStage(RecruitmentConstants.STAGE_HIRED);
         JobApplication saved = applicationRepository.save(app);
         autoCloseRequisitionIfFilled(saved.getRequisitionId());
         return toResponseLight(saved);
+    }
+
+    /**
+     * Policy A: validate + tạo/gán User+Role. Idempotent nếu username đã tồn tại.
+     */
+    private void ensureHireUserAccount(JobApplication app, HireRequest hire) {
+        if (hire == null
+                || !StringUtils.hasText(hire.getUsername())
+                || !StringUtils.hasText(hire.getPassword())) {
+            throw new AppException(RecruitmentErrorCode.HIRE_USER_REQUIRED);
+        }
+        if (!StringUtils.hasText(hire.getRoleCode())) {
+            throw new AppException(RecruitmentErrorCode.HIRE_ROLE_REQUIRED);
+        }
+
+        Candidate candidate = candidateRepository.findById(app.getCandidateId())
+                .filter(c -> Boolean.FALSE.equals(c.getIsDeleted()))
+                .orElseThrow(() -> new AppException(RecruitmentErrorCode.CANDIDATE_NOT_FOUND, app.getCandidateId()));
+
+        String username = hire.getUsername().trim();
+        String roleCode = hire.getRoleCode().trim();
+
+        if (userRepository.findByUserName(username).isPresent()) {
+            try {
+                userAdminService.assignRole(username, roleCode, APP_CODE);
+            } catch (QTHTException ex) {
+                if (!ERR_USER_ROLE_EXISTS.equals(ex.getMessage())) {
+                    throw ex;
+                }
+            }
+            log.info("[Recruitment] Hire idempotent — reuse user '{}' + role {}", username, roleCode);
+            return;
+        }
+
+        RegisterRequest reg = new RegisterRequest();
+        reg.setUsername(username);
+        reg.setPassword(hire.getPassword());
+        reg.setEmail(candidate.getEmail());
+        reg.setFullname(candidate.getFullName());
+        reg.setDataAction((short) 1);
+        reg.setRoleId(roleCode);
+
+        if (StringUtils.hasText(candidate.getEmail())) {
+            personRepository.findByEmail(candidate.getEmail()).ifPresent(p -> reg.setPersonId(p.getId()));
+        }
+
+        userAdminService.register(reg);
+        log.info("[Recruitment] Hire created user '{}' role {} for candidate {}",
+                username, roleCode, candidate.getId());
     }
 
     private void autoCloseRequisitionIfFilled(String requisitionId) {

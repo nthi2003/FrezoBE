@@ -15,7 +15,7 @@ import com.frezo.qtht.mapper.OrganizationMapper;
 import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.OrganizationService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -62,7 +62,7 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Response<OrganizationResponse> add(OrganizationAddRequest request) {
+    public ApiResponse<OrganizationResponse> add(OrganizationAddRequest request) {
         validateRequest(request);
 
         Organization organization = organizationMapper.toEntity(request);
@@ -82,12 +82,12 @@ public class OrganizationServiceImpl implements OrganizationService {
         settingRequest.setIsSwap(false);
         settingService.add(settingRequest);
 
-        return Response.ok(organizationMapper.toResponse(savedOrg));
+        return ApiResponse.ok(organizationMapper.toResponse(savedOrg));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Response<OrganizationResponse> update(String id, OrganizationEditRequest request) {
+    public ApiResponse<OrganizationResponse> update(String id, OrganizationEditRequest request) {
         Organization organization = findEntityById(id);
 
         validateUpdate(organization, request);
@@ -103,7 +103,7 @@ public class OrganizationServiceImpl implements OrganizationService {
         log.debug("Updating organization: {}", organization.getCode());
         Organization savedOrg = organizationRepository.save(organization);
 
-        return Response.ok(organizationMapper.toResponse(savedOrg));
+        return ApiResponse.ok(organizationMapper.toResponse(savedOrg));
     }
 
     @Override
@@ -117,9 +117,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Response<OrganizationDetailResponse> getById(String id) {
+    public ApiResponse<OrganizationDetailResponse> getById(String id) {
         Organization organization = findEntityById(id);
-        return Response.ok(organizationMapper.toDetailResponse(organization));
+        return ApiResponse.ok(organizationMapper.toDetailResponse(organization));
     }
 
     @Override

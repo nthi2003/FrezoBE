@@ -11,7 +11,7 @@ import com.frezo.qtbv.entity.Category;
 import com.frezo.qtbv.mapper.CategoryMapper;
 import com.frezo.qtbv.repository.CategoryRepository;
 import com.frezo.qtbv.service.CategoryService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
@@ -41,22 +41,22 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Transactional
-    public Response<?> add(CategoryRequest request) {
+    public ApiResponse<?> add(CategoryRequest request) {
         validateRequest(request);
         Category category = categoryMapper.toEntity(request);
         category.setIsDeleted(false);
         Category save = categoryRepository.save(category);
-        return Response.ok(categoryMapper.toResponse(save));
+        return ApiResponse.ok(categoryMapper.toResponse(save));
 
     }
 
     @Transactional
-    public Response<?> edit(String id, CategoryRequest request) {
+    public ApiResponse<?> edit(String id, CategoryRequest request) {
         Category category = findEntityById(id);
         validateRequest(request);
         categoryMapper.updateEntity(request, category);
         Category save  = categoryRepository.save(category);
-        return Response.ok(categoryMapper.toResponse(save));
+        return ApiResponse.ok(categoryMapper.toResponse(save));
     }
 
     public CategoryResponse view (String id) {

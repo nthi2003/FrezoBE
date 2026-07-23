@@ -253,6 +253,9 @@ public class JournalServiceImpl implements JournalService {
     }
 
     private void assertPeriodStatus(FiscalPeriod p) {
+        if (p.getStatus() == PeriodStatus.LOCKED) {
+            throw new AppException(AccountingErrorCode.PERIOD_LOCKED, p.getMonth() + "/" + p.getYear());
+        }
         if (p.getStatus() != PeriodStatus.OPEN) {
             throw new AppException(AccountingErrorCode.PERIOD_CLOSED, p.getMonth() + "/" + p.getYear());
         }

@@ -3,7 +3,7 @@ package com.frezo.fbautomation.controller;
 import com.frezo.fbautomation.dto.request.SocialPostRequest;
 import com.frezo.fbautomation.dto.response.SocialPostResponse;
 import com.frezo.fbautomation.service.SocialPostService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -43,49 +43,49 @@ public class SocialPostController {
 
     @GetMapping
     @Operation(summary = "List bài viết")
-    public Response<List<SocialPostResponse>> list(
+    public ApiResponse<List<SocialPostResponse>> list(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String channel) {
-        return Response.ok(service.list(status, channel));
+        return ApiResponse.ok(service.list(status, channel));
     }
 
     @GetMapping("/{id}")
-    public Response<SocialPostResponse> get(@PathVariable String id) {
-        return Response.ok(service.get(id));
+    public ApiResponse<SocialPostResponse> get(@PathVariable String id) {
+        return ApiResponse.ok(service.get(id));
     }
 
     @PostMapping
     @Operation(summary = "Tạo bản nháp hoặc lên lịch")
-    public Response<SocialPostResponse> create(@RequestBody @Valid SocialPostRequest req) {
-        return Response.ok(service.create(req));
+    public ApiResponse<SocialPostResponse> create(@RequestBody @Valid SocialPostRequest req) {
+        return ApiResponse.ok(service.create(req));
     }
 
     @PutMapping("/{id}")
-    public Response<SocialPostResponse> update(
+    public ApiResponse<SocialPostResponse> update(
             @PathVariable String id,
             @RequestBody @Valid SocialPostRequest req) {
-        return Response.ok(service.update(id, req));
+        return ApiResponse.ok(service.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public Response<Void> delete(@PathVariable String id) {
+    public ApiResponse<Void> delete(@PathVariable String id) {
         service.delete(id);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 
     @PostMapping("/{id}/duplicate")
-    public Response<SocialPostResponse> duplicate(@PathVariable String id) {
-        return Response.ok(service.duplicate(id));
+    public ApiResponse<SocialPostResponse> duplicate(@PathVariable String id) {
+        return ApiResponse.ok(service.duplicate(id));
     }
 
     @PostMapping("/{id}/cancel")
-    public Response<SocialPostResponse> cancel(@PathVariable String id) {
-        return Response.ok(service.cancel(id));
+    public ApiResponse<SocialPostResponse> cancel(@PathVariable String id) {
+        return ApiResponse.ok(service.cancel(id));
     }
 
     @PostMapping("/{id}/publish")
     @Operation(summary = "Publish ngay lập tức (cần Page Access Token)")
-    public Response<SocialPostResponse> publishNow(@PathVariable String id) {
-        return Response.ok(service.publishNow(id));
+    public ApiResponse<SocialPostResponse> publishNow(@PathVariable String id) {
+        return ApiResponse.ok(service.publishNow(id));
     }
 }

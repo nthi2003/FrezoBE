@@ -5,7 +5,7 @@ import com.frezo.qtht.dto.request.PersonFilterRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
 import com.frezo.qtht.dto.response.PersonResponse;
 import com.frezo.qtht.entity.Person;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 
 import java.util.Map;
 import java.util.Optional;
@@ -15,9 +15,9 @@ public interface PersonService {
 
     void delete(String id);
 
-    Response<PersonResponse> createPerson (PersonAddRequest personAddRequest);
+    ApiResponse<PersonResponse> createPerson (PersonAddRequest personAddRequest);
 
-    Response<PersonResponse> updatePerson(String id, PersonUpdateRequest request);
+    ApiResponse<PersonResponse> updatePerson(String id, PersonUpdateRequest request);
     void activate (String id);
 
     void deactivate (String id);

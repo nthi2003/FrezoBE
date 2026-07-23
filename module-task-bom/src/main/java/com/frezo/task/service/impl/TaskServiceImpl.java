@@ -10,7 +10,6 @@ import com.frezo.task.mapper.TaskMapper;
 import com.frezo.task.repository.TagRepository;
 import com.frezo.task.repository.TaskRepository;
 import com.frezo.task.service.TaskService;
-import com.frezo.util.web.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +27,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public Response<TaskResponse> create(TaskRequest request) {
+    public TaskResponse create(TaskRequest request) {
         Task task = taskMapper.toEntity(request);
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -39,12 +38,12 @@ public class TaskServiceImpl implements TaskService {
             task.setStatus(TaskStatusEnum.OPEN);
         }
         Task savedTask = taskRepository.save(task);
-        return Response.ok(taskMapper.toResponse(savedTask));
+        return taskMapper.toResponse(savedTask);
     }
 
     @Override
     @Transactional
-    public Response<TaskResponse> update(String id, TaskRequest request) {
+    public TaskResponse update(String id, TaskRequest request) {
         Task task = findEntityById(id);
         taskMapper.updateEntity(request, task);
         if (request.getTagIds() != null) {
@@ -52,46 +51,46 @@ public class TaskServiceImpl implements TaskService {
             task.setTags(tags);
         }
         Task savedTask = taskRepository.save(task);
-        return Response.ok(taskMapper.toResponse(savedTask));
+        return taskMapper.toResponse(savedTask);
     }
 
     @Override
     @Transactional
-    public Response<Void> delete(String id) {
+    public Void delete(String id) {
         Task task = findEntityById(id);
         task.setIsDeleted(true);
         taskRepository.save(task);
-        return Response.ok();
+        return null;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Response<TaskResponse> findById(String id) {
+    public TaskResponse findById(String id) {
         Task task = findEntityById(id);
-        return Response.ok(taskMapper.toResponse(task));
+        return taskMapper.toResponse(task);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Response<List<TaskResponse>> findAll() {
+    public List<TaskResponse> findAll() {
         List<Task> tasks = taskRepository.findAll().stream()
                 .filter(t -> t.getIsDeleted() == null || !t.getIsDeleted())
                 .collect(Collectors.toList());
-        return Response.ok(taskMapper.toResponseList(tasks));
+        return taskMapper.toResponseList(tasks);
     }
 
     @Override
     @Transactional
-    public Response<TaskResponse> assignTask(String taskId, String assigneeId) {
+    public TaskResponse assignTask(String taskId, String assigneeId) {
         Task task = findEntityById(taskId);
         task.setAssigneeId(assigneeId);
         Task savedTask = taskRepository.save(task);
-        return Response.ok(taskMapper.toResponse(savedTask));
+        return taskMapper.toResponse(savedTask);
     }
 
     @Override
     @Transactional
-    public Response<TaskResponse> updateStatus(String taskId, String status) {
+    public TaskResponse updateStatus(String taskId, String status) {
         Task task = findEntityById(taskId);
         try {
             task.setStatus(TaskStatusEnum.valueOf(status.toUpperCase()));
@@ -99,7 +98,7 @@ public class TaskServiceImpl implements TaskService {
             throw new QTHTException("INVALID_STATUS", "Trạng thái không hợp lệ: " + status);
         }
         Task savedTask = taskRepository.save(task);
-        return Response.ok(taskMapper.toResponse(savedTask));
+        return taskMapper.toResponse(savedTask);
     }
 
     private Task findEntityById(String id) {

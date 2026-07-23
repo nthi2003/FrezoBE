@@ -1,7 +1,6 @@
 package com.frezo.email.repository;
 
 import com.frezo.email.entity.EmailTemplate;
-import com.frezo.util.web.Response;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;

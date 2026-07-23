@@ -10,7 +10,6 @@ import com.frezo.task.entity.Ticket;
 import com.frezo.task.mapper.TicketMapper;
 import com.frezo.task.repository.TicketRepository;
 import com.frezo.task.service.TicketService;
-import com.frezo.util.web.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -52,7 +51,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public Response<TicketResponse> create(TicketRequest request) {
+    public TicketResponse create(TicketRequest request) {
         Ticket ticket = ticketMapper.toEntity(request);
         String currentUser = SystemUtils.getCurrentUsername();
         ticket.setReporterId(currentUser);
@@ -69,12 +68,12 @@ public class TicketServiceImpl implements TicketService {
             notifyAssignment(saved, /*prevAssignee*/ null, currentUser);
         }
 
-        return Response.ok(ticketMapper.toResponse(saved));
+        return ticketMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public Response<TicketResponse> update(String id, TicketRequest request) {
+    public TicketResponse update(String id, TicketRequest request) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
 
@@ -103,7 +102,7 @@ public class TicketServiceImpl implements TicketService {
             notifyStatusChange(saved, oldStatus, currentUser);
         }
 
-        return Response.ok(ticketMapper.toResponse(saved));
+        return ticketMapper.toResponse(saved);
     }
 
     @Override
@@ -116,16 +115,16 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public Response<TicketResponse> findById(String id) {
+    public TicketResponse findById(String id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
-        return Response.ok(ticketMapper.toResponse(ticket));
+        return ticketMapper.toResponse(ticket);
     }
 
     @Override
-    public Response<List<TicketResponse>> findAll() {
+    public List<TicketResponse> findAll() {
         List<Ticket> tickets = ticketRepository.findAll();
-        return Response.ok(ticketMapper.toResponseList(tickets));
+        return ticketMapper.toResponseList(tickets);
     }
 
     // ============================================================
@@ -134,7 +133,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public Response<TicketResponse> updateStatus(String id, String status) {
+    public TicketResponse updateStatus(String id, String status) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
 
@@ -149,7 +148,7 @@ public class TicketServiceImpl implements TicketService {
             if (oldStatus != saved.getStatus()) {
                 notifyStatusChange(saved, oldStatus, SystemUtils.getCurrentUsername());
             }
-            return Response.ok(ticketMapper.toResponse(saved));
+            return ticketMapper.toResponse(saved);
         } catch (IllegalArgumentException e) {
             throw new QTHTException("Invalid ticket status");
         }
@@ -157,7 +156,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     @Transactional
-    public Response<TicketResponse> assignTicket(String id, String assigneeId) {
+    public TicketResponse assignTicket(String id, String assigneeId) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
 
@@ -171,7 +170,7 @@ public class TicketServiceImpl implements TicketService {
         if (!Objects.equals(oldAssigneeId, saved.getAssigneeId())) {
             notifyAssignment(saved, oldAssigneeId, SystemUtils.getCurrentUsername());
         }
-        return Response.ok(ticketMapper.toResponse(saved));
+        return ticketMapper.toResponse(saved);
     }
 
     // ============================================================

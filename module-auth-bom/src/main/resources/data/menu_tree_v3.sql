@@ -1,5 +1,7 @@
 -- ============================================================
 -- SCRIPT: menu_tree_v3 — Domain parents (MODULE_CONSOLIDATION_PLAN)
+-- RUNTIME SSOT (LNK-07 / MENU-01). DataInitializer loads THIS file only.
+-- menu_tree_v2.sql / menu_tree_restructure.sql = DEPRECATED — do not load.
 -- Date: 2026-07-21
 -- Replaces mega-IA v2 (MENU_SALE wrapping Acc/WH).
 --
@@ -132,7 +134,7 @@ UPDATE menu SET parent_code = 'MENU_CRM', order_index = 7, fe_url = '/crm/invoic
 -- === Product (C4 catalog) ===
 UPDATE menu SET parent_code = 'MENU_PRODUCT', order_index = 1, fe_url = '/product',       is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_PRODUCT';
 UPDATE menu SET parent_code = 'MENU_PRODUCT', order_index = 2, fe_url = '/loai-san-pham', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_PRODUCT_CATE';
-UPDATE menu SET parent_code = 'MENU_PRODUCT', order_index = 3, fe_url = '/admin/qlbghd',  is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_BGHD';
+-- QLHT_BGHD: soft-delete (PlaceholderPage dead-end) — LNK-08 / Plan R23
 
 -- === Warehouse (C4 inventory) ===
 UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 1, fe_url = '/warehouse/reorder-rules',     is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_REORDER';
@@ -221,7 +223,9 @@ WHERE app_code = 'QTHT'
       -- attendance settings removed from FE
       'QLHT_ATTEND_SETTING', 'QLHT_ATTENDANCE_SETTING', 'ATTENDANCE_SETTINGS',
       -- category sub-leaves (parent QLHT_CATEGORY is enough)
-      'QLDM_ISSUER', 'QLDM_SIGNER', 'QLDM_TITLE', 'QLDM_LOCATION', 'QLDM_INDUSTRY'
+      'QLDM_ISSUER', 'QLDM_SIGNER', 'QLDM_TITLE', 'QLDM_LOCATION', 'QLDM_INDUSTRY',
+      -- SALE BGHD placeholder (Plan R23 / LNK-08)
+      'QLHT_BGHD'
   )
   AND (is_deleted IS DISTINCT FROM true OR status IS DISTINCT FROM false);
 

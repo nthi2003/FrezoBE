@@ -55,3 +55,39 @@ SELECT
 WHERE NOT EXISTS (
     SELECT 1 FROM roles WHERE code = 'STAFF' AND app_code = 'QTHT'
 );
+
+-- 4. HR (Leave step 2 / ApproverResolver)
+INSERT INTO roles (id, code, name, description, app_code, status, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT
+    gen_random_uuid(),
+    'HR',
+    'Nhân sự',
+    'Duyệt nghỉ phép / hồ sơ nhân sự (Approval LEAVE_STANDARD step 2).',
+    'QTHT',
+    'A',
+    false,
+    NOW(),
+    'system',
+    NOW(),
+    'system'
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles WHERE code = 'HR' AND app_code = 'QTHT'
+);
+
+-- 5. CHIEF_ACC (Payroll period lock step 1)
+INSERT INTO roles (id, code, name, description, app_code, status, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT
+    gen_random_uuid(),
+    'CHIEF_ACC',
+    'Kế toán trưởng',
+    'Duyệt khoá kỳ lương (Approval PAYROLL_PERIOD step 1).',
+    'QTHT',
+    'A',
+    false,
+    NOW(),
+    'system',
+    NOW(),
+    'system'
+WHERE NOT EXISTS (
+    SELECT 1 FROM roles WHERE code = 'CHIEF_ACC' AND app_code = 'QTHT'
+);

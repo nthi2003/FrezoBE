@@ -7,17 +7,17 @@ import com.frezo.qlns.dto.request.ContractFilter;
 import com.frezo.qlns.dto.response.ContractAsginWorkResponse;
 import com.frezo.qlns.dto.response.ContractComboboxResponse;
 import com.frezo.qlns.dto.response.ContractResponse;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 
 import java.util.List;
 import java.util.Map;
 
 public interface ContractService {
-    Response<ContractResponse> edit ( String id , ContractEditRequest request);
-    Response<ContractResponse> add (ContractAddRequest request);
-    Response<?> delete (String id);
+    ApiResponse<ContractResponse> edit ( String id , ContractEditRequest request);
+    ApiResponse<ContractResponse> add (ContractAddRequest request);
+    ApiResponse<?> delete (String id);
     Map<String , Object> all(ContractFilter filter);
-    Response<List<ContractComboboxResponse>> combobox (ContractFilter filter);
+    ApiResponse<List<ContractComboboxResponse>> combobox (ContractFilter filter);
 
     ContractResponse view (String id);
 

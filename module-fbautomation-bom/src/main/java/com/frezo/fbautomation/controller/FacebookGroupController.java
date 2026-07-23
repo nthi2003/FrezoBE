@@ -2,7 +2,7 @@ package com.frezo.fbautomation.controller;
 
 import com.frezo.fbautomation.dto.response.FacebookGroupResponse;
 import com.frezo.fbautomation.service.FacebookGroupService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,21 +20,21 @@ public class FacebookGroupController {
 
     @Operation(summary = "Danh sách groups (lọc theo status)")
     @GetMapping
-    public Response<List<FacebookGroupResponse>> getAll(
+    public ApiResponse<List<FacebookGroupResponse>> getAll(
             @RequestParam(required = false) String status) {
-        return Response.ok(groupService.getAll(status));
+        return ApiResponse.ok(groupService.getAll(status));
     }
 
     @Operation(summary = "Chi tiết group")
     @GetMapping("/{id}")
-    public Response<FacebookGroupResponse> getById(@PathVariable String id) {
-        return Response.ok(groupService.getById(id));
+    public ApiResponse<FacebookGroupResponse> getById(@PathVariable String id) {
+        return ApiResponse.ok(groupService.getById(id));
     }
 
     @Operation(summary = "Xóa group")
     @DeleteMapping("/{id}")
-    public Response<Void> delete(@PathVariable String id) {
+    public ApiResponse<Void> delete(@PathVariable String id) {
         groupService.delete(id);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 }

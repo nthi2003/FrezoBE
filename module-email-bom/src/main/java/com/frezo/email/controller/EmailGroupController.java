@@ -4,7 +4,6 @@ import com.frezo.common.response.ApiResponse;
 import com.frezo.email.dto.request.EmailGroupRequest;
 import com.frezo.email.dto.response.EmailGroupResponse;
 import com.frezo.email.service.EmailGroupService;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,15 +36,13 @@ public class EmailGroupController {
     @Operation(summary = "Create new email group")
     @PostMapping
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody EmailGroupRequest request) {
-        Response<EmailGroupResponse> response = emailGroupService.create(request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailGroupService.create(request));
     }
 
     @Operation(summary = "Update email group")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @Valid @RequestBody EmailGroupRequest request) {
-        Response<EmailGroupResponse> response = emailGroupService.update(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(emailGroupService.update(id, request));
     }
 
     @Operation(summary = "Delete email group")

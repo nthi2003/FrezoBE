@@ -5,7 +5,6 @@ import com.frezo.qtbv.dto.request.CategoryFilter;
 import com.frezo.qtbv.dto.request.CategoryRequest;
 import com.frezo.qtbv.service.CategoryService;
 import com.frezo.common.security.CheckPermission;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,15 +33,13 @@ public class CategoryController {
     @PostMapping
     @CheckPermission(api = "/qtht/category", action = "CREATE")
     public ResponseEntity<ApiResponse<?>> add (@RequestBody CategoryRequest request) {
-        Response<?> response = categoryService.add(request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(categoryService.add(request));
     }
     @Operation(summary = "Chỉnh sửa danh mục", description = "Chỉnh sửa mới danh mục")
     @PutMapping("/{id}")
     @CheckPermission(api = "/qtht/category", action = "EDIT")
     public ResponseEntity<ApiResponse<?>> edit (@PathVariable("id") String id , @RequestBody CategoryRequest request) {
-        Response<?> response = categoryService.edit(id,request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(categoryService.edit(id, request));
     }
     @Operation(summary = "Delete danh mục")
     @DeleteMapping("/{id}")

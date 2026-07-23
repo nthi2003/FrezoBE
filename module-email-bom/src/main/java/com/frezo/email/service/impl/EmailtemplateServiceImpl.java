@@ -12,7 +12,7 @@ import com.frezo.email.entity.EmailTemplate;
 import com.frezo.email.mapper.EmailTemplateMapper;
 import com.frezo.email.repository.EmailTemplateRepository;
 import com.frezo.email.service.EmailtemplateService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,22 +42,22 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
     }
 
     @Transactional
-    public Response<?> add(EmailTemplateRequest request) {
+    public ApiResponse<?> add(EmailTemplateRequest request) {
 
         validateRequest(request);
         EmailTemplate emailTemplate = emailTemplateMapper.toEntity(request);
         emailTemplate.setIsDeleted(false);
         EmailTemplate saveEmail = emailTemplateRepository.save(emailTemplate);
-        return Response.ok(emailTemplateMapper.toResponse(saveEmail));
+        return ApiResponse.ok(emailTemplateMapper.toResponse(saveEmail));
 
     }
     @Transactional
-    public Response<?> edit(String id, EmailTemplateRequest request) {
+    public ApiResponse<?> edit(String id, EmailTemplateRequest request) {
         EmailTemplate exist = findEntityById(id);
         validateRequest(request);
         emailTemplateMapper.updateEntity(request, exist);
         EmailTemplate saveEmail = emailTemplateRepository.save(exist);
-        return Response.ok(emailTemplateMapper.toResponse(saveEmail));
+        return ApiResponse.ok(emailTemplateMapper.toResponse(saveEmail));
     }
 
     public EmailTemplateResponse view (String id) {

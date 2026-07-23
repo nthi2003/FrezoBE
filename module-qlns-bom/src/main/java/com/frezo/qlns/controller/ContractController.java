@@ -8,7 +8,6 @@ import com.frezo.qlns.service.AiExtractionService;
 import com.frezo.qlns.service.ContractService;
 import com.frezo.qlns.service.ContractVersionService;
 import com.frezo.qlns.service.DocumentExtractionService;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -35,19 +34,19 @@ public class ContractController {
     @Operation(summary = "Tạo hợp đồng mới" , description = "Tạo hợp đồng mới")
     @PostMapping
     public ApiResponse<?> createContract(@RequestBody ContractAddRequest request) {
-        return ApiResponse.success(contractService.add(request));
+        return contractService.add(request);
     }
 
     @Operation(summary = "Cập nhật hợp đồng mới" , description = "Cập nhật hợp đồng ")
     @PutMapping("/{id}")
     public ApiResponse<?> updateContract(@PathVariable("id") String id , @RequestBody ContractEditRequest request) {
-        return ApiResponse.success(contractService.edit(id , request));
+        return contractService.edit(id , request);
     }
 
     @Operation(summary = "Xóa hợp đồng", description = "Xóa hợp đồng")
     @DeleteMapping("/{id}")
     public ApiResponse<?> delete(@PathVariable("id") String id) {
-        return ApiResponse.success(contractService.delete(id));
+        return contractService.delete(id);
     }
 
     @Operation(summary = "Lấy danh sách hợp đồng" , description = "Lấy danh sách hợp đồng")
@@ -58,8 +57,8 @@ public class ContractController {
 
     @Operation(summary = "Combobox hợp đồng" , description = "Combobox hợp đồng")
     @GetMapping("/combobox")
-    public ApiResponse<Response<List<ContractComboboxResponse>>> combobox (@ModelAttribute ContractFilter filter) {
-        return ApiResponse.success(contractService.combobox(filter));
+    public ApiResponse<List<ContractComboboxResponse>> combobox (@ModelAttribute ContractFilter filter) {
+        return contractService.combobox(filter);
     }
 
     @Operation(summary = "Xem chi tiết hợp đồng" , description = "Xem chi tiết hợp đồng")

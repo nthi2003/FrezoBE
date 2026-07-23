@@ -3,7 +3,7 @@ package com.frezo.fbautomation.controller;
 import com.frezo.fbautomation.dto.request.FacebookAccountRequest;
 import com.frezo.fbautomation.dto.response.FacebookAccountResponse;
 import com.frezo.fbautomation.service.FacebookAccountService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,40 +22,40 @@ public class FacebookAccountController {
 
     @Operation(summary = "Danh sách tài khoản Facebook")
     @GetMapping
-    public Response<List<FacebookAccountResponse>> getAll() {
-        return Response.ok(accountService.getAll());
+    public ApiResponse<List<FacebookAccountResponse>> getAll() {
+        return ApiResponse.ok(accountService.getAll());
     }
 
     @Operation(summary = "Chi tiết tài khoản")
     @GetMapping("/{id}")
-    public Response<FacebookAccountResponse> getById(@PathVariable String id) {
-        return Response.ok(accountService.getById(id));
+    public ApiResponse<FacebookAccountResponse> getById(@PathVariable String id) {
+        return ApiResponse.ok(accountService.getById(id));
     }
 
     @Operation(summary = "Thêm tài khoản mới")
     @PostMapping
-    public Response<FacebookAccountResponse> create(@Valid @RequestBody FacebookAccountRequest request) {
-        return Response.ok(accountService.create(request));
+    public ApiResponse<FacebookAccountResponse> create(@Valid @RequestBody FacebookAccountRequest request) {
+        return ApiResponse.ok(accountService.create(request));
     }
 
     @Operation(summary = "Cập nhật tài khoản")
     @PutMapping("/{id}")
-    public Response<FacebookAccountResponse> update(@PathVariable String id,
+    public ApiResponse<FacebookAccountResponse> update(@PathVariable String id,
                                                      @Valid @RequestBody FacebookAccountRequest request) {
-        return Response.ok(accountService.update(id, request));
+        return ApiResponse.ok(accountService.update(id, request));
     }
 
     @Operation(summary = "Xóa tài khoản")
     @DeleteMapping("/{id}")
-    public Response<Void> delete(@PathVariable String id) {
+    public ApiResponse<Void> delete(@PathVariable String id) {
         accountService.delete(id);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 
     @Operation(summary = "Cập nhật cookie")
     @PutMapping("/{id}/cookie")
-    public Response<Void> updateCookie(@PathVariable String id, @RequestBody String cookie) {
+    public ApiResponse<Void> updateCookie(@PathVariable String id, @RequestBody String cookie) {
         accountService.updateCookie(id, cookie);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 }

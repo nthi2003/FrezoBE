@@ -7,7 +7,6 @@ import com.frezo.task.entity.Tag;
 import com.frezo.task.mapper.TagMapper;
 import com.frezo.task.repository.TagRepository;
 import com.frezo.task.service.TagService;
-import com.frezo.util.web.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,45 +24,45 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional
-    public Response<TagResponse> add(TagRequest request) {
+    public TagResponse add(TagRequest request) {
         validateRequest(request);
         Tag tag = tagMapper.toEntity(request);
         tag.setIsDeleted(false);
         Tag savedTag = tagRepository.save(tag);
-        return Response.ok(tagMapper.toResponse(savedTag));
+        return tagMapper.toResponse(savedTag);
     }
 
     @Override
     @Transactional
-    public Response<TagResponse> edit(String id, TagRequest request) {
+    public TagResponse edit(String id, TagRequest request) {
         Tag exist = findEntityById(id);
         if (!Objects.equals(exist.getCode(), request.getCode())) {
             validateRequest(request);
         }
         tagMapper.updateEntity(request, exist);
         Tag savedTag = tagRepository.save(exist);
-        return Response.ok(tagMapper.toResponse(savedTag));
+        return tagMapper.toResponse(savedTag);
     }
 
     @Override
     @Transactional
-    public Response<Void> delete(String id) {
+    public Void delete(String id) {
         Tag tag = findEntityById(id);
         tag.setIsDeleted(true);
         tagRepository.save(tag);
-        return Response.ok();
+        return null;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Response<List<TagResponse>> findAll(String category) {
+    public List<TagResponse> findAll(String category) {
         List<Tag> tags;
         if (category != null && !category.isBlank()) {
             tags = tagRepository.findByCategoryAndIsDeletedFalse(category);
         } else {
             tags = tagRepository.findAll();
         }
-        return Response.ok(tagMapper.toResponseList(tags));
+        return tagMapper.toResponseList(tags);
     }
 
     private void validateRequest(TagRequest request) {

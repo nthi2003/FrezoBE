@@ -21,7 +21,7 @@ import com.frezo.qlns.repository.ContractHisRepository;
 import com.frezo.qlns.repository.ContractRepository;
 import com.frezo.qlns.service.ContractService;
 import com.frezo.qlns.service.ContractVersionService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -71,7 +71,7 @@ public class ContractServiceImpl implements ContractService {
         return specification;
     }
 
-    public Response<com.frezo.qlns.dto.response.ContractResponse> add(ContractAddRequest request) {
+    public ApiResponse<com.frezo.qlns.dto.response.ContractResponse> add(ContractAddRequest request) {
         validateRequest(request);
         Contract contract = contractMapper.toEntity(request);
         contract.setIsDeleted(false);
@@ -82,25 +82,25 @@ public class ContractServiceImpl implements ContractService {
         contractHistoryRepository.save(contractHistory);
         contractVersionService.createVersion(savedContract, "CONTRACT_DONE", "Hồ sơ đã được tạo thành công");
 
-        return Response.ok(contractMapper.toResponse(savedContract));
+        return ApiResponse.ok(contractMapper.toResponse(savedContract));
     }
 
-    public Response<List<com.frezo.qlns.dto.response.ContractComboboxResponse>> combobox(ContractFilter filter) {
+    public ApiResponse<List<com.frezo.qlns.dto.response.ContractComboboxResponse>> combobox(ContractFilter filter) {
         Specification<Contract> specification = createSpecification(filter);
         if (!Boolean.TRUE.equals(filter.getIsDelete())) {
             specification = specification.and(GenericSpecification.hasFieldIs("activated", Boolean.TRUE));
         }
         List<Contract> contracts = contractRepository.findAll(specification);
-        return Response.ok(contractMapper.toListComboboxResponse(contracts));
+        return ApiResponse.ok(contractMapper.toListComboboxResponse(contracts));
     }
 
-    public Response<com.frezo.qlns.dto.response.ContractResponse> edit(String id, ContractEditRequest request) {
+    public ApiResponse<com.frezo.qlns.dto.response.ContractResponse> edit(String id, ContractEditRequest request) {
         Contract exist = findEntityById(id);
         validateRequest(request);
         contractMapper.updateEntity(request, exist);
         Contract saveContract = contractRepository.save(exist);
         contractVersionService.createVersion(saveContract, "CONTRACT_UPDATE", "Hồ sơ đã được cập nhật thành công");
-        return Response.ok(contractMapper.toResponse(saveContract));
+        return ApiResponse.ok(contractMapper.toResponse(saveContract));
     }
 
     private void validateRequest(ContractAddRequest request) {
@@ -113,10 +113,10 @@ public class ContractServiceImpl implements ContractService {
         return contractRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));
     }
 
-    public Response<?> delete(String id) {
+    public ApiResponse<?> delete(String id) {
         Contract exits = findEntityById(id);
         exits.setIsDeleted(true);
-        return Response.ok(contractRepository.save(exits));
+        return ApiResponse.ok(contractRepository.save(exits));
     }
 
     public com.frezo.qlns.dto.response.ContractResponse view(String id) {

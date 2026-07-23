@@ -2,7 +2,7 @@ package com.frezo.fbautomation.controller;
 
 import com.frezo.fbautomation.dto.response.LeadImportBatchResponse;
 import com.frezo.fbautomation.service.LeadImportService;
-import com.frezo.util.web.Response;
+import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,29 +38,29 @@ public class LeadImportController {
 
     @Operation(summary = "Upload file CSV/Excel để tạo lead hàng loạt")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Response<LeadImportBatchResponse> importFile(
+    public ApiResponse<LeadImportBatchResponse> importFile(
             @RequestPart("file") MultipartFile file,
             @RequestParam(required = false) String source,
             @RequestParam(defaultValue = "true") boolean dedupe) {
-        return Response.ok(importService.importLeads(file, source, dedupe));
+        return ApiResponse.ok(importService.importLeads(file, source, dedupe));
     }
 
     @Operation(summary = "Preview 20 dòng đầu để check format")
     @PostMapping(value = "/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Response<List<List<String>>> preview(@RequestPart("file") MultipartFile file) {
-        return Response.ok(importService.preview(file));
+    public ApiResponse<List<List<String>>> preview(@RequestPart("file") MultipartFile file) {
+        return ApiResponse.ok(importService.preview(file));
     }
 
     @Operation(summary = "Lịch sử các batch đã upload")
     @GetMapping("/history")
-    public Response<List<LeadImportBatchResponse>> history() {
-        return Response.ok(importService.history());
+    public ApiResponse<List<LeadImportBatchResponse>> history() {
+        return ApiResponse.ok(importService.history());
     }
 
     @Operation(summary = "Rollback batch — soft-delete tất cả lead con")
     @DeleteMapping("/{batchId}")
-    public Response<Void> rollback(@PathVariable String batchId) {
+    public ApiResponse<Void> rollback(@PathVariable String batchId) {
         importService.rollback(batchId);
-        return Response.ok();
+        return ApiResponse.ok();
     }
 }

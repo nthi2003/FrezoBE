@@ -6,7 +6,6 @@ import com.frezo.qtht.dto.request.IpTrustEditRequest;
 import com.frezo.qtht.dto.request.IpTrustFilter;
 import com.frezo.qtht.dto.response.IpTrustResponse;
 import com.frezo.qtht.service.IPTrustService;
-import com.frezo.util.web.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -33,8 +32,7 @@ public class IPTrustController {
     @Operation(summary = "Thêm mới ip vào white list", description = "Thêm mới một địa chỉ IP cùng tên mô tả vào hệ thống")
     @PostMapping
     public ResponseEntity<ApiResponse<IpTrustResponse>> add(@Valid @RequestBody IpTrustAddRequest request) {
-        Response<IpTrustResponse> response = ipTrustService.add(request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(ipTrustService.add(request));
     }
 
     @Operation(summary = "Chỉnh sửa thông tin ip", description = "Cập nhật tên hoặc số IP hiện có trong danh sách")
@@ -42,8 +40,7 @@ public class IPTrustController {
     public ResponseEntity<ApiResponse<IpTrustResponse>> edit(
             @PathVariable String id,
             @Valid @RequestBody IpTrustEditRequest request) {
-        Response<IpTrustResponse> response = ipTrustService.edit(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+        return ResponseEntity.ok(ipTrustService.edit(id, request));
     }
 
     @Operation(summary = "Chi tiết white list ip", description = "Lấy thông tin chi tiết một IP dựa trên ID")
@@ -54,8 +51,7 @@ public class IPTrustController {
 
     @Operation(summary = "Xóa ip khỏi white list", description = "Thực hiện xóa (soft delete) địa chỉ IP khỏi danh sách trắng")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id) {
-        Response<?> response = ipTrustService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success(response.getData(), response.getMessage()));
+    public ResponseEntity<ApiResponse<?>> delete(@PathVariable String id) {
+        return ResponseEntity.ok(ipTrustService.delete(id));
     }
 }

@@ -9,6 +9,7 @@ import com.frezo.accounting.repository.FiscalPeriodRepository;
 import com.frezo.accounting.repository.FiscalYearRepository;
 import com.frezo.accounting.service.FiscalPeriodService;
 import com.frezo.common.exception.AppException;
+import com.frezo.common.helper.SystemUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,11 +90,15 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
     public FiscalPeriodResponse closePeriod(String periodId) {
         FiscalPeriod p = periodRepo.findById(periodId)
                 .orElseThrow(() -> new AppException(AccountingErrorCode.PERIOD_NOT_FOUND, periodId));
-        if (p.getStatus() == PeriodStatus.CLOSED || p.getStatus() == PeriodStatus.LOCKED) {
+        if (p.getStatus() == PeriodStatus.LOCKED) {
+            throw new AppException(AccountingErrorCode.PERIOD_LOCKED);
+        }
+        if (p.getStatus() == PeriodStatus.CLOSED) {
             throw new AppException(AccountingErrorCode.PERIOD_ALREADY_CLOSED);
         }
         p.setStatus(PeriodStatus.CLOSED);
         p.setClosedAt(LocalDateTime.now());
+        p.setClosedBy(SystemUtils.getCurrentUsername());
         return toResponse(periodRepo.save(p));
     }
 
@@ -103,7 +108,7 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
         FiscalPeriod p = periodRepo.findById(periodId)
                 .orElseThrow(() -> new AppException(AccountingErrorCode.PERIOD_NOT_FOUND, periodId));
         if (p.getStatus() == PeriodStatus.LOCKED) {
-            throw new AppException(AccountingErrorCode.PERIOD_ALREADY_CLOSED);
+            throw new AppException(AccountingErrorCode.PERIOD_LOCKED);
         }
         p.setStatus(PeriodStatus.OPEN);
         p.setClosedAt(null);

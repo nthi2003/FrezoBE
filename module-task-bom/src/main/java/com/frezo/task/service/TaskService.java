@@ -2,22 +2,21 @@ package com.frezo.task.service;
 
 import com.frezo.task.dto.request.TaskRequest;
 import com.frezo.task.dto.response.TaskResponse;
-import com.frezo.util.web.Response;
 
 import java.util.List;
 
 public interface TaskService {
-    Response<TaskResponse> create(TaskRequest request);
+    TaskResponse create(TaskRequest request);
 
-    Response<TaskResponse> update(String id, TaskRequest request);
+    TaskResponse update(String id, TaskRequest request);
 
-    Response<Void> delete(String id);
+    Void delete(String id);
 
-    Response<TaskResponse> findById(String id);
+    TaskResponse findById(String id);
 
-    Response<List<TaskResponse>> findAll();
+    List<TaskResponse> findAll();
 
-    Response<TaskResponse> assignTask(String taskId, String assigneeId);
+    TaskResponse assignTask(String taskId, String assigneeId);
 
-    Response<TaskResponse> updateStatus(String taskId, String status);
+    TaskResponse updateStatus(String taskId, String status);
 }

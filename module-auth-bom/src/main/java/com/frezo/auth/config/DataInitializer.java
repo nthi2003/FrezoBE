@@ -266,8 +266,9 @@ public class DataInitializer implements CommandLineRunner {
         log.info("=== SEEDING MENU DATA (core + extended) ===");
         safeExecute("classpath:data/menu_data.sql", "menu_data");
         safeExecute("classpath:data/menu_data_extended.sql", "menu_data_extended");
-        // v3: domain parents (HR / CRM / Product / Warehouse / Accounting /
-        // Approval / Task / Growth / QTHT) — see docs/BE_MENU_REGROUP_PLAN.md
+        // LNK-07 / MENU-01 SSOT: ONLY menu_tree_v3.sql (9 domain parents).
+        // Do NOT load menu_tree_v2.sql / menu_tree_restructure.sql (DEPRECATED archive).
+        // See PLAN_LINKAGE_USABILITY.md LNK-07 · docs/BE_MENU_REGROUP_PLAN.md
         safeExecute("classpath:data/menu_tree_v3.sql", "menu_tree_v3");
 
         log.info("=== SEEDING ROLE DATA ===");
@@ -374,6 +375,9 @@ public class DataInitializer implements CommandLineRunner {
             ensureUserWithPerson(d.username(), "123456", d.displayName(), d.email(), false);
             linkUserToRole(d.username(), d.roleCode(), "QTHT");
         }
+        // LNK-05: ApprovalFlowSeed steps HR / CHIEF_ACC need resolvable users
+        linkUserToRole("maitt", "HR", "QTHT");
+        linkUserToRole("loanbt", "CHIEF_ACC", "QTHT");
         log.info(">>> Demo login users ready: {} accounts, password '123456'.", demos.size());
     }
 

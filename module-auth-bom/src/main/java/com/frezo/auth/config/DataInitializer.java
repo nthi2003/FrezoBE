@@ -54,6 +54,11 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
+            // 0. Schema guard: password column phải ≥ 100 (DelegatingPasswordEncoder = "{bcrypt}" + 60).
+            // Hibernate ddl-auto=update KHÔNG widen cột cũ → rehash bị fail (varchar(50)) và password
+            // plain text còn lại → login lỗi "no PasswordEncoder mapped for the id null".
+            ensurePasswordColumnWidth();
+
             // 1. Seed 2 built-in super users: admin + superadmin (Person.isAdmin=true)
             ensureUserWithPerson("admin", "123456", "Administrator", "admin@frezo.com", true);
             ensureUserWithPerson("superadmin", "123456", "Super Administrator", "superadmin@frezo.com", true);
@@ -86,6 +91,34 @@ public class DataInitializer implements CommandLineRunner {
             seedDemoLoginUsers();
         } catch (Exception e) {
             log.error("DataInitializer failed", e);
+        }
+    }
+
+    // =====================================================================
+    // Schema guard
+    // =====================================================================
+
+    /**
+     * Đảm bảo {@code users.password} đủ rộng cho hash {@code {bcrypt}$2a$10$...} (~68 chars).
+     * Idempotent — no-op nếu cột đã ≥ 255.
+     */
+    private void ensurePasswordColumnWidth() {
+        try {
+            Integer maxLen = jdbcTemplate.queryForObject(
+                    """
+                    SELECT character_maximum_length
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'users'
+                      AND column_name = 'password'
+                    """,
+                    Integer.class);
+            if (maxLen != null && maxLen < 255) {
+                jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password TYPE varchar(255)");
+                log.info(">>> Widened users.password varchar({}) → varchar(255) for BCrypt hashes", maxLen);
+            }
+        } catch (Exception e) {
+            log.warn("ensurePasswordColumnWidth skipped: {}", e.getMessage());
         }
     }
 

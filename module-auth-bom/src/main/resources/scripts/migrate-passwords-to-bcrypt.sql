@@ -20,6 +20,10 @@
 
 BEGIN;
 
+-- PREREQUISITE: cột password phải đủ rộng (~68 chars cho {bcrypt}$2a$10$...).
+-- Nếu còn varchar(50), DataInitializer/rehash sẽ FAIL và password plain text còn nguyên.
+ALTER TABLE users ALTER COLUMN password TYPE varchar(255);
+
 -- Chỉ update user có password chưa có prefix (bỏ qua nếu đã migrate)
 UPDATE users
 SET password = '{noop}' || password

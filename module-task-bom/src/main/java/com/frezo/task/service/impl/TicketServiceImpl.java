@@ -3,6 +3,8 @@ package com.frezo.task.service.impl;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.repository.CommentAttachmentRepository;
+import com.frezo.common.repository.CommentRepository;
 import com.frezo.common.service.NotificationService;
 import com.frezo.task.dto.request.TicketRequest;
 import com.frezo.task.dto.response.TicketResponse;
@@ -17,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -30,7 +34,7 @@ import java.util.UUID;
  *   <li><b>Người giao (reporter)</b> — luôn được thông báo khi ticket đổi trạng thái, để nắm tình hình.</li>
  *   <li><b>Người xử lý (assignee)</b> — được thông báo khi ticket được giao cho họ, hoặc khi có action ngoài họ.</li>
  * </ul>
- * Notification bao gồm deep-link {@code /tasks?ticketId=...} để FE navigate ngay khi click.
+ * Notification bao gồm deep-link {@code /task/tickets?ticketId=...} để FE navigate ngay khi click.
  */
 @Slf4j
 @Service
@@ -38,12 +42,15 @@ import java.util.UUID;
 public class TicketServiceImpl implements TicketService {
 
     private static final String TICKET_ENTITY = "TICKET";
-    private static final String ACTION_URL_PREFIX = "/tasks?ticketId=";
+    private static final String SUBJECT_TYPE_TICKET = "TICKET";
+    private static final String ACTION_URL_PREFIX = "/task/tickets?ticketId=";
 
     private final TicketRepository ticketRepository;
     private final TicketMapper ticketMapper;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final CommentAttachmentRepository commentAttachmentRepository;
 
     // ============================================================
     // CRUD
@@ -68,7 +75,7 @@ public class TicketServiceImpl implements TicketService {
             notifyAssignment(saved, /*prevAssignee*/ null, currentUser);
         }
 
-        return ticketMapper.toResponse(saved);
+        return enrichCounts(ticketMapper.toResponse(saved));
     }
 
     @Override
@@ -81,7 +88,13 @@ public class TicketServiceImpl implements TicketService {
         Ticket.TicketStatus oldStatus = ticket.getStatus();
         String oldAssigneeId = ticket.getAssigneeId();
 
+        // Partial update: null trong request KHÔNG ghi đè (mapper IGNORE).
         ticketMapper.updateEntityFromRequest(request, ticket);
+
+        // intentional clear: client gửi "" / blank → unassign (khác với omit/null = giữ nguyên)
+        if (request.getAssigneeId() != null && request.getAssigneeId().isBlank()) {
+            ticket.setAssigneeId(null);
+        }
 
         if (ticket.getStatus() == Ticket.TicketStatus.RESOLVED || ticket.getStatus() == Ticket.TicketStatus.CLOSED) {
             if (ticket.getResolvedAt() == null) {
@@ -102,7 +115,7 @@ public class TicketServiceImpl implements TicketService {
             notifyStatusChange(saved, oldStatus, currentUser);
         }
 
-        return ticketMapper.toResponse(saved);
+        return enrichCounts(ticketMapper.toResponse(saved));
     }
 
     @Override
@@ -118,13 +131,15 @@ public class TicketServiceImpl implements TicketService {
     public TicketResponse findById(String id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
-        return ticketMapper.toResponse(ticket);
+        return enrichCounts(ticketMapper.toResponse(ticket));
     }
 
     @Override
     public List<TicketResponse> findAll() {
         List<Ticket> tickets = ticketRepository.findAll();
-        return ticketMapper.toResponseList(tickets);
+        List<TicketResponse> responses = ticketMapper.toResponseList(tickets);
+        enrichCountsBatch(responses);
+        return responses;
     }
 
     // ============================================================
@@ -148,7 +163,7 @@ public class TicketServiceImpl implements TicketService {
             if (oldStatus != saved.getStatus()) {
                 notifyStatusChange(saved, oldStatus, SystemUtils.getCurrentUsername());
             }
-            return ticketMapper.toResponse(saved);
+            return enrichCounts(ticketMapper.toResponse(saved));
         } catch (IllegalArgumentException e) {
             throw new QTHTException("Invalid ticket status");
         }
@@ -170,7 +185,51 @@ public class TicketServiceImpl implements TicketService {
         if (!Objects.equals(oldAssigneeId, saved.getAssigneeId())) {
             notifyAssignment(saved, oldAssigneeId, SystemUtils.getCurrentUsername());
         }
-        return ticketMapper.toResponse(saved);
+        return enrichCounts(ticketMapper.toResponse(saved));
+    }
+
+    // ============================================================
+    // Comment / attachment aggregates (board card counts)
+    // ============================================================
+
+    private TicketResponse enrichCounts(TicketResponse response) {
+        if (response == null || response.getId() == null) return response;
+        long comments = commentRepository.countUserComments(SUBJECT_TYPE_TICKET, response.getId());
+        response.setCommentCount((int) comments);
+        Map<String, Integer> att = attachmentCountsFor(List.of(response.getId()));
+        response.setAttachmentCount(att.getOrDefault(response.getId(), 0));
+        return response;
+    }
+
+    private void enrichCountsBatch(List<TicketResponse> responses) {
+        if (responses == null || responses.isEmpty()) return;
+        List<String> ids = responses.stream()
+                .map(TicketResponse::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        if (ids.isEmpty()) return;
+
+        Map<String, Integer> commentCounts = new HashMap<>();
+        for (Object[] row : commentRepository.countUserCommentsGrouped(SUBJECT_TYPE_TICKET, ids)) {
+            if (row == null || row.length < 2 || row[0] == null) continue;
+            commentCounts.put(String.valueOf(row[0]), ((Number) row[1]).intValue());
+        }
+        Map<String, Integer> attachmentCounts = attachmentCountsFor(ids);
+
+        for (TicketResponse r : responses) {
+            r.setCommentCount(commentCounts.getOrDefault(r.getId(), 0));
+            r.setAttachmentCount(attachmentCounts.getOrDefault(r.getId(), 0));
+        }
+    }
+
+    private Map<String, Integer> attachmentCountsFor(List<String> ticketIds) {
+        Map<String, Integer> out = new HashMap<>();
+        if (ticketIds == null || ticketIds.isEmpty()) return out;
+        for (Object[] row : commentAttachmentRepository.countBySubjectIds(SUBJECT_TYPE_TICKET, ticketIds)) {
+            if (row == null || row.length < 2 || row[0] == null) continue;
+            out.put(String.valueOf(row[0]), ((Number) row[1]).intValue());
+        }
+        return out;
     }
 
     // ============================================================

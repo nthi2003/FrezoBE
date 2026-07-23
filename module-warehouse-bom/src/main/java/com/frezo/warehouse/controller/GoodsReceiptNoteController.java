@@ -3,11 +3,13 @@ package com.frezo.warehouse.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.warehouse.dto.request.GrnConfirmRequest;
 import com.frezo.warehouse.dto.request.GrnCreateRequest;
+import com.frezo.warehouse.service.DocumentPrintService;
 import com.frezo.warehouse.service.GoodsReceiptNoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class GoodsReceiptNoteController {
 
     private final GoodsReceiptNoteService grnService;
+    private final DocumentPrintService documentPrintService;
 
     @Operation(summary = "Tạo phiếu nhập kho", description = "Tạo GRN từ PO hoặc nhập tay")
     @PostMapping
@@ -64,5 +67,11 @@ public class GoodsReceiptNoteController {
     public ApiResponse<?> delete(@PathVariable String id) {
         grnService.delete(id);
         return ApiResponse.success("Xoá phiếu nhập kho thành công");
+    }
+
+    @Operation(summary = "In phiếu nhập kho", description = "Trả về HTML để in/kết xuất PDF")
+    @GetMapping(value = "/{id}/print", produces = MediaType.TEXT_HTML_VALUE)
+    public String print(@PathVariable String id) {
+        return documentPrintService.printGrn(id);
     }
 }

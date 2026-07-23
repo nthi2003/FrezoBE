@@ -1,10 +1,12 @@
 package com.frezo.qtht.service;
 
 import com.frezo.common.response.FePage;
+import com.frezo.qtht.dto.comment.CommentAttachmentDto;
 import com.frezo.qtht.dto.comment.CommentCreatePayload;
 import com.frezo.qtht.dto.comment.CommentDto;
 import com.frezo.qtht.dto.comment.CommentUpdatePayload;
 import com.frezo.qtht.dto.comment.MentionUserDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,4 +21,6 @@ public interface CommentService {
     void delete(String id);
 
     List<MentionUserDto> searchUsers(String q);
+
+    CommentAttachmentDto uploadAttachment(MultipartFile file);
 }

@@ -21,4 +21,8 @@ public class TicketResponse {
     private String resolutionNote;
     private LocalDateTime createdDate;
     private LocalDateTime updatedDate;
+    /** Aggregate user comments (non-system, not deleted) — backfilled on list/detail. */
+    private Integer commentCount;
+    /** Aggregate comment attachments on this ticket. */
+    private Integer attachmentCount;
 }

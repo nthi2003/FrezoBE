@@ -19,6 +19,7 @@ public class CommentDto {
     private String authorAvatar;
     private List<String> mentions;
     private String parentId;
+    private List<CommentAttachmentDto> attachments;
     private String createdAt;
     private String updatedAt;
     private Boolean deleted;

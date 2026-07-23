@@ -11,4 +11,5 @@ public class CommentCreatePayload {
     private String content;
     private String parentId;
     private List<String> mentionedUserIds;
+    private List<CommentAttachmentInput> attachments;
 }

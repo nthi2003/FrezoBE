@@ -9,7 +9,9 @@ import com.frezo.common.service.NotificationService;
 import com.frezo.task.dto.request.TicketRequest;
 import com.frezo.task.dto.response.TicketResponse;
 import com.frezo.task.entity.Ticket;
+import com.frezo.task.entity.TicketCategory;
 import com.frezo.task.mapper.TicketMapper;
+import com.frezo.task.repository.TicketCategoryRepository;
 import com.frezo.task.repository.TicketRepository;
 import com.frezo.task.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class TicketServiceImpl implements TicketService {
     private static final String ACTION_URL_PREFIX = "/task/tickets?ticketId=";
 
     private final TicketRepository ticketRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketMapper ticketMapper;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
@@ -59,6 +62,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public TicketResponse create(TicketRequest request) {
+        validateCategoryCode(request.getCategory());
         Ticket ticket = ticketMapper.toEntity(request);
         String currentUser = SystemUtils.getCurrentUsername();
         ticket.setReporterId(currentUser);
@@ -84,6 +88,10 @@ public class TicketServiceImpl implements TicketService {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new QTHTException("Ticket not found"));
 
+        if (request.getCategory() != null) {
+            validateCategoryCode(request.getCategory());
+        }
+
         // Snapshot trước khi update để so sánh
         Ticket.TicketStatus oldStatus = ticket.getStatus();
         String oldAssigneeId = ticket.getAssigneeId();
@@ -106,11 +114,11 @@ public class TicketServiceImpl implements TicketService {
 
         String currentUser = SystemUtils.getCurrentUsername();
 
-        // Assignee thay đổi ⇒ báo assignee mới + reporter
+
         if (!Objects.equals(oldAssigneeId, saved.getAssigneeId())) {
             notifyAssignment(saved, oldAssigneeId, currentUser);
         }
-        // Status thay đổi ⇒ báo reporter + assignee
+
         if (oldStatus != saved.getStatus()) {
             notifyStatusChange(saved, oldStatus, currentUser);
         }
@@ -198,6 +206,7 @@ public class TicketServiceImpl implements TicketService {
         response.setCommentCount((int) comments);
         Map<String, Integer> att = attachmentCountsFor(List.of(response.getId()));
         response.setAttachmentCount(att.getOrDefault(response.getId(), 0));
+        enrichCategoryName(response, loadCategoryNameMap());
         return response;
     }
 
@@ -215,10 +224,41 @@ public class TicketServiceImpl implements TicketService {
             commentCounts.put(String.valueOf(row[0]), ((Number) row[1]).intValue());
         }
         Map<String, Integer> attachmentCounts = attachmentCountsFor(ids);
+        Map<String, String> categoryNames = loadCategoryNameMap();
 
         for (TicketResponse r : responses) {
             r.setCommentCount(commentCounts.getOrDefault(r.getId(), 0));
             r.setAttachmentCount(attachmentCounts.getOrDefault(r.getId(), 0));
+            enrichCategoryName(r, categoryNames);
+        }
+    }
+
+
+    private void validateCategoryCode(String code) {
+        if (code == null || code.isBlank()) {
+            return;
+        }
+        ticketCategoryRepository.findByCodeAndIsDeletedFalse(code.trim())
+                .orElseThrow(() -> new QTHTException(
+                        "TICKET_CATEGORY_INVALID",
+                        "Danh mục không hợp lệ: " + code));
+    }
+
+    private Map<String, String> loadCategoryNameMap() {
+        Map<String, String> map = new HashMap<>();
+        for (TicketCategory c : ticketCategoryRepository.findByIsDeletedFalseOrderBySortOrderAscNameAsc()) {
+            if (c.getCode() != null) {
+                map.put(c.getCode(), c.getName());
+            }
+        }
+        return map;
+    }
+
+    private void enrichCategoryName(TicketResponse response, Map<String, String> categoryNames) {
+        if (response == null || response.getCategory() == null) return;
+        String name = categoryNames.get(response.getCategory());
+        if (name != null) {
+            response.setCategoryName(name);
         }
     }
 
@@ -232,9 +272,6 @@ public class TicketServiceImpl implements TicketService {
         return out;
     }
 
-    // ============================================================
-    // Notification helpers
-    // ============================================================
 
     /** Gửi thông báo khi assignee đổi (giao mới hoặc đổi người). */
     private void notifyAssignment(Ticket ticket, String prevAssigneeId, String actor) {
@@ -328,7 +365,7 @@ public class TicketServiceImpl implements TicketService {
         );
     }
 
-    /** Resolve personId → username qua UserRepository. */
+
     private String resolveUsername(String personId) {
         if (personId == null || personId.isBlank()) return null;
         // Nếu personId thực ra đã là username (backward compat), thử findByUserName trước

@@ -31,9 +31,9 @@ public class Ticket extends BaseEntity {
     @Column(name = "priority")
     private TicketPriority priority; // LOW, MEDIUM, HIGH, URGENT
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "category")
-    private TicketCategory category; // BUG, FEATURE_REQUEST, SUPPORT, OTHER
+
+    @Column(name = "category", length = 50)
+    private String category;
 
     @Column(name = "reporter_id", length = 100)
     private String reporterId; // người tạo ticket
@@ -52,5 +52,4 @@ public class Ticket extends BaseEntity {
 
     public enum TicketStatus { OPEN, IN_PROGRESS, RESOLVED, CLOSED }
     public enum TicketPriority { LOW, MEDIUM, HIGH, URGENT }
-    public enum TicketCategory { BUG, FEATURE_REQUEST, SUPPORT, OTHER }
 }

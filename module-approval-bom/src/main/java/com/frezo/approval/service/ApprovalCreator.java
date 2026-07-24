@@ -48,8 +48,20 @@ public class ApprovalCreator {
             throw new AppException(ApprovalErrorCode.FLOW_EMPTY, flow.getCode());
         }
 
+        // ANTI-BLOCK: fail-fast nếu role bước không có User — tránh phiếu PENDING treo ngoài Inbox
+        for (ApprovalFlowStep t : templates) {
+            String role = t.getApproverRole();
+            if (role == null || role.isBlank()
+                    || approverResolver.resolveFirst(role).isEmpty()) {
+                throw new AppException(ApprovalErrorCode.NO_APPROVER,
+                        role != null && !role.isBlank() ? role : ("step-" + t.getStepOrder()));
+            }
+        }
+
         String by = requestedBy != null ? requestedBy : SystemUtils.getCurrentUsername();
         ApprovalFlowStep first = templates.get(0);
+        ApproverResolver.ApproverHint firstHint = approverResolver.resolveFirst(first.getApproverRole())
+                .orElseThrow(() -> new AppException(ApprovalErrorCode.NO_APPROVER, first.getApproverRole()));
 
         ApprovalRequest req = ApprovalRequest.builder()
                 .flowId(flow.getId())
@@ -61,7 +73,9 @@ public class ApprovalCreator {
                 .currentStepOrder(first.getStepOrder())
                 .totalSteps(templates.size())
                 .status("PENDING")
-                .currentApproverHint(first.getApproverRole())
+                .currentApproverHint(firstHint.username() != null
+                        ? firstHint.username()
+                        : first.getApproverRole())
                 .build();
         req.setId(UUID.randomUUID().toString());
         req = requestRepository.save(req);
@@ -78,14 +92,15 @@ public class ApprovalCreator {
         stepRepository.save(submitted);
 
         for (ApprovalFlowStep t : templates) {
-            ApproverResolver.ApproverHint h = approverResolver.resolveFirst(t.getApproverRole()).orElse(null);
+            ApproverResolver.ApproverHint h = approverResolver.resolveFirst(t.getApproverRole())
+                    .orElseThrow(() -> new AppException(ApprovalErrorCode.NO_APPROVER, t.getApproverRole()));
             ApprovalStep step = ApprovalStep.builder()
                     .requestId(req.getId())
                     .stepOrder(t.getStepOrder())
                     .approverRole(t.getApproverRole())
-                    .approverPersonId(h != null ? h.personId() : null)
-                    .approverUsername(h != null ? h.username() : null)
-                    .approverName(h != null ? h.displayName() : t.getName())
+                    .approverPersonId(h.personId())
+                    .approverUsername(h.username())
+                    .approverName(h.displayName())
                     .action("PENDING")
                     .build();
             step.setId(UUID.randomUUID().toString());

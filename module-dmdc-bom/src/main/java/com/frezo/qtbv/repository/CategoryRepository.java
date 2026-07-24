@@ -11,9 +11,15 @@ import org.springframework.stereotype.Repository;
 public interface CategoryRepository extends JpaRepository<Category, String>, JpaSpecificationExecutor<Category> {
     boolean existsByCodeAndIsDeletedFalse(String code);
 
+    boolean existsByCodeAndIsDeletedFalseAndIdNot(String code, String id);
+
     boolean existsByNameAndIsDeletedFalse(String name);
 
+    boolean existsByNameAndIsDeletedFalseAndIdNot(String name, String id);
+
     boolean existsByNameEnAndIsDeletedFalse(String nameEn);
+
+    boolean existsByNameEnAndIsDeletedFalseAndIdNot(String nameEn, String id);
 
     Optional<Category> findByCode(String code);
 

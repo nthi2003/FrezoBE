@@ -12,6 +12,8 @@ public interface ApprovalFlowRepository extends JpaRepository<ApprovalFlow, Stri
 
     Optional<ApprovalFlow> findFirstBySubjectTypeAndActiveTrueAndIsDeletedFalse(String subjectType);
 
+    List<ApprovalFlow> findBySubjectTypeAndActiveTrueAndIsDeletedFalse(String subjectType);
+
     Optional<ApprovalFlow> findByCodeAndIsDeletedFalse(String code);
 
     Optional<ApprovalFlow> findByCodeAndActiveTrueAndIsDeletedFalse(String code);

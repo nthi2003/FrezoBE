@@ -1,6 +1,7 @@
 package com.frezo.product.service.impl.product;
 
 import com.frezo.common.audit.AuditAction;
+import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.PageResponse;
@@ -16,14 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * CRUD sản phẩm — tách khỏi façade để mỗi class ≤5 deps (Batch B refactor 2026-07).
- */
+
 @Component
 @RequiredArgsConstructor
 public class ProductCommandService {
@@ -50,8 +50,9 @@ public class ProductCommandService {
     @AuditAction(value = "Thêm mới sản phẩm", entity = "Product", action = "CREATE")
     public ProductResponse create(ProductCreateRequest request) {
         Product product = productMapper.toEntity(request);
-        if (product.getCode() == null || product.getCode().isBlank()) {
-            product.setCode(generateProductCode());
+        String code = normalizeRequiredCode(product.getCode());
+        product.setCode(code);
+        if (productRepository.findByCode(code).isPresent()) {
         }
         return productMapper.toResponse(productRepository.save(product));
     }
@@ -61,6 +62,15 @@ public class ProductCommandService {
     public ProductResponse update(String id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("product.not.found"));
+        if (request.getCode() != null) {
+            String code = normalizeRequiredCode(request.getCode());
+            request.setCode(code);
+            productRepository.findByCode(code)
+                    .filter(existing -> !existing.getId().equals(id))
+                    .ifPresent(existing -> {
+                        throw new AppException("product.code.already.exists", HttpStatus.CONFLICT, code);
+                    });
+        }
         productMapper.updateEntity(request, product);
         return productMapper.toResponse(productRepository.save(product));
     }
@@ -75,11 +85,11 @@ public class ProductCommandService {
         productRepository.save(product);
     }
 
-    private String generateProductCode() {
-        String maxCode = productRepository.findMaxCode();
-        if (maxCode == null) return "SP001";
-        int num = Integer.parseInt(maxCode.replaceAll("\\D+", "")) + 1;
-        return String.format("SP%03d", num);
+    private String normalizeRequiredCode(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new AppException("product.code.required", HttpStatus.BAD_REQUEST);
+        }
+        return raw.trim();
     }
 
     private Specification<Product> createSpecification(ProductFilterRequest f) {

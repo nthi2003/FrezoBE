@@ -22,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.frezo.qlns.service.impl.LeaveApprovalBridge;
 
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     @Override
     @Transactional
     public LeaveRequestResponse create(LeaveRequestAddRequest request) {
+
+        approvalBridge.assertActiveContract(request.getContractId());
+
         LeaveRequest entity = leaveRequestMapper.toEntity(request);
 
         String managerUsername = approvalBridge.resolveManagerUsername(request.getPersonId());

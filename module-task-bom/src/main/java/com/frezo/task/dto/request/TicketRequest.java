@@ -11,7 +11,7 @@ public class TicketRequest {
     private String description;
     private Ticket.TicketStatus status;
     private Ticket.TicketPriority priority;
-    private Ticket.TicketCategory category;
+    private String category;
     private String assigneeId;
     private LocalDateTime dueDate;
     private String resolutionNote;

@@ -42,7 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Transactional
     public ApiResponse<?> add(CategoryRequest request) {
-        validateRequest(request);
+        validateRequest(request, null);
         Category category = categoryMapper.toEntity(request);
         category.setIsDeleted(false);
         Category save = categoryRepository.save(category);
@@ -53,7 +53,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public ApiResponse<?> edit(String id, CategoryRequest request) {
         Category category = findEntityById(id);
-        validateRequest(request);
+        validateRequest(request, id);
         categoryMapper.updateEntity(request, category);
         Category save  = categoryRepository.save(category);
         return ApiResponse.ok(categoryMapper.toResponse(save));
@@ -69,16 +69,29 @@ public class CategoryServiceImpl implements CategoryService {
         categoryRepository.save(category);
     }
 
-    private void validateRequest(CategoryRequest request) {
-
-        if (categoryRepository.existsByCodeAndIsDeletedFalse(request.getCode())) {
-            throw new QTHTException("code.exist");
-        } else if (categoryRepository.existsByNameAndIsDeletedFalse(request.getName())) {
-            throw new QTHTException("name.exist");
-        } else if (request.getNameEn() != null && categoryRepository.existsByNameEnAndIsDeletedFalse(request.getNameEn())) {
-            throw new QTHTException("name.en.exist");
+    private void validateRequest(CategoryRequest request, String excludeId) {
+        boolean codeExists = excludeId == null
+                ? categoryRepository.existsByCodeAndIsDeletedFalse(request.getCode())
+                : categoryRepository.existsByCodeAndIsDeletedFalseAndIdNot(request.getCode(), excludeId);
+        if (codeExists) {
+            throw new QTHTException("category.code.exist", request.getCode());
         }
 
+        boolean nameExists = excludeId == null
+                ? categoryRepository.existsByNameAndIsDeletedFalse(request.getName())
+                : categoryRepository.existsByNameAndIsDeletedFalseAndIdNot(request.getName(), excludeId);
+        if (nameExists) {
+            throw new QTHTException("category.name.exist", request.getName());
+        }
+
+        if (request.getNameEn() != null) {
+            boolean nameEnExists = excludeId == null
+                    ? categoryRepository.existsByNameEnAndIsDeletedFalse(request.getNameEn())
+                    : categoryRepository.existsByNameEnAndIsDeletedFalseAndIdNot(request.getNameEn(), excludeId);
+            if (nameEnExists) {
+                throw new QTHTException("category.name.en.exist", request.getNameEn());
+            }
+        }
     }
 
     protected Category findEntityById(String id) {

@@ -1,11 +1,12 @@
 package com.frezo.server.service;
 
-import com.frezo.qtht.service.DashboardService;
-
 import com.frezo.product.repository.ProductRepository;
 import com.frezo.product.repository.SaleOrderRepository;
 import com.frezo.qtht.dto.response.DashboardSummaryResponse;
 import com.frezo.qtht.repository.PersonRepository;
+import com.frezo.qtht.service.DashboardService;
+import com.frezo.task.common.TaskStatusEnum;
+import com.frezo.task.repository.TaskRepository;
 import com.frezo.warehouse.repository.StockBalanceRepository;
 import com.frezo.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final StockBalanceRepository stockBalanceRepository;
     private final SaleOrderRepository saleOrderRepository;
     private final ProductRepository productRepository;
+    private final TaskRepository taskRepository;
 
     @Override
     public DashboardSummaryResponse getSummary() {
@@ -52,8 +54,11 @@ public class DashboardServiceImpl implements DashboardService {
         long lowStockProducts = productRepository.countLowStockProducts();
         long totalProductsInStock = stockBalanceRepository.countDistinctProductId();
 
+        // Org-wide, same filter as FE DashboardPage: status !== 'DONE'
+        long pendingTasks = taskRepository.countByStatusNotAndIsDeletedFalse(TaskStatusEnum.DONE);
+
         return DashboardSummaryResponse.builder()
-                .pendingTasks(0L)
+                .pendingTasks(pendingTasks)
                 .todayAttendance(0L)
                 .newArticles(0L)
                 .expiringContracts(java.util.Collections.emptyList())

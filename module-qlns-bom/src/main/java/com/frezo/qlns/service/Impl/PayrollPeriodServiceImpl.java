@@ -126,12 +126,13 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         String title = String.format("Kỳ lương %02d/%d%s",
                 entity.getMonth(), entity.getYear(),
                 entity.getName() != null ? " · " + entity.getName() : "");
+        // null flowCode → flow PAYROLL đang active tại /approval/flows
         ApprovalRequest req = approvalCreator.create(
                 SubjectType.PAYROLL.name(),
                 entity.getId(),
                 title,
                 null,
-                APPROVAL_FLOW_CODE,
+                null,
                 null);
         entity.setApprovalRequestId(req.getId());
         log.info("[payroll] Khoá kỳ {} + Approval {}", entity.getId(), req.getId());

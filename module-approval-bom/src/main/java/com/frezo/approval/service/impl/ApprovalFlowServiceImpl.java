@@ -37,15 +37,19 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
     @Override
     @Transactional
     public ApprovalFlowDto create(ApprovalFlowRequest req) {
+        boolean active = req.getActive() == null || req.getActive();
         ApprovalFlow flow = ApprovalFlow.builder()
                 .code("FLOW-" + System.currentTimeMillis())
                 .name(req.getName())
                 .subjectType(req.getSubjectType())
-                .active(req.getActive() == null || req.getActive())
+                .active(active)
                 .description(req.getDescription())
                 .build();
         flow.setId(UUID.randomUUID().toString());
         flow = flowRepository.save(flow);
+        if (active) {
+            deactivateOthers(req.getSubjectType(), flow.getId());
+        }
         saveSteps(flow.getId(), req.getSteps());
         return toDto(flow);
     }
@@ -61,6 +65,10 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
         if (req.getActive() != null) flow.setActive(req.getActive());
         if (req.getDescription() != null) flow.setDescription(req.getDescription());
         flowRepository.save(flow);
+        // Chỉ 1 flow active / subjectType — runtime leave/PR/payroll resolve theo active
+        if (Boolean.TRUE.equals(flow.getActive()) && flow.getSubjectType() != null) {
+            deactivateOthers(flow.getSubjectType(), flow.getId());
+        }
         if (req.getSteps() != null) {
             flowStepRepository.findByFlowIdAndIsDeletedFalseOrderByStepOrderAsc(id)
                     .forEach(s -> {
@@ -70,6 +78,17 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
             saveSteps(id, req.getSteps());
         }
         return toDto(flow);
+    }
+
+    /** Khi kích hoạt 1 flow → tắt các flow cùng loại (LEAVE / PAYROLL / …). */
+    private void deactivateOthers(String subjectType, String keepId) {
+        if (subjectType == null || subjectType.isBlank()) return;
+        flowRepository.findBySubjectTypeAndActiveTrueAndIsDeletedFalse(subjectType).stream()
+                .filter(f -> !f.getId().equals(keepId))
+                .forEach(f -> {
+                    f.setActive(false);
+                    flowRepository.save(f);
+                });
     }
 
     private void saveSteps(String flowId, List<ApprovalFlowStepTemplate> steps) {

@@ -217,12 +217,13 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         }
 
         String summary = "PR " + pr.getCode() + " · " + lines.size() + " dòng";
+
         ApprovalRequest ar = approvalCreator.create(
                 SubjectType.PURCHASE_REQUEST.name(),
                 pr.getId(),
                 summary,
                 null,
-                FLOW_CODE,
+                null,
                 null);
         pr.setApprovalRequestId(ar.getId());
         pr.setStatus("PENDING");

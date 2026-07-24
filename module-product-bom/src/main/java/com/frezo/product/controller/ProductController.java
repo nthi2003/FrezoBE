@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import com.frezo.common.security.CheckPermission;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -47,14 +48,14 @@ public class ProductController {
     @Operation(summary = "Tạo sản phẩm mới", description = "Thêm sản phẩm mới vào danh mục")
     @PostMapping
     @CheckPermission(api = "/product", action = "CREATE")
-    public ApiResponse<?> create(@RequestBody ProductCreateRequest request) {
+    public ApiResponse<?> create(@Valid @RequestBody ProductCreateRequest request) {
         return ApiResponse.success(productService.create(request));
     }
 
     @Operation(summary = "Cập nhật sản phẩm", description = "Cập nhật thông tin sản phẩm đã có")
     @PutMapping("/{id}")
     @CheckPermission(api = "/product/{id}", action = "UPDATE")
-    public ApiResponse<?> update(@PathVariable String id, @RequestBody ProductUpdateRequest request) {
+    public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody ProductUpdateRequest request) {
         return ApiResponse.success(productService.update(id, request));
     }
 

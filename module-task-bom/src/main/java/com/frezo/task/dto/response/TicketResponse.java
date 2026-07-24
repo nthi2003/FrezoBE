@@ -13,7 +13,8 @@ public class TicketResponse {
     private String description;
     private Ticket.TicketStatus status;
     private Ticket.TicketPriority priority;
-    private Ticket.TicketCategory category;
+    private String category;
+    private String categoryName;
     private String reporterId;
     private String assigneeId;
     private LocalDateTime dueDate;

@@ -2,7 +2,8 @@ package com.frezo.qtht.service.impl;
 
 import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.UserRepository;
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.constant.BlockReason;
 import com.frezo.common.constant.TimeBlock;
@@ -38,7 +39,7 @@ public class IpBlockServiceImpl implements IpBlockService {
                         LocalDateTime.now());
 
         if (!activeBlocks.isEmpty()) {
-            throw new QTHTException("block.ip");
+            throw new AppException(QthtErrorCode.IP_BLOCKED);
         }
     }
 

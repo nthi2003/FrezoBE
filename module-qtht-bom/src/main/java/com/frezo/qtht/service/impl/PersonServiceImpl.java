@@ -1,9 +1,10 @@
 package com.frezo.qtht.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.qtht.dto.request.PersonAddRequest;
 import com.frezo.qtht.dto.request.PersonFilterRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
@@ -16,6 +17,7 @@ import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.PersonService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,8 +27,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import com.frezo.qtht.entity.Department;
 
@@ -34,10 +34,6 @@ import com.frezo.qtht.entity.Department;
 @Service
 @RequiredArgsConstructor
 public class PersonServiceImpl implements PersonService {
-
-    private static final String ERROR_CODE_EXISTS = "exception.person.code.exists";
-    private static final String ERROR_PERSON_NOT_FOUND = "invalid.person.entity.not.found";
-    private static final String ERROR_ORG_NOT_FOUND = "invalid.organization.entity.not.found";
 
     private final PersonRepository personRepository;
     private final PersonMapper personMapper;
@@ -58,7 +54,7 @@ public class PersonServiceImpl implements PersonService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> all(PersonFilterRequest filter) {
+    public PageResponse<PersonResponse> all(PersonFilterRequest filter) {
         Specification<Person> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
 
@@ -66,11 +62,7 @@ public class PersonServiceImpl implements PersonService {
                 specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort));
 
-        List<PersonResponse> responses = entities.getContent().stream()
-                .map(personMapper::toResponse)
-                .toList();
-
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
+        return PageResponse.from(entities, personMapper::toResponse);
     }
 
     @Override
@@ -140,12 +132,12 @@ public class PersonServiceImpl implements PersonService {
     @Transactional(readOnly = true)
     protected Person findPersonById(String id) {
         return personRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException(ERROR_PERSON_NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_NOT_FOUND));
     }
 
     private void validateCodeUniqueness(String code) {
         if (code != null && personRepository.existsByCode(code)) {
-            throw new QTHTException(ERROR_CODE_EXISTS, code);
+            throw new AppException(QthtErrorCode.PERSON_CODE_EXISTS, code);
         }
     }
 
@@ -176,7 +168,7 @@ public class PersonServiceImpl implements PersonService {
     private void setOrganization(Person person, String orgId) {
         if (orgId != null && !orgId.trim().isEmpty()) {
             Organization organization = organizationRepository.findById(orgId.trim())
-                    .orElseThrow(() -> new QTHTException(ERROR_ORG_NOT_FOUND));
+                    .orElseThrow(() -> new AppException(QthtErrorCode.ORGANIZATION_NOT_FOUND));
             person.setOrganization(organization);
             log.debug("Set organization: id={}, name={}", organization.getId(), organization.getName());
         } else {
@@ -188,7 +180,7 @@ public class PersonServiceImpl implements PersonService {
     private void setDepartment(Person person, String departmentId) {
         if (departmentId != null && !departmentId.trim().isEmpty()) {
             Department department = departmentRepository.findById(departmentId.trim())
-                    .orElseThrow(() -> new QTHTException("invalid.department.entity.not.found"));
+                    .orElseThrow(() -> new AppException(QthtErrorCode.DEPARTMENT_NOT_FOUND));
             person.setDepartment(department);
         } else {
             person.setDepartment(null);

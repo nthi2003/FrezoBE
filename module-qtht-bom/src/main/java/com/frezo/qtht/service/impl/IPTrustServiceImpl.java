@@ -15,14 +15,12 @@ import com.frezo.qtht.mapper.IpTrustMapper;
 import com.frezo.qtht.repository.IpTrustRepository;
 import com.frezo.qtht.service.IPTrustService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,14 +29,12 @@ public class IPTrustServiceImpl implements IPTrustService {
     private final IpTrustMapper ipTrustMapper;
 
 
-    public Map<String, Object> all (IpTrustFilter filter) {
+    public PageResponse<IpTrustResponse> all(IpTrustFilter filter) {
         Specification<IPTrust> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC , "createdDate");
         Page<IPTrust> entities = ipTrustRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(),sort));
-        List<IpTrustResponse> responses = entities.getContent().stream()
-                .map(ipTrustMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities , responses);
+        return PageResponse.from(entities, ipTrustMapper::toResponse);
     }
 
     private Specification<IPTrust> createSpecification (IpTrustFilter filter) {

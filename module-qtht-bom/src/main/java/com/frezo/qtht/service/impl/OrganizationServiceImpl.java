@@ -17,6 +17,7 @@ import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.OrganizationService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,17 +42,13 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> all(OrganizationFilterRequest filter) {
+    public PageResponse<OrganizationResponse> all(OrganizationFilterRequest filter) {
         Specification<Organization> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<Organization> entities = organizationRepository.findAll(
                 specification, ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort, true));
 
-        List<OrganizationResponse> responses = entities.getContent().stream()
-                .map(organizationMapper::toResponse)
-                .toList();
-
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
+        return PageResponse.from(entities, organizationMapper::toResponse);
     }
 
     @Override

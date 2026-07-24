@@ -3,6 +3,7 @@ package com.frezo.qtht.service.impl;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.ApilogFilter;
 import com.frezo.qtht.dto.response.ApiLogResponse;
 import com.frezo.qtht.dto.response.ApiLogStatsResponse;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,14 +34,12 @@ public class ApiLogServiceImpl implements ApiLogService {
     }
 
     @Override
-    public Map<String, Object> all(ApilogFilter filter) {
+    public PageResponse<ApiLogResponse> all(ApilogFilter filter) {
         Specification<ApiLog> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<ApiLog> entities = apiLogRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort));
-        List<ApiLogResponse> responses = entities.getContent().stream()
-                .map(apiLogMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
+        return PageResponse.from(entities, apiLogMapper::toResponse);
     }
 
 

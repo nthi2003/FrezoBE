@@ -1,6 +1,7 @@
 package com.frezo.qtht.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.common.service.MinioService;
 import com.frezo.qtht.entity.PersonDocument;
 import com.frezo.qtht.repository.PersonDocumentRepository;
@@ -74,9 +75,9 @@ public class PersonDocumentServiceImpl implements PersonDocumentService {
     @Transactional
     public void deleteDocument(String personId, String documentId) {
         PersonDocument doc = personDocumentRepository.findById(documentId)
-                .orElseThrow(() -> new QTHTException("Document not found"));
+                .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_DOCUMENT_NOT_FOUND));
         if (!doc.getPersonId().equals(personId)) {
-            throw new QTHTException("Document does not belong to this person");
+            throw new AppException(QthtErrorCode.PERSON_DOCUMENT_MISMATCH);
         }
 
         if (doc.getFileUrl() != null) {

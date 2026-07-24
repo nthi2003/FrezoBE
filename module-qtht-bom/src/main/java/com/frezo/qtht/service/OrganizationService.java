@@ -6,12 +6,12 @@ import com.frezo.qtht.dto.request.OrganizationFilterRequest;
 import com.frezo.qtht.dto.response.OrganizationResponse;
 import com.frezo.qtht.dto.response.OrganizationDetailResponse;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 
 public interface OrganizationService {
-    Map<String, Object> all(OrganizationFilterRequest filter);
+    PageResponse<OrganizationResponse> all(OrganizationFilterRequest filter);
 
     ApiResponse<OrganizationResponse> add(OrganizationAddRequest request);
 

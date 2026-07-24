@@ -3,9 +3,9 @@ package com.frezo.email.service;
 import com.frezo.email.dto.request.EmailConfigAddRequest;
 import com.frezo.email.dto.request.EmailConfigEditRequest;
 import com.frezo.email.dto.request.EmailConfigFilter;
+import com.frezo.email.dto.response.EmailConfigResponse;
 import com.frezo.common.response.ApiResponse;
-
-import java.util.Map;
+import com.frezo.common.response.PageResponse;
 
 public interface EmailConfigService {
     void deactivate(String id);
@@ -14,7 +14,7 @@ public interface EmailConfigService {
 
     ApiResponse<?> edit(String id, EmailConfigEditRequest request);
 
-    Map<String, Object> all(EmailConfigFilter filter);
+    PageResponse<EmailConfigResponse> all(EmailConfigFilter filter);
 
     ApiResponse<?> add(EmailConfigAddRequest request);
 

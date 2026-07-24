@@ -1,15 +1,14 @@
 package com.frezo.customer.service;
 
+import com.frezo.common.response.PageResponse;
 import com.frezo.customer.dto.request.CustomerFilterRequest;
 import com.frezo.customer.dto.request.CustomerRequest;
 import com.frezo.customer.dto.response.CustomerResponse;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Map;
-
 public interface CustomerService {
 
-    Map<String, Object> getAll(CustomerFilterRequest filter);
+    PageResponse<CustomerResponse> getAll(CustomerFilterRequest filter);
 
     CustomerResponse getById(String id);
 

@@ -4,14 +4,11 @@ import com.frezo.qtht.dto.request.PersonAddRequest;
 import com.frezo.qtht.dto.request.PersonFilterRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
 import com.frezo.qtht.dto.response.PersonResponse;
-import com.frezo.qtht.entity.Person;
 import com.frezo.common.response.ApiResponse;
-
-import java.util.Map;
-import java.util.Optional;
+import com.frezo.common.response.PageResponse;
 
 public interface PersonService {
-    Map<String, Object> all(PersonFilterRequest filter) ;
+    PageResponse<PersonResponse> all(PersonFilterRequest filter);
 
     void delete(String id);
 

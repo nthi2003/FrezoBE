@@ -8,15 +8,15 @@ import com.frezo.qlns.dto.response.ContractAsginWorkResponse;
 import com.frezo.qlns.dto.response.ContractComboboxResponse;
 import com.frezo.qlns.dto.response.ContractResponse;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ContractService {
     ApiResponse<ContractResponse> edit ( String id , ContractEditRequest request);
     ApiResponse<ContractResponse> add (ContractAddRequest request);
     ApiResponse<?> delete (String id);
-    Map<String , Object> all(ContractFilter filter);
+    PageResponse<ContractResponse> all(ContractFilter filter);
     ApiResponse<List<ContractComboboxResponse>> combobox (ContractFilter filter);
 
     ContractResponse view (String id);

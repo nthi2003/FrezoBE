@@ -5,8 +5,10 @@ import com.frezo.auth.entity.User;
 import com.frezo.auth.entity.UserRole;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.auth.repository.UserRoleRepository;
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.common.helper.ServiceHelper;
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.response.UserResponse;
 import com.frezo.qtht.entity.Department;
 import com.frezo.qtht.entity.Organization;
@@ -22,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,12 +45,6 @@ public class UserAdminServiceImpl implements UserAdminService {
     private static final String DEFAULT_ROLE_NAME = "Staff";
     private static final String DEFAULT_ROLE_DESC = "Nhân viên";
 
-    private static final String ERR_USER_EXISTS = "exception.user.exists";
-    private static final String ERR_EMAIL_EXISTS = "exception.email.exists";
-    private static final String ERR_ROLE_NOT_FOUND = "exception.role.not.found";
-    private static final String ERR_USER_NOT_FOUND = "exception.user.not.found";
-    private static final String ERR_USER_ROLE_EXISTS = "exception.userRole.exists";
-
     private final UserRepository userRepository;
     private final PersonRepository personRepository;
     private final OrganizationRepository organizationRepository;
@@ -67,7 +62,7 @@ public class UserAdminServiceImpl implements UserAdminService {
 
         if (StringUtils.hasText(request.getPersonId())) {
             person = personRepository.findById(request.getPersonId())
-                    .orElseThrow(() -> new QTHTException("exception.person.not.found", HttpStatus.BAD_REQUEST));
+                    .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_REGISTER_NOT_FOUND));
             user.setName(person.getName());
             user.setEmail(person.getEmail());
         } else {
@@ -85,10 +80,10 @@ public class UserAdminServiceImpl implements UserAdminService {
     public void assignRole(String username, String roleCode, String appCode) {
         User user = getUserByUsername(username);
         Role role = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(roleCode, appCode)
-                .orElseThrow(() -> new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.ROLE_NOT_FOUND));
 
         if (userRoleRepository.existsByUserIdAndRoleId(user.getId(), role.getId())) {
-            throw new QTHTException(ERR_USER_ROLE_EXISTS, HttpStatus.BAD_REQUEST);
+            throw new AppException(QthtErrorCode.USER_ROLE_EXISTS);
         }
 
         saveUserRole(user, role.getId());
@@ -100,11 +95,11 @@ public class UserAdminServiceImpl implements UserAdminService {
         User user = getUserByIdOrThrow(userId);
 
         if (!roleRepository.existsById(roleId)) {
-            throw new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND);
+            throw new AppException(QthtErrorCode.ROLE_NOT_FOUND);
         }
 
         if (userRoleRepository.existsByUserIdAndRoleId(userId, roleId)) {
-            throw new QTHTException(ERR_USER_ROLE_EXISTS, HttpStatus.BAD_REQUEST);
+            throw new AppException(QthtErrorCode.USER_ROLE_EXISTS);
         }
 
         saveUserRole(user, roleId);
@@ -129,7 +124,7 @@ public class UserAdminServiceImpl implements UserAdminService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> getAllUsers(Integer pageNumber, Integer pageSize, String search) {
+    public PageResponse<UserResponse> getAllUsers(Integer pageNumber, Integer pageSize, String search) {
         Pageable pageable = ServiceHelper.createPageable(
                 pageNumber != null ? pageNumber : 0,
                 pageSize != null ? pageSize : 20,
@@ -142,15 +137,8 @@ public class UserAdminServiceImpl implements UserAdminService {
         Map<String, Person> personMap = fetchPersonsForUsers(users);
         Map<String, List<Role>> userRolesMap = fetchRolesForUsers(users);
 
-        List<UserResponse> responses = users.stream()
-                .map(user -> mapToUserResponse(user, personMap.get(user.getPersonId()), userRolesMap.get(user.getId())))
-                .toList();
-
-        return ServiceHelper.createResponse1(
-                pageNumber != null ? pageNumber : 0,
-                pageSize != null ? pageSize : 20,
-                userPage,
-                responses);
+        return PageResponse.from(userPage, user ->
+                mapToUserResponse(user, personMap.get(user.getPersonId()), userRolesMap.get(user.getId())));
     }
 
     @Override
@@ -170,19 +158,19 @@ public class UserAdminServiceImpl implements UserAdminService {
     private void validateRegisterRequest(RegisterRequest request) {
         if (request.getDataAction() == null ||
                 (request.getDataAction() != 1 && request.getDataAction() != 2 && request.getDataAction() != 3)) {
-            throw new QTHTException("exception.dataAction.invalid", HttpStatus.BAD_REQUEST, request.getDataAction());
+            throw new AppException(QthtErrorCode.DATA_ACTION_INVALID, request.getDataAction());
         }
 
         if (userRepository.findByUserName(request.getUsername()).isPresent()) {
-            throw new QTHTException(ERR_USER_EXISTS, HttpStatus.BAD_REQUEST);
+            throw new AppException(QthtErrorCode.USER_EXISTS);
         }
 
         if (!StringUtils.hasText(request.getPersonId())) {
             if (!StringUtils.hasText(request.getEmail()) || !StringUtils.hasText(request.getFullname())) {
-                throw new QTHTException("exception.email.fullname.required", HttpStatus.BAD_REQUEST);
+                throw new AppException(QthtErrorCode.EMAIL_NAME_REQUIRED);
             }
             if (personRepository.existsByEmail(request.getEmail())) {
-                throw new QTHTException(ERR_EMAIL_EXISTS, HttpStatus.BAD_REQUEST);
+                throw new AppException(QthtErrorCode.EMAIL_EXISTS);
             }
         }
     }
@@ -232,13 +220,13 @@ public class UserAdminServiceImpl implements UserAdminService {
             for (String code : roleCodes) {
                 Role role = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(code, APP_CODE)
                         .orElseThrow(
-                                () -> new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                                () -> new AppException(QthtErrorCode.ROLE_NOT_FOUND));
                 saveUserRole(user, role.getId());
             }
         } else if (StringUtils.hasText(request.getRoleId())) {
             Role role = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(request.getRoleId(), APP_CODE)
                     .orElseThrow(
-                            () -> new QTHTException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
+                            () -> new AppException(QthtErrorCode.ROLE_NOT_FOUND));
             saveUserRole(user, role.getId());
         } else {
             assignDefaultRole(user);
@@ -262,12 +250,12 @@ public class UserAdminServiceImpl implements UserAdminService {
         return roleRepository.save(newRole);
     }
     public void actived (String id) {
-        User user =  userRepository.findById(id).orElseThrow(() -> new QTHTException(ERR_USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+        User user =  userRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
         user.setStatus(1);
         userRepository.save(user);
     }
     public void inactived (String id) {
-        User user =  userRepository.findById(id).orElseThrow(() -> new QTHTException(ERR_USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+        User user =  userRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
         user.setStatus(0);
         userRepository.save(user);
     }
@@ -276,7 +264,7 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Transactional
     public String resetPassword(String id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new QTHTException(ERR_USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
         
         String defaultPass = "123456";
         user.setPassword(passwordEncoder.encode(defaultPass));
@@ -302,12 +290,12 @@ public class UserAdminServiceImpl implements UserAdminService {
 
     private User getUserByUsername(String username) {
         return userRepository.findByUserName(username)
-                .orElseThrow(() -> new QTHTException(ERR_USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
     }
 
     private User getUserByIdOrThrow(String userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new QTHTException(ERR_USER_NOT_FOUND, HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
     }
 
     private List<String> getRoleIdsByUserId(String userId) {

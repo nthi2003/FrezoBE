@@ -1,6 +1,7 @@
 package com.frezo.qtht.service;
 
 import com.frezo.auth.dto.request.RegisterRequest;
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.response.UserResponse;
 import com.frezo.qtht.entity.Role;
 
@@ -18,7 +19,7 @@ public interface UserAdminService {
 
     List<Role> getRolesByUserId(String userId);
 
-    Map<String, Object> getAllUsers(Integer pageNumber, Integer pageSize, String search);
+    PageResponse<UserResponse> getAllUsers(Integer pageNumber, Integer pageSize, String search);
 
     UserResponse getUserById(String id);
 

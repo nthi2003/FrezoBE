@@ -1,7 +1,8 @@
 package com.frezo.qtht.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.qtht.dto.request.SettingAddRequest;
 import com.frezo.qtht.dto.request.SettingEditRequest;
@@ -43,7 +44,7 @@ public class SettingServiceImpl implements SettingService {
     @CacheEvict(value = "settings", key = "#request.orgId")
     public ApiResponse<SettingResponse> add(SettingAddRequest request) {
         if (settingRepository.findByOrgIdAndIsDeletedFalse(request.getOrgId()).isPresent()) {
-            throw new QTHTException("setting.org.already.exists");
+            throw new AppException(QthtErrorCode.SETTING_ORG_ALREADY_EXISTS);
         }
         Setting setting = settingMapper.toEntity(request);
         Setting savedSetting = settingRepository.save(setting);
@@ -55,7 +56,7 @@ public class SettingServiceImpl implements SettingService {
     @CacheEvict(value = "settings", key = "#request.orgId")
     public ApiResponse<SettingResponse> edit(SettingEditRequest request) {
         Setting setting = settingRepository.findByIdAndIsDeletedFalse(request.getId())
-                .orElseThrow(() -> new QTHTException("setting.not.found"));
+                .orElseThrow(() -> new AppException(QthtErrorCode.SETTING_NOT_FOUND));
 
         settingMapper.updateEntity(setting, request);
         Setting savedSetting = settingRepository.save(setting);

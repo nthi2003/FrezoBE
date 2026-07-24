@@ -101,7 +101,11 @@ FROM (VALUES
     ('APPR_FLOWS',         'Cấu hình luồng duyệt', 'Approval Flows',       '/approval/flows',                  'src/modules/approval',   'MENU_QTHT',       11, 'GitBranch'),
     ('SYS_ASSET_DEP',      'Khấu hao TSCĐ',        'Depreciation',         '/assets/depreciation',             'src/modules/assets',     'MENU_QTHT',       9,  'TrendingDown'),
     -- Docs
-    ('MENU_DOCS',          'Tài liệu',             'Docs',                 '/docs',                            'src/docs',               'MENU_TASK',       4,  'BookOpen')
+    ('MENU_DOCS',          'Tài liệu',             'Docs',                 '/docs',                            'src/docs',               'MENU_TASK',       5,  'BookOpen'),
+    -- Ticket category master (FR-TASK-CAT)
+    ('QLHT_TICKET_CAT',    'Danh mục Ticket',      'Ticket Categories',    '/task/categories',                 'src/modules/tasks',      'MENU_TASK',       4,  'FolderTree'),
+    -- Guide CMS (FR-DOC-03/04)
+    ('QLHT_GUIDE',         'Quản lý hướng dẫn',    'Guide CMS',            '/admin/guides',                    'src/modules/docs',       'MENU_QTHT',       18, 'BookOpen')
 ) AS v(code, name, name_en, fe_url, folder_path, parent_code, order_index, icon)
 WHERE NOT EXISTS (
     SELECT 1 FROM menu m WHERE m.app_code = 'QTHT' AND m.code = v.code
@@ -161,10 +165,11 @@ UPDATE menu SET parent_code = 'MENU_ACCOUNTING', order_index = 8, fe_url = '/acc
 UPDATE menu SET parent_code = 'MENU_APPROVAL', order_index = 1, fe_url = '/approval/inbox', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'APPR_INBOX';
 
 -- === Tasks / Ops (C8) ===
-UPDATE menu SET parent_code = 'MENU_TASK', order_index = 1, fe_url = '/task',         is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_CV';
-UPDATE menu SET parent_code = 'MENU_TASK', order_index = 2, fe_url = '/task/tickets', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_TICKET';
-UPDATE menu SET parent_code = 'MENU_TASK', order_index = 3, fe_url = '/task/tags',    is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_TAG';
-UPDATE menu SET parent_code = 'MENU_TASK', order_index = 4, fe_url = '/docs',         is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'MENU_DOCS';
+UPDATE menu SET parent_code = 'MENU_TASK', order_index = 1, fe_url = '/task',            is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_CV';
+UPDATE menu SET parent_code = 'MENU_TASK', order_index = 2, fe_url = '/task/tickets',    is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_TICKET';
+UPDATE menu SET parent_code = 'MENU_TASK', order_index = 3, fe_url = '/task/tags',       is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_TAG';
+UPDATE menu SET parent_code = 'MENU_TASK', order_index = 4, name = 'Danh mục Ticket', name_en = 'Ticket Categories', fe_url = '/task/categories', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_TICKET_CAT';
+UPDATE menu SET parent_code = 'MENU_TASK', order_index = 5, fe_url = '/docs',            is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'MENU_DOCS';
 
 -- === Growth / Channels (C7) ===
 UPDATE menu SET parent_code = 'MENU_GROWTH', order_index = 1,  fe_url = '/admin/events', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_EVENT';
@@ -212,6 +217,7 @@ UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 14, fe_url = '/qtht/web
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 15, fe_url = '/qtht/tin-tuc',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_NEWS';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 16, fe_url = '/qtht/settings',             is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_SETTING';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 17, fe_url = '/admin/article-management',  is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ARTICLE';
+UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 18, fe_url = '/admin/guides',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_GUIDE';
 
 -- ------------------------------------------------------------
 -- 4) Soft-delete deprecated mega-parents / legacy folders

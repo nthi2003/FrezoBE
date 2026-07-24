@@ -66,6 +66,23 @@ public enum QthtErrorCode implements ErrorCode {
     IP_NUMBER_ALREADY_USED("ip.number.is.used", HttpStatus.CONFLICT, "Số IP đã được sử dụng"),
     IP_WHITELIST_EXISTS("ip.whitelist.exists", HttpStatus.CONFLICT, "IP đã tồn tại trong danh sách whitelist"),
 
+    // -------------------- GUIDE (Docs CMS — FR-DOC-03) --------------------
+    GUIDE_NOT_FOUND("guide.not.found", HttpStatus.NOT_FOUND, "Hướng dẫn không tồn tại"),
+    GUIDE_SLUG_EXISTS("guide.slug.exists", HttpStatus.CONFLICT, "Slug hướng dẫn đã tồn tại"),
+
+    // -------------------- PERSON DOCUMENT --------------------
+    PERSON_DOCUMENT_NOT_FOUND("Document not found", HttpStatus.NOT_FOUND, "Không tìm thấy tài liệu"),
+    PERSON_DOCUMENT_MISMATCH("Document does not belong to this person", HttpStatus.BAD_REQUEST,
+            "Tài liệu không thuộc nhân sự này"),
+
+    // -------------------- REGISTER / FEATURE --------------------
+    EMAIL_NAME_REQUIRED("exception.email.fullname.required", HttpStatus.BAD_REQUEST, "Email và họ tên bắt buộc"),
+    PERSON_REGISTER_NOT_FOUND("exception.person.not.found", HttpStatus.BAD_REQUEST, "Nhân sự không tồn tại"),
+    IP_BLOCKED("block.ip", HttpStatus.FORBIDDEN, "IP đang bị khóa"),
+    FEATURE_DENIED_NO_ORG("feature.denied.no.org", HttpStatus.FORBIDDEN, "Không xác định được tổ chức"),
+    FEATURE_DISABLED("FEATURE_DISABLED", HttpStatus.FORBIDDEN, "Tính năng bị tắt"),
+    INVALID_FEATURE_NAME("invalid.feature.name", HttpStatus.BAD_REQUEST, "Tên tính năng không hợp lệ"),
+
     // -------------------- GENERIC (module-scoped) --------------------
     ENTITY_NOT_FOUND("valid.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy dữ liệu");
 

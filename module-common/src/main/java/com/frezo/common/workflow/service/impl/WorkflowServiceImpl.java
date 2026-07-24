@@ -1,6 +1,7 @@
 package com.frezo.common.workflow.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.common.workflow.WorkflowErrorCode;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.workflow.dto.WorkflowDefinitionDto;
 import com.frezo.common.workflow.dto.WorkflowInstanceDto;
@@ -93,7 +94,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     public WorkflowDefinitionDto getDefinition(String id) {
         WorkflowDefinition def = definitionRepository.findById(id)
                 .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
         return mapDefinitionWithSteps(def);
     }
 
@@ -101,7 +102,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     public WorkflowDefinitionDto getDefinitionByCode(String code) {
         WorkflowDefinition def = definitionRepository.findByCode(code)
                 .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
         return mapDefinitionWithSteps(def);
     }
 
@@ -109,17 +110,17 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Transactional
     public WorkflowDefinitionDto saveDefinition(WorkflowDefinitionDto dto) {
         if (dto.getName() == null || dto.getName().isBlank())
-            throw new QTHTException("error.workflow.definition.name.required");
+            throw new AppException(WorkflowErrorCode.DEFINITION_NAME_REQUIRED);
         if (dto.getCode() == null || dto.getCode().isBlank())
-            throw new QTHTException("error.workflow.definition.code.required");
+            throw new AppException(WorkflowErrorCode.DEFINITION_CODE_REQUIRED);
         if (dto.getModuleCode() == null || dto.getModuleCode().isBlank())
-            throw new QTHTException("error.workflow.definition.module.required");
+            throw new AppException(WorkflowErrorCode.DEFINITION_MODULE_REQUIRED);
 
         WorkflowDefinition def;
         boolean isNew = dto.getId() == null || dto.getId().isBlank();
         if (isNew) {
             if (definitionRepository.existsByCode(dto.getCode()))
-                throw new QTHTException("error.workflow.definition.code.duplicate");
+                throw new AppException(WorkflowErrorCode.DEFINITION_CODE_DUPLICATE);
             def = WorkflowDefinition.builder()
                     .code(dto.getCode().trim().toUpperCase())
                     .name(dto.getName())
@@ -135,7 +136,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                     .build();
         } else {
             def = definitionRepository.findById(dto.getId())
-                    .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                    .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
             def.setName(dto.getName());
             def.setDescription(dto.getDescription());
             if (dto.getActive() != null) def.setActive(dto.getActive());
@@ -171,7 +172,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Transactional
     public void deleteDefinition(String id) {
         WorkflowDefinition def = definitionRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
         def.softDelete(SystemUtils.getCurrentUsername());
         definitionRepository.save(def);
     }
@@ -186,14 +187,14 @@ public class WorkflowServiceImpl implements WorkflowService {
                                      String startedBy, String title) {
         WorkflowDefinition def = definitionRepository.findByCode(definitionCode)
                 .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
         if (!Boolean.TRUE.equals(def.getActive())) {
-            throw new QTHTException("error.workflow.definition.inactive");
+            throw new AppException(WorkflowErrorCode.DEFINITION_INACTIVE);
         }
 
         List<WorkflowStep> steps = stepRepository.findByDefinitionIdAndIsDeletedFalseOrderByStepOrderAsc(def.getId());
         if (steps.isEmpty()) {
-            throw new QTHTException("error.workflow.definition.no.steps");
+            throw new AppException(WorkflowErrorCode.DEFINITION_NO_STEPS);
         }
 
         WorkflowInstance inst = WorkflowInstance.builder()
@@ -229,13 +230,13 @@ public class WorkflowServiceImpl implements WorkflowService {
     @Transactional
     public WorkflowInstanceDto cancelInstance(String instanceId) {
         WorkflowInstance inst = instanceRepository.findById(instanceId)
-                .orElseThrow(() -> new QTHTException("error.workflow.instance.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.INSTANCE_NOT_FOUND));
         if (!STATUS_RUNNING.equals(inst.getStatus())) {
-            throw new QTHTException("error.workflow.instance.not.running");
+            throw new AppException(WorkflowErrorCode.INSTANCE_NOT_RUNNING);
         }
         String me = SystemUtils.getCurrentUsername();
         if (!inst.getStartedBy().equalsIgnoreCase(me) && !isCurrentUserAdmin()) {
-            throw new QTHTException("error.workflow.instance.cancel.forbidden");
+            throw new AppException(WorkflowErrorCode.INSTANCE_CANCEL_FORBIDDEN);
         }
         inst.setStatus(STATUS_CANCELLED);
         inst.setCompletedAt(LocalDateTime.now());
@@ -280,7 +281,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         WorkflowTask task = findTaskOrThrow(taskId);
         assertCanDecide(task);
         if (!TASK_PENDING.equals(task.getStatus())) {
-            throw new QTHTException("error.workflow.task.not.pending");
+            throw new AppException(WorkflowErrorCode.TASK_NOT_PENDING);
         }
 
         String me = SystemUtils.getCurrentUsername();
@@ -292,7 +293,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         // Advance instance
         WorkflowInstance inst = instanceRepository.findById(task.getInstanceId())
-                .orElseThrow(() -> new QTHTException("error.workflow.instance.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.INSTANCE_NOT_FOUND));
         WorkflowDefinition def = definitionRepository.findByCode(inst.getDefinitionCode()).orElse(null);
         List<WorkflowStep> steps = def != null
                 ? stepRepository.findByDefinitionIdAndIsDeletedFalseOrderByStepOrderAsc(def.getId())
@@ -318,10 +319,10 @@ public class WorkflowServiceImpl implements WorkflowService {
         WorkflowTask task = findTaskOrThrow(taskId);
         assertCanDecide(task);
         if (!TASK_PENDING.equals(task.getStatus())) {
-            throw new QTHTException("error.workflow.task.not.pending");
+            throw new AppException(WorkflowErrorCode.TASK_NOT_PENDING);
         }
         if (reason == null || reason.isBlank()) {
-            throw new QTHTException("error.workflow.task.reject.reason.required");
+            throw new AppException(WorkflowErrorCode.TASK_REJECT_REASON_REQUIRED);
         }
 
         String me = SystemUtils.getCurrentUsername();
@@ -333,7 +334,7 @@ public class WorkflowServiceImpl implements WorkflowService {
 
         // Terminate instance
         WorkflowInstance inst = instanceRepository.findById(task.getInstanceId())
-                .orElseThrow(() -> new QTHTException("error.workflow.instance.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.INSTANCE_NOT_FOUND));
         inst.setStatus(STATUS_REJECTED);
         inst.setCompletedAt(LocalDateTime.now());
         instanceRepository.save(inst);
@@ -376,7 +377,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     private WorkflowTask findTaskOrThrow(String id) {
         return taskRepository.findById(id)
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.workflow.task.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.TASK_NOT_FOUND));
     }
 
     /**
@@ -389,27 +390,27 @@ public class WorkflowServiceImpl implements WorkflowService {
      */
     private void assertCanDecide(WorkflowTask task) {
         String me = SystemUtils.getCurrentUsername();
-        if (me == null) throw new QTHTException("error.workflow.task.forbidden");
+        if (me == null) throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
         if (isCurrentUserAdmin()) return; // Admin over-ride
         if (task.getAssigneeUsername() != null) {
             if (!task.getAssigneeUsername().equalsIgnoreCase(me))
-                throw new QTHTException("error.workflow.task.forbidden");
+                throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
             return;
         }
         if (task.getAssigneeRole() != null) {
             List<String> roles = getRolesOfUser(me);
             if (roles.stream().noneMatch(r -> r.equalsIgnoreCase(task.getAssigneeRole())))
-                throw new QTHTException("error.workflow.task.forbidden");
+                throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
             return;
         }
         // Pool cho admin only nhưng user không phải admin
-        throw new QTHTException("error.workflow.task.forbidden");
+        throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
     }
 
     private static void validateApproverType(String type) {
         if (!(TYPE_USER.equals(type) || TYPE_ROLE.equals(type)
                 || TYPE_MANAGER.equals(type) || TYPE_ADMIN.equals(type))) {
-            throw new QTHTException("error.workflow.step.approver.type.invalid");
+            throw new AppException(WorkflowErrorCode.STEP_APPROVER_TYPE_INVALID);
         }
     }
 

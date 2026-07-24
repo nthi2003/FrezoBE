@@ -110,4 +110,16 @@ public class ArticleController {
     public ApiResponse<?> getPublishedArticles(@RequestParam(name = "organizationId", required = false) String organizationId) {
         return ApiResponse.success(articleService.getPublishedArticles(organizationId));
     }
+
+    @Operation(summary = "Home feed bài viết", description = "Tin đã xuất bản cho Trang chủ — mọi user đăng nhập (không cần QTBV.VIEW)")
+    @GetMapping("/home-feed")
+    public ApiResponse<?> getHomeFeed() {
+        return ApiResponse.success(articleService.getHomeFeed());
+    }
+
+    @Operation(summary = "Chi tiết bài viết (Home)", description = "Đọc bài đã xuất bản từ /bai-viet — mọi user đăng nhập")
+    @GetMapping("/home-feed/{id}")
+    public ApiResponse<?> getHomeFeedById(@PathVariable String id) {
+        return ApiResponse.success(articleService.getHomeFeedById(id));
+    }
 }

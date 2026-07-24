@@ -26,6 +26,7 @@ FROM (VALUES
     ('QLHT_LEAVE',          'Đơn Nghỉ Phép',            'Leave Requests',            '/qlns/leaves',                 'src/modules/qlns',      NULL, 32, 'fa-solid fa-plane-departure'),
     -- Tasks
     ('QLHT_TAG',            'Nhãn Công Việc',           'Task Tags',                 '/task/tags',                   'src/modules/tasks',     'QLHT_CV', 3, 'fa-solid fa-tag'),
+    ('QLHT_TICKET_CAT',     'Danh mục Ticket',          'Ticket Categories',         '/task/categories',             'src/modules/tasks',     'QLHT_CV', 4, 'fa-solid fa-folder-tree'),
     -- Email root + subs
     ('QLHT_EMAIL',          'Email Marketing',          'Email Marketing',           '/email/inbox',                 'src/modules/email',     NULL, 40, 'fa-solid fa-envelope-open-text'),
     ('QLHT_EMAIL_INBOX',    'Hộp Thư Đến',              'Inbox',                     '/email/inbox',                 'src/modules/email',     'QLHT_EMAIL', 1, 'fa-solid fa-inbox'),

@@ -24,6 +24,12 @@ public interface ArticleService {
 
     List<ArticleResponse> getPublishedArticles(String organizationId);
 
+    /** Home portal feed for any authenticated user (INTERNAL + PUBLIC published). */
+    List<ArticleResponse> getHomeFeed();
+
+    /** Published article detail for Home /bai-viet reader (no QTBV admin permission). */
+    ArticleResponse getHomeFeedById(String id);
+
     ArticleResponse review(String id, ArticleReviewRequest request, String managerId);
 
     ArticleResponse findById(String id);

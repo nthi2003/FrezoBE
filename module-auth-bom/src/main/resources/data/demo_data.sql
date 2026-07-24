@@ -130,20 +130,63 @@ WHERE EXISTS (SELECT 1 FROM organization WHERE code = 'FTECH_HO')
   );
 
 -- ============================================================
--- 6) TAGS — 6 nhãn công việc phổ biến
+-- 6) TAGS — nhãn công việc VN (slug không dấu, category khớp FE TagsPage)
+--    Migration: cập nhật seed EN cũ → VI nếu DB đã chạy demo trước đó.
 -- ============================================================
+UPDATE tags SET code = 'bug', name = 'Bug', category = 'other', color = '#dc2626',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code = 'BUG' AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'bug' AND t2.id <> tags.id);
+
+UPDATE tags SET code = 'tinh-nang', name = 'Tính năng', category = 'other', color = '#3b82f6',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code = 'FEATURE' AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'tinh-nang' AND t2.id <> tags.id);
+
+UPDATE tags SET code = 'cai-tien', name = 'Cải tiến', category = 'other', color = '#22c55e',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code = 'IMPROVE' AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'cai-tien' AND t2.id <> tags.id);
+
+UPDATE tags SET code = 'gap', name = 'Gấp', category = 'priority', color = '#f97316',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code = 'URGENT' AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'gap' AND t2.id <> tags.id);
+
+UPDATE tags SET code = 'tai-lieu', name = 'Tài liệu', category = 'other', color = '#a855f7',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code = 'DOC' AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'tai-lieu' AND t2.id <> tags.id);
+
+UPDATE tags SET code = 'theo-doi', name = 'Theo dõi', category = 'status', color = '#eab308',
+           updated_date = NOW(), updated_by = 'system'
+WHERE code IN ('REVIEW', 'FOLLOW_UP', 'FOLLOW-UP') AND COALESCE(is_deleted, false) = false
+  AND NOT EXISTS (SELECT 1 FROM tags t2 WHERE t2.code = 'theo-doi' AND t2.id <> tags.id);
+
+-- Soft-delete orphan EN seed nếu đã có bản VI song song (tránh trùng hiển thị)
+UPDATE tags SET is_deleted = true, updated_date = NOW(), updated_by = 'system'
+WHERE code IN ('BUG', 'FEATURE', 'IMPROVE', 'URGENT', 'DOC', 'REVIEW', 'FOLLOW_UP', 'FOLLOW-UP')
+  AND COALESCE(is_deleted, false) = false
+  AND EXISTS (
+      SELECT 1 FROM tags t2
+      WHERE t2.code IN ('bug', 'tinh-nang', 'cai-tien', 'gap', 'tai-lieu', 'theo-doi')
+        AND t2.is_deleted = false
+  );
+
 INSERT INTO tags (id, code, name, category, color, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT gen_random_uuid(), v.code, v.name, v.category, v.color, false,
        NOW(), 'system', NOW(), 'system'
 FROM (VALUES
-    ('BUG',      'Bug',            'Type',     '#ef4444'),
-    ('FEATURE',  'Feature',        'Type',     '#3b82f6'),
-    ('IMPROVE',  'Improvement',    'Type',     '#22c55e'),
-    ('URGENT',   'Khẩn cấp',       'Priority', '#f97316'),
-    ('DOC',      'Documentation',  'Type',     '#a855f7'),
-    ('REVIEW',   'Cần review',     'Status',   '#eab308')
+    ('gap',        'Gấp',         'priority', '#f97316'),
+    ('quan-trong', 'Quan trọng',  'priority', '#ef4444'),
+    ('bug',        'Bug',         'other',    '#dc2626'),
+    ('tinh-nang',  'Tính năng',   'other',    '#3b82f6'),
+    ('hop',        'Họp',         'other',    '#06b6d4'),
+    ('theo-doi',   'Theo dõi',    'status',   '#eab308'),
+    ('cai-tien',   'Cải tiến',    'other',    '#22c55e'),
+    ('tai-lieu',   'Tài liệu',    'other',    '#a855f7')
 ) AS v(code, name, category, color)
-WHERE NOT EXISTS (SELECT 1 FROM tags t WHERE t.code = v.code);
+WHERE NOT EXISTS (SELECT 1 FROM tags t WHERE t.code = v.code AND COALESCE(t.is_deleted, false) = false);
 
 -- ============================================================
 -- 7) TASKS — 10 công việc mẫu (mix status/priority, có assignee, deadline)
@@ -169,26 +212,30 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM tasks t WHERE t.title = v.title);
 
 -- ============================================================
--- 8) TAGS trên task — gán bug/feature tag cho vài task
+-- 8) TAGS trên task — gán nhãn VI cho vài task demo
 -- ============================================================
 INSERT INTO task_tags (task_id, tag_id)
 SELECT
     (SELECT id FROM tasks WHERE title = v.task_title LIMIT 1),
-    (SELECT id FROM tags  WHERE code  = v.tag_code   LIMIT 1)
+    (SELECT id FROM tags  WHERE code  = v.tag_code AND COALESCE(is_deleted, false) = false LIMIT 1)
 FROM (VALUES
-    ('Fix bug 404 ở trang /admin/events',               'BUG'),
-    ('Fix bug 404 ở trang /admin/events',               'URGENT'),
-    ('Redesign trang Articles theo enterprise pattern', 'FEATURE'),
-    ('Redesign trang Articles theo enterprise pattern', 'REVIEW'),
-    ('Backup DB production',                            'URGENT'),
-    ('Viết docs onboarding cho intern Q3',              'DOC')
+    ('Fix bug 404 ở trang /admin/events',               'bug'),
+    ('Fix bug 404 ở trang /admin/events',               'gap'),
+    ('Redesign trang Articles theo enterprise pattern', 'tinh-nang'),
+    ('Redesign trang Articles theo enterprise pattern', 'theo-doi'),
+    ('Backup DB production',                            'gap'),
+    ('Backup DB production',                            'quan-trong'),
+    ('Viết docs onboarding cho intern Q3',              'tai-lieu'),
+    ('Chuẩn bị deck sales Q4',                          'hop'),
+    ('Chuẩn bị deck sales Q4',                          'theo-doi'),
+    ('Test regression module Payroll',                  'cai-tien')
 ) AS v(task_title, tag_code)
 WHERE EXISTS (SELECT 1 FROM tasks WHERE title = v.task_title)
-  AND EXISTS (SELECT 1 FROM tags WHERE code = v.tag_code)
+  AND EXISTS (SELECT 1 FROM tags WHERE code = v.tag_code AND COALESCE(is_deleted, false) = false)
   AND NOT EXISTS (
       SELECT 1 FROM task_tags tt
       WHERE tt.task_id = (SELECT id FROM tasks WHERE title = v.task_title LIMIT 1)
-        AND tt.tag_id  = (SELECT id FROM tags  WHERE code  = v.tag_code   LIMIT 1)
+        AND tt.tag_id  = (SELECT id FROM tags  WHERE code  = v.tag_code AND COALESCE(is_deleted, false) = false LIMIT 1)
   );
 
 -- ============================================================
@@ -601,6 +648,34 @@ WHERE p.code LIKE 'EMP%'
       SELECT 1 FROM payroll pr
       WHERE pr.person_id = p.id AND pr.month = v.month AND pr.year = v.year
   );
+
+-- ============================================================
+-- 18b) TICKET CATEGORIES — master danh mục VI (FR-TASK-CAT)
+--      code giữ enum cũ để tickets.category không cần rewrite
+-- ============================================================
+INSERT INTO ticket_categories (id, code, name, sort_order, active, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), v.code, v.name, v.sort_order, true, false,
+       NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('BUG',             'Lỗi',       1),
+    ('FEATURE_REQUEST', 'Tính năng', 2),
+    ('SUPPORT',         'Hỗ trợ',    3),
+    ('OTHER',           'Khác',      4)
+) AS v(code, name, sort_order)
+WHERE NOT EXISTS (
+    SELECT 1 FROM ticket_categories t
+    WHERE t.code = v.code AND COALESCE(t.is_deleted, false) = false
+);
+
+-- Đồng bộ tên VI nếu đã seed trước đó bằng tên EN
+UPDATE ticket_categories SET name = 'Lỗi',       updated_date = NOW(), updated_by = 'system'
+WHERE code = 'BUG' AND COALESCE(is_deleted, false) = false AND name IS DISTINCT FROM 'Lỗi';
+UPDATE ticket_categories SET name = 'Tính năng', updated_date = NOW(), updated_by = 'system'
+WHERE code = 'FEATURE_REQUEST' AND COALESCE(is_deleted, false) = false AND name IS DISTINCT FROM 'Tính năng';
+UPDATE ticket_categories SET name = 'Hỗ trợ',    updated_date = NOW(), updated_by = 'system'
+WHERE code = 'SUPPORT' AND COALESCE(is_deleted, false) = false AND name IS DISTINCT FROM 'Hỗ trợ';
+UPDATE ticket_categories SET name = 'Khác',      updated_date = NOW(), updated_by = 'system'
+WHERE code = 'OTHER' AND COALESCE(is_deleted, false) = false AND name IS DISTINCT FROM 'Khác';
 
 -- ============================================================
 -- 19) TICKETS — 8 ticket support/bug/feature

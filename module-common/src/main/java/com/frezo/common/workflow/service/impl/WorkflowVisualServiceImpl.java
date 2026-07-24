@@ -2,7 +2,8 @@ package com.frezo.common.workflow.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.common.workflow.WorkflowErrorCode;
 import com.frezo.common.workflow.dto.WorkflowDefinitionDto;
 import com.frezo.common.workflow.dto.WorkflowGraphDto;
 import com.frezo.common.workflow.dto.WorkflowStepDto;
@@ -79,7 +80,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
     public WorkflowDefinitionDto updateDefinitionVisual(String id, WorkflowDefinitionDto dto) {
         WorkflowDefinition def = requireDefinition(id);
         if (Boolean.TRUE.equals(def.getIsTemplate())) {
-            throw new QTHTException("error.workflow.template.read.only");
+            throw new AppException(WorkflowErrorCode.TEMPLATE_READ_ONLY);
         }
         if (dto.getName() != null && !dto.getName().isBlank()) {
             def.setName(dto.getName());
@@ -128,10 +129,10 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
     public WorkflowGraphDto saveGraph(String definitionId, WorkflowGraphDto graph) {
         WorkflowDefinition def = requireDefinition(definitionId);
         if (Boolean.TRUE.equals(def.getIsTemplate())) {
-            throw new QTHTException("error.workflow.template.read.only");
+            throw new AppException(WorkflowErrorCode.TEMPLATE_READ_ONLY);
         }
         if (graph == null) {
-            throw new QTHTException("error.workflow.graph.required");
+            throw new AppException(WorkflowErrorCode.GRAPH_REQUIRED);
         }
         int next = def.getVersion() == null ? 1 : def.getVersion() + 1;
         if (graph.getVersion() == null) {
@@ -226,13 +227,13 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
                 .or(() -> definitionRepository.findByCodeAndIsTemplateTrueAndIsDeletedFalse(key.toUpperCase()))
                 .or(() -> definitionRepository.findByCode(key.toUpperCase())
                         .filter(d -> Boolean.TRUE.equals(d.getIsTemplate()) && !Boolean.TRUE.equals(d.getIsDeleted())))
-                .orElseThrow(() -> new QTHTException("error.workflow.template.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.TEMPLATE_NOT_FOUND));
     }
 
     private WorkflowDefinition requireDefinition(String id) {
         return definitionRepository.findById(id)
                 .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.workflow.definition.not.found"));
+                .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
     }
 
     private String uniqueCloneCode(String base) {
@@ -313,7 +314,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
             return objectMapper.readValue(json, WorkflowGraphDto.class);
         } catch (JsonProcessingException ex) {
             log.warn("[wf-visual] Không parse được graphJson: {}", ex.getMessage());
-            throw new QTHTException("error.workflow.graph.invalid");
+            throw new AppException(WorkflowErrorCode.GRAPH_INVALID);
         }
     }
 
@@ -321,7 +322,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         try {
             return objectMapper.writeValueAsString(graph);
         } catch (JsonProcessingException ex) {
-            throw new QTHTException("error.workflow.graph.invalid");
+            throw new AppException(WorkflowErrorCode.GRAPH_INVALID);
         }
     }
 }

@@ -31,6 +31,13 @@ public interface ArticleRepository extends JpaRepository<Article, String>,
                         "AND (a.isDeleted = false OR a.isDeleted IS NULL)")
         List<Article> findPublishedArticles();
 
+        /** Intranet home: all published (INTERNAL + PUBLIC), newest first. */
+        @Query("SELECT a FROM Article a WHERE a.status = 'PUBLISHED' " +
+                        "AND a.isActive = true " +
+                        "AND (a.isDeleted = false OR a.isDeleted IS NULL) " +
+                        "ORDER BY a.publishedAt DESC")
+        List<Article> findIntranetHomeFeed();
+
         @Query("SELECT COUNT(r) FROM ArticleReaction r WHERE r.articleId = :articleId")
         Long countReactionByArticleId(@Param("articleId") String articleId);
 

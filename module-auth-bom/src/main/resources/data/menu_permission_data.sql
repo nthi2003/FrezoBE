@@ -39,6 +39,7 @@ WITH menu_api_map(menu_code, api_path) AS (
         ('QLHT_CV',             'task/task'),
         ('QLHT_TICKET',         'task/ticket'),
         ('QLHT_TAG',            'task/tag'),
+        ('QLHT_TICKET_CAT',     'task/ticket-category'),
         -- Email
         ('QLHT_EMAIL_TEMPLATE', 'email/template'),
         ('QLHT_EMAIL_GROUP',    'email/group'),

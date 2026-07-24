@@ -1,6 +1,7 @@
 package com.frezo.qtht.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -64,10 +65,10 @@ public class IPTrustServiceImpl implements IPTrustService {
 
     private void validateRequest(IpTrustAddRequest request) {
         if (ipTrustRepository.existsByIpName(request.getIpName())) {
-            throw new QTHTException("ip.name.is.used");
+            throw new AppException(QthtErrorCode.IP_NAME_ALREADY_USED);
         }
         if (ipTrustRepository.existsByIpNumber(request.getIpName())) {
-            throw new QTHTException("ip.number.is.used");
+            throw new AppException(QthtErrorCode.IP_NUMBER_ALREADY_USED);
         }
 
     }
@@ -90,7 +91,7 @@ public class IPTrustServiceImpl implements IPTrustService {
         return ApiResponse.ok(ipTrustRepository.save(exits));
     }
     private IPTrust findEntityById(String id) {
-        return ipTrustRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));
+        return ipTrustRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.ENTITY_NOT_FOUND));
     }
 
 

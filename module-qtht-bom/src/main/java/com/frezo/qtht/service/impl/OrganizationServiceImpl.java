@@ -1,9 +1,10 @@
 package com.frezo.qtht.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.qtht.dto.request.OrganizationAddRequest;
 import com.frezo.qtht.dto.request.OrganizationEditRequest;
 import com.frezo.qtht.dto.request.OrganizationFilterRequest;
@@ -32,13 +33,6 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class OrganizationServiceImpl implements OrganizationService {
-
-    private static final String ERROR_ORG_NOT_FOUND = "invalid.organization.entity.not.found";
-    private static final String ERROR_PERSON_NOT_FOUND = "invalid.person.entity.not.found";
-    private static final String ERROR_CODE_EXISTS = "organization.code.already.exists";
-    private static final String ERROR_TAX_EXISTS = "organization.taxcode.already.exists";
-    private static final String ERROR_PARENT_NOT_FOUND = "organization.parent.not.found";
-    private static final String ERROR_LEVEL_INVALID = "organization.level.invalid";
 
     private final OrganizationRepository organizationRepository;
     private final OrganizationMapper organizationMapper;
@@ -133,27 +127,27 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Transactional(readOnly = true)
     protected Organization findEntityById(String id) {
         return organizationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException(ERROR_ORG_NOT_FOUND));
+                .orElseThrow(() -> new AppException(QthtErrorCode.ORGANIZATION_NOT_FOUND));
     }
 
     private void validateRequest(OrganizationAddRequest request) {
         if (organizationRepository.existsByCode(request.getCode())) {
-            throw new QTHTException(ERROR_CODE_EXISTS, request.getCode());
+            throw new AppException(QthtErrorCode.ORGANIZATION_CODE_EXISTS, request.getCode());
         }
         if (StringUtils.hasText(request.getTaxCode()) && organizationRepository.existsByTaxCode(request.getTaxCode())) {
-            throw new QTHTException(ERROR_TAX_EXISTS, request.getTaxCode());
+            throw new AppException(QthtErrorCode.ORGANIZATION_TAX_EXISTS, request.getTaxCode());
         }
     }
 
     private void validateUpdate(Organization organization, OrganizationEditRequest request) {
         if (!organization.getCode().equals(request.getCode())
                 && organizationRepository.existsByCode(request.getCode())) {
-            throw new QTHTException(ERROR_CODE_EXISTS, request.getCode());
+            throw new AppException(QthtErrorCode.ORGANIZATION_CODE_EXISTS, request.getCode());
         }
 
         if (StringUtils.hasText(request.getTaxCode()) && !request.getTaxCode().equals(organization.getTaxCode())
                 && organizationRepository.existsByTaxCode(request.getTaxCode())) {
-            throw new QTHTException(ERROR_TAX_EXISTS, request.getTaxCode());
+            throw new AppException(QthtErrorCode.ORGANIZATION_TAX_EXISTS, request.getTaxCode());
         }
     }
 
@@ -164,10 +158,10 @@ public class OrganizationServiceImpl implements OrganizationService {
 
         if (StringUtils.hasText(parentId)) {
             Organization parent = organizationRepository.findById(parentId)
-                    .orElseThrow(() -> new QTHTException(ERROR_PARENT_NOT_FOUND));
+                    .orElseThrow(() -> new AppException(QthtErrorCode.ORGANIZATION_PARENT_NOT_FOUND));
 
             if (level != null && level <= (parent.getLevel() != null ? parent.getLevel() : 0)) {
-                throw new QTHTException(ERROR_LEVEL_INVALID);
+                throw new AppException(QthtErrorCode.ORGANIZATION_LEVEL_INVALID);
             }
 
             organization.setParent(parent);
@@ -184,7 +178,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     private void updateLegalRepresentative(Organization organization, String legalRepId) {
         if (StringUtils.hasText(legalRepId)) {
             Person legalRep = personRepository.findById(legalRepId)
-                    .orElseThrow(() -> new QTHTException(ERROR_PERSON_NOT_FOUND));
+                    .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_NOT_FOUND));
             organization.setLegalRepresentative(legalRep);
         } else {
             organization.setLegalRepresentative(null);

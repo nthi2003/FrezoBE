@@ -203,6 +203,26 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    public List<ArticleResponse> getHomeFeed() {
+        List<ArticleResponse> responses = articleRepository.findIntranetHomeFeed().stream()
+                .map(articleMapper::toDto)
+                .collect(Collectors.toList());
+        enrichArticlesWithHeartCount(responses);
+        return responses;
+    }
+
+    @Override
+    public ArticleResponse getHomeFeedById(String id) {
+        Article article = getArticleByIdOrThrow(id);
+        if (!ArticleStatus.PUBLISHED.equals(article.getStatus()) || !Boolean.TRUE.equals(article.getIsActive())) {
+            throw new AppException(ERR_ARTICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
+        ArticleResponse response = articleMapper.toDto(article);
+        enrichArticlesWithHeartCount(Collections.singletonList(response));
+        return response;
+    }
+
+    @Override
     @Transactional
     public ArticleResponse review(String id, ArticleReviewRequest request, String managerId) {
         Article article = getArticleByIdOrThrow(id);

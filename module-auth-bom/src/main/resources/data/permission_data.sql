@@ -75,6 +75,7 @@ WITH perm_matrix(module, entity, actions) AS (
         ('task', 'task',            ARRAY['VIEW','CREATE','UPDATE','DELETE']),
         ('task', 'ticket',          ARRAY['VIEW','CREATE','UPDATE','DELETE']),
         ('task', 'tag',             ARRAY['VIEW','CREATE','UPDATE','DELETE']),
+        ('task', 'ticket-category', ARRAY['VIEW','CREATE','UPDATE','DELETE']),
         -- ========================= FACEBOOK AUTOMATION =========================
         ('fb', 'account',           ARRAY['VIEW','CREATE','UPDATE','DELETE']),
         ('fb', 'group',             ARRAY['VIEW','DELETE']),
@@ -242,6 +243,33 @@ SELECT
     NOW(), 'system',
     NOW(), 'system'
 FROM qtbv_art_perms s
+WHERE NOT EXISTS (
+    SELECT 1 FROM permission p WHERE p.code = s.code
+);
+
+-- ============================================================
+-- FR-DOC-03: Guide CMS — api_path leading slash khớp @CheckPermission
+-- ============================================================
+WITH guide_perms(code, name, api_method, api_path, action) AS (
+    VALUES
+        ('QTHT_GUIDES_VIEW',   'Guides - VIEW',   'GET',    '/qtht/guides', 'VIEW'),
+        ('QTHT_GUIDES_CREATE', 'Guides - CREATE', 'POST',   '/qtht/guides', 'CREATE'),
+        ('QTHT_GUIDES_UPDATE', 'Guides - UPDATE', 'PUT',    '/qtht/guides', 'UPDATE'),
+        ('QTHT_GUIDES_DELETE', 'Guides - DELETE', 'DELETE', '/qtht/guides', 'DELETE')
+)
+INSERT INTO permission (id, code, name, api_method, api_path, action, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT
+    gen_random_uuid(),
+    s.code,
+    s.name,
+    s.api_method,
+    s.api_path,
+    s.action,
+    'QTHT',
+    false,
+    NOW(), 'system',
+    NOW(), 'system'
+FROM guide_perms s
 WHERE NOT EXISTS (
     SELECT 1 FROM permission p WHERE p.code = s.code
 );

@@ -2,6 +2,7 @@ package com.frezo.qtht.controller;
 
 import com.frezo.auth.dto.request.RegisterRequest;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.comment.MentionUserDto;
 import com.frezo.qtht.dto.response.UserResponse;
@@ -63,11 +64,11 @@ public class UserAdminController {
     @Operation(summary = "Lấy danh sách tất cả người dùng", description = "Lấy danh sách người dùng với phân trang và tìm kiếm")
     @GetMapping("/all")
     @CheckPermission(api = "/qtht/user/all", action = "VIEW")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getAllUsers(
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @RequestParam(required = false) String search) {
-        Map<String, Object> result = userAdminService.getAllUsers(page, size, search);
+        PageResponse<UserResponse> result = userAdminService.getAllUsers(page, size, search);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 

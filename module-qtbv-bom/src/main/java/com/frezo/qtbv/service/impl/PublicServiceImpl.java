@@ -1,6 +1,7 @@
 package com.frezo.qtbv.service.impl;
 
 import com.frezo.common.response.PageResponse;
+import com.frezo.qtbv.dto.response.ArticleResponse;
 import com.frezo.qtbv.entity.LandingConfig;
 import com.frezo.qtbv.service.ArticleService;
 import com.frezo.qtbv.service.LandingConfigService;
@@ -10,8 +11,6 @@ import com.frezo.product.dto.response.ProductResponse;
 import com.frezo.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +37,7 @@ public class PublicServiceImpl implements PublicService {
     }
 
     @Override
-    public Map<String, Object> getArticles(int page, int size) {
+    public PageResponse<ArticleResponse> getArticles(int page, int size) {
         return articleService.getPublicArticles(page, size);
     }
 

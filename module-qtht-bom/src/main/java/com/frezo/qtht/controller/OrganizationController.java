@@ -2,6 +2,7 @@ package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
 import com.frezo.common.response.ComboboxResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.request.OrganizationAddRequest;
 import com.frezo.qtht.dto.request.OrganizationEditRequest;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/qtht/organization")
@@ -56,16 +56,10 @@ public class OrganizationController {
     @Operation(summary = "Lấy danh sách combobox", description = "Lấy danh sách tổ chức dạng combobox")
     @GetMapping("/combobox")
     public ApiResponse<?> getCombobox(@ModelAttribute OrganizationFilterRequest filter) {
-        Map<String, Object> data = organizationService.all(filter);
-        Object itemsObj = data != null ? data.get("items") : null;
-
-        if (!(itemsObj instanceof List<?> items)) {
-            return ApiResponse.success(Collections.emptyList());
-        }
+        PageResponse<OrganizationResponse> data = organizationService.all(filter);
+        List<OrganizationResponse> items = data.getItems() != null ? data.getItems() : Collections.emptyList();
 
         List<ComboboxResponse> comboboxData = items.stream()
-                .filter(o -> o instanceof OrganizationResponse)
-                .map(o -> (OrganizationResponse) o)
                 .map(this::mapToCombobox)
                 .toList();
 

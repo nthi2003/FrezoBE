@@ -6,13 +6,13 @@ import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.email.dto.request.EmailTemplateFilter;
 import com.frezo.email.dto.request.EmailTemplateRequest;
-import com.frezo.email.dto.response.EmailConfigResponse;
 import com.frezo.email.dto.response.EmailTemplateResponse;
 import com.frezo.email.entity.EmailTemplate;
 import com.frezo.email.mapper.EmailTemplateMapper;
 import com.frezo.email.repository.EmailTemplateRepository;
 import com.frezo.email.service.EmailtemplateService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,9 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -32,13 +29,11 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
     private final EmailTemplateRepository emailTemplateRepository;
 
 
-    public Map<String , Object> all(EmailTemplateFilter filter) {
+    public PageResponse<EmailTemplateResponse> all(EmailTemplateFilter filter) {
         Specification<EmailTemplate> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate" );
         Page<EmailTemplate> entities = emailTemplateRepository.findAll(specification, ServiceHelper.createPageable(filter.getPageNumber() , filter.getPageSize(), sort));
-        List<EmailTemplateResponse> responses = entities.getContent().stream()
-            .map(emailTemplateMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities , responses);
+        return PageResponse.from(entities, emailTemplateMapper::toResponse);
     }
 
     @Transactional

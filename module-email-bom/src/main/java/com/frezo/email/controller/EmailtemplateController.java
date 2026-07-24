@@ -1,6 +1,7 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.email.dto.request.EmailTemplateFilter;
 import com.frezo.email.dto.request.EmailTemplateRequest;
 import com.frezo.email.dto.request.SendTestEmailRequest;
@@ -14,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/email/template")
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class EmailtemplateController {
 
     @Operation(summary = "Get all email templates", description = "Returns a paginated list of email templates")
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getAll(EmailTemplateFilter filter) {
+    public ResponseEntity<ApiResponse<PageResponse<EmailTemplateResponse>>> getAll(EmailTemplateFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(emailTemplateService.all(filter)));
     }
 

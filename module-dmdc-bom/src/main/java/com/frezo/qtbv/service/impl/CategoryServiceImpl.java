@@ -12,15 +12,13 @@ import com.frezo.qtbv.mapper.CategoryMapper;
 import com.frezo.qtbv.repository.CategoryRepository;
 import com.frezo.qtbv.service.CategoryService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
 
 import static com.frezo.common.helper.GenericSpecification.likeField;
 
@@ -30,14 +28,12 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    public Map<String, Object> all (CategoryFilter filter) {
+    public PageResponse<CategoryResponse> all(CategoryFilter filter) {
         Specification<Category> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.ASC , "orderIndex");
         Page<Category> entities = categoryRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(),sort));
-        List<CategoryResponse> responses = entities.getContent().stream()
-                .map(categoryMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities , responses);
+        return PageResponse.from(entities, categoryMapper::toResponse);
     }
 
     @Transactional

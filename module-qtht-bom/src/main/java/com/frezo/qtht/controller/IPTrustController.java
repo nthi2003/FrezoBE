@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.IpTrustAddRequest;
 import com.frezo.qtht.dto.request.IpTrustEditRequest;
 import com.frezo.qtht.dto.request.IpTrustFilter;
@@ -13,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/qtht/ip-trust")
 @RequiredArgsConstructor
@@ -25,7 +24,7 @@ public class IPTrustController {
 
     @Operation(summary = "Lấy danh sách white list ip", description = "Lấy tất cả các ip trong danh sách trắng với phân trang và tìm kiếm theo keyword")
     @GetMapping
-    public ResponseEntity<ApiResponse<Map<String, Object>>> all(IpTrustFilter filter) {
+    public ResponseEntity<ApiResponse<PageResponse<IpTrustResponse>>> all(IpTrustFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(ipTrustService.all(filter)));
     }
 

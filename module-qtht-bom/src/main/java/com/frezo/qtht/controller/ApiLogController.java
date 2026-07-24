@@ -1,7 +1,9 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.ApilogFilter;
+import com.frezo.qtht.dto.response.ApiLogResponse;
 import com.frezo.qtht.service.ApiLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.frezo.qtht.dto.response.ApiLogStatsResponse;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/qtht/api-log")
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class ApiLogController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách API logs")
-    public ApiResponse<Map<String, Object>> getAllLogs(ApilogFilter filter) {
+    public ApiResponse<PageResponse<ApiLogResponse>> getAllLogs(ApilogFilter filter) {
         return ApiResponse.success(apiLogService.all(filter));
     }
 

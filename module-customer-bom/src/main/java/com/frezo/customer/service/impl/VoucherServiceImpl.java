@@ -4,6 +4,7 @@ import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.customer.entity.Voucher;
 import com.frezo.customer.repository.VoucherRepository;
@@ -17,8 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,7 +27,7 @@ public class VoucherServiceImpl {
     private final VoucherRepository voucherRepository;
 
     // ── List ─────────────────────────────────────────────────────────────────────
-    public Map<String, Object> getAll(String keyword, String status, String discountType,
+    public PageResponse<Voucher> getAll(String keyword, String status, String discountType,
                                        Integer pageNumber, Integer pageSize) {
         Specification<Voucher> spec = Specification.where(null);
         if (SystemUtils.isNotNullOrEmpty(keyword)) {
@@ -44,7 +43,7 @@ public class VoucherServiceImpl {
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<Voucher> page = voucherRepository.findAll(spec,
                 ServiceHelper.createPageable(pageNumber, pageSize, sort));
-        return ServiceHelper.createResponse1(pageNumber, pageSize, page, page.getContent());
+        return PageResponse.from(page);
     }
 
     // ── Create ────────────────────────────────────────────────────────────────────

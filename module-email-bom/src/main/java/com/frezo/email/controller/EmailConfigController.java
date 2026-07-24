@@ -1,9 +1,11 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.email.dto.request.EmailConfigAddRequest;
 import com.frezo.email.dto.request.EmailConfigEditRequest;
 import com.frezo.email.dto.request.EmailConfigFilter;
+import com.frezo.email.dto.response.EmailConfigResponse;
 import com.frezo.email.service.EmailConfigService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,8 +13,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/email/config")
@@ -23,7 +23,7 @@ public class EmailConfigController {
 
     @Operation(summary = "Get all email configurations", description = "Returns a paginated list of email configurations")
     @GetMapping("")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getAll(EmailConfigFilter filter) {
+    public ResponseEntity<ApiResponse<PageResponse<EmailConfigResponse>>> getAll(EmailConfigFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(emailConfigService.all(filter)));
     }
 

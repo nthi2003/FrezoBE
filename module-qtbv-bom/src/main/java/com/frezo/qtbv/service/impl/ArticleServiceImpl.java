@@ -2,8 +2,8 @@ package com.frezo.qtbv.service.impl;
 
 import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
-import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.service.CodeSequenceService;
 import com.frezo.qtbv.common.ArticleStatus;
 import com.frezo.qtbv.common.PublishScope;
@@ -279,51 +279,39 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public Map<String, Object> getPublicArticles(Integer pageNumber, Integer pageSize) {
+    public PageResponse<ArticleResponse> getPublicArticles(Integer pageNumber, Integer pageSize) {
         Pageable pageable = PageRequest.of(
                 pageNumber == null ? 0 : pageNumber,
                 pageSize == null ? 10 : pageSize);
 
         Page<Article> entities = articleRepository.findPublicArticles(pageable);
-        List<ArticleResponse> responses = entities.getContent().stream()
-                .map(articleMapper::toDto)
-                .collect(Collectors.toList());
-
-        enrichArticlesWithHeartCount(responses);
-
-        return ServiceHelper.createResponse1(pageNumber, pageSize, entities, responses);
+        Page<ArticleResponse> responses = entities.map(articleMapper::toDto);
+        enrichArticlesWithHeartCount(responses.getContent());
+        return PageResponse.from(responses);
     }
 
     @Override
-    public Map<String, Object> getMyDrafts(Integer pageNumber, Integer pageSize, String authorId) {
+    public PageResponse<ArticleResponse> getMyDrafts(Integer pageNumber, Integer pageSize, String authorId) {
         Pageable pageable = PageRequest.of(
                 pageNumber == null ? 0 : pageNumber,
                 pageSize == null ? 10 : pageSize);
 
         Page<Article> page = articleRepository.findByAuthorIdAndIsDeletedFalse(authorId, pageable);
-        List<ArticleResponse> responses = page.getContent().stream()
-                .map(articleMapper::toDto)
-                .collect(Collectors.toList());
-
-        enrichArticlesWithHeartCount(responses);
-
-        return ServiceHelper.createResponse1(pageNumber, pageSize, page, responses);
+        Page<ArticleResponse> responses = page.map(articleMapper::toDto);
+        enrichArticlesWithHeartCount(responses.getContent());
+        return PageResponse.from(responses);
     }
 
     @Override
-    public Map<String, Object> getPendingApproval(Integer pageNumber, Integer pageSize, String managerId) {
+    public PageResponse<ArticleResponse> getPendingApproval(Integer pageNumber, Integer pageSize, String managerId) {
         Pageable pageable = PageRequest.of(
                 pageNumber == null ? 0 : pageNumber,
                 pageSize == null ? 10 : pageSize);
 
         Page<Article> page = articleRepository.findWaitingApprovalByManagerId(managerId, pageable);
-        List<ArticleResponse> responses = page.getContent().stream()
-                .map(articleMapper::toDto)
-                .collect(Collectors.toList());
-
-        enrichArticlesWithHeartCount(responses);
-
-        return ServiceHelper.createResponse1(pageNumber, pageSize, page, responses);
+        Page<ArticleResponse> responses = page.map(articleMapper::toDto);
+        enrichArticlesWithHeartCount(responses.getContent());
+        return PageResponse.from(responses);
     }
 
     // --- Helper Methods ---

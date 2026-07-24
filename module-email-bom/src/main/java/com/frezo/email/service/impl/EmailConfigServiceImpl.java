@@ -14,6 +14,7 @@ import com.frezo.email.repository.EmailConfigRepository;
 import com.frezo.email.service.EmailConfigService;
 import com.frezo.email.service.EmailService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,9 +24,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -34,14 +32,12 @@ public class EmailConfigServiceImpl implements EmailConfigService {
     private final EmailConfigMapper emailConfigMapper;
     private final EmailService emailService;
 
-    public Map<String, Object> all(EmailConfigFilter filter) {
+    public PageResponse<EmailConfigResponse> all(EmailConfigFilter filter) {
         Specification<EmailConfig> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<EmailConfig> entities = emailConfigRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort));
-        List<EmailConfigResponse> responses = entities.getContent().stream()
-                .map(emailConfigMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
+        return PageResponse.from(entities, emailConfigMapper::toResponse);
     }
 
     public ApiResponse<?> add(EmailConfigAddRequest request) {

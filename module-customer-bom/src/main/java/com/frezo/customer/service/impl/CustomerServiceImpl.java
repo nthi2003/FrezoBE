@@ -4,6 +4,7 @@ import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.CryptoUtils;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.customer.dto.request.CustomerFilterRequest;
@@ -27,7 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -39,14 +39,12 @@ public class CustomerServiceImpl implements CustomerService {
 
     // ─────────────────── LIST / SEARCH ─────────────────────────────────────────
     @Override
-    public Map<String, Object> getAll(CustomerFilterRequest filter) {
+    public PageResponse<CustomerResponse> getAll(CustomerFilterRequest filter) {
         Specification<Customer> spec = buildSpec(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<Customer> page = customerRepository.findAll(spec,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort, true));
-        List<CustomerResponse> items = page.getContent().stream()
-                .map(customerMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), page, items);
+        return PageResponse.from(page, customerMapper::toResponse);
     }
 
     private Specification<Customer> buildSpec(CustomerFilterRequest filter) {

@@ -8,6 +8,7 @@ import com.frezo.qtht.dto.response.PersonResponse;
 import com.frezo.qtht.service.PersonService;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.common.response.ComboboxResponse;
+import com.frezo.common.response.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,7 +16,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 @RestController
 @RequestMapping("/qlns/person")
@@ -49,16 +51,10 @@ public class PersonController {
 
     @GetMapping("/combobox")
     public ApiResponse<?> getCombobox(@ModelAttribute PersonFilterRequest filter) {
-        Map<String, Object> data = personService.all(filter);
-        Object itemsObj = data != null ? data.get("items") : null;
-
-        if (!(itemsObj instanceof java.util.List<?> items)) {
-            return ApiResponse.ok(java.util.List.of());
-        }
+        PageResponse<PersonResponse> data = personService.all(filter);
+        List<PersonResponse> items = data.getItems() != null ? data.getItems() : Collections.emptyList();
 
         return ApiResponse.ok(items.stream()
-                .filter(p -> p instanceof PersonResponse)
-                .map(p -> (PersonResponse) p)
                 .map(p -> ComboboxResponse.builder()
                         .value(p.getId())
                         .label(p.getName() + " (" + p.getCode() + ")")

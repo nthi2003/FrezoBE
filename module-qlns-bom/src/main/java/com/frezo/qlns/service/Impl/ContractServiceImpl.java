@@ -22,6 +22,7 @@ import com.frezo.qlns.repository.ContractRepository;
 import com.frezo.qlns.service.ContractService;
 import com.frezo.qlns.service.ContractVersionService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -44,14 +45,12 @@ public class ContractServiceImpl implements ContractService {
     private final NotificationService notificationService;
     private final ContractRepository contractRepository;
 
-    public Map<String, Object> all(ContractFilter filter) {
+    public PageResponse<ContractResponse> all(ContractFilter filter) {
         Specification<Contract> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
         Page<Contract> entities = contractRepository.findAll(specification,
                 ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(), sort));
-        List<com.frezo.qlns.dto.response.ContractResponse> responses = entities.getContent().stream()
-                .map(contractMapper::toResponse).toList();
-        return ServiceHelper.createResponse1(filter.getPageNumber(), filter.getPageSize(), entities, responses);
+        return PageResponse.from(entities, contractMapper::toResponse);
     }
 
     private Specification<Contract> createSpecification(ContractFilter filter) {

@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl.payroll;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.dto.response.PayrollCalculateAllResponse;
 import com.frezo.qlns.engine.PayrollEngine;
 import com.frezo.qlns.entity.Contract;
@@ -54,7 +55,7 @@ public class PayrollCalculationOrchestrator {
      * Tính lương cho 1 nhân viên trong 1 kỳ. Idempotent — nếu đã có phiếu (personId+month+year)
      * và chưa lock, sẽ cập nhật lại.
      * <p>
-     * Thiếu HĐ activated/ACTIVE → {@link QTHTException} 400 (không fallback lương cứng, không 500).
+     * Thiếu HĐ activated/ACTIVE → {@link AppException} 400 (không fallback lương cứng, không 500).
      */
     @Transactional
     public CalculationResult calculate(String personId, Integer month, Integer year) {
@@ -161,7 +162,7 @@ public class PayrollCalculationOrchestrator {
 
     private CalculationResult doCalculate(String personId, Integer month, Integer year) {
         Person person = dataCollector.findPersonOrThrow(personId,
-                () -> new QTHTException("error.person.not.found"));
+                () -> new AppException(QlnsErrorCode.PERSON_NOT_FOUND));
 
         PayrollConfigLoader.ConfigBundle cfg = configLoader.load(person.getOrgId(), year);
         PayrollDataCollector.CollectedInput input = dataCollector.collect(person, month, year, cfg);
@@ -192,10 +193,10 @@ public class PayrollCalculationOrchestrator {
 
     private static void validatePeriod(Integer month, Integer year) {
         if (month == null || month < 1 || month > 12) {
-            throw new QTHTException("Tham số month không hợp lệ (1–12)");
+            throw new AppException(QlnsErrorCode.PAYROLL_MONTH_INVALID);
         }
         if (year == null || year < 2000 || year > 2100) {
-            throw new QTHTException("Tham số year không hợp lệ");
+            throw new AppException(QlnsErrorCode.PAYROLL_YEAR_INVALID);
         }
     }
 }

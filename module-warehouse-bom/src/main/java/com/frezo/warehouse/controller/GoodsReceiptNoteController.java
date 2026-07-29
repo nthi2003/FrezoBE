@@ -3,6 +3,7 @@ package com.frezo.warehouse.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.warehouse.dto.request.GrnConfirmRequest;
 import com.frezo.warehouse.dto.request.GrnCreateRequest;
+import com.frezo.warehouse.dto.request.GrnUpdateRequest;
 import com.frezo.warehouse.service.DocumentPrintService;
 import com.frezo.warehouse.service.GoodsReceiptNoteService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,7 +28,25 @@ public class GoodsReceiptNoteController {
         return ApiResponse.success(grnService.create(request));
     }
 
-    @Operation(summary = "Xác nhận nhập kho", description = "CONFIRM → cập nhật stock_ledger, stock_transactions, stock_balances")
+    @Operation(summary = "Cập nhật phiếu nhập kho", description = "Sửa HĐ NCC, ghi chú — chỉ khi chưa CONFIRMED")
+    @PutMapping("/{id}")
+    public ApiResponse<?> update(@PathVariable String id, @RequestBody GrnUpdateRequest request) {
+        return ApiResponse.success(grnService.update(id, request));
+    }
+
+    @Operation(summary = "Gửi duyệt phiếu nhập kho", description = "DRAFT → PENDING_APPROVAL")
+    @PostMapping("/{id}/submit")
+    public ApiResponse<?> submit(@PathVariable String id) {
+        return ApiResponse.success(grnService.submit(id));
+    }
+
+    @Operation(summary = "Duyệt phiếu nhập kho", description = "PENDING_APPROVAL/DRAFT → APPROVED")
+    @PostMapping("/{id}/approve")
+    public ApiResponse<?> approve(@PathVariable String id) {
+        return ApiResponse.success(grnService.approve(id));
+    }
+
+    @Operation(summary = "Xác nhận nhập kho", description = "APPROVED/DRAFT → CONFIRMED — cập nhật stock")
     @PostMapping("/{id}/confirm")
     public ApiResponse<?> confirm(@PathVariable String id, @RequestBody GrnConfirmRequest request) {
         return ApiResponse.success(grnService.confirm(id, request));

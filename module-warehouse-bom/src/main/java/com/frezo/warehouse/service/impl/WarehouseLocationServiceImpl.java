@@ -1,13 +1,13 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.warehouse.dto.request.WarehouseLocationRequest;
 import com.frezo.warehouse.dto.response.WarehouseLocationResponse;
 import com.frezo.warehouse.entity.WarehouseLocation;
 import com.frezo.warehouse.repository.WarehouseLocationRepository;
 import com.frezo.warehouse.service.WarehouseLocationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     @Override
     public WarehouseLocationResponse getById(String id) {
         WarehouseLocation loc = locationRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.location.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.LOCATION_NOT_FOUND));
         return toResponse(loc);
     }
 
@@ -34,7 +34,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     @Override
     public WarehouseLocationResponse getByBarcode(String barcode) {
         WarehouseLocation loc = locationRepository.findByBarcode(barcode)
-                .orElseThrow(() -> new QTHTException("warehouse.location.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.LOCATION_NOT_FOUND));
         return toResponse(loc);
     }
 
@@ -59,7 +59,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     @Transactional
     public WarehouseLocationResponse update(String id, WarehouseLocationRequest request) {
         WarehouseLocation loc = locationRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.location.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.LOCATION_NOT_FOUND));
         if (request.getZoneId() != null) loc.setZoneId(request.getZoneId());
         if (request.getAisle() != null) loc.setAisle(request.getAisle());
         if (request.getRack() != null) loc.setRack(request.getRack());
@@ -76,7 +76,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     @Transactional
     public void delete(String id) {
         WarehouseLocation loc = locationRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.location.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.LOCATION_NOT_FOUND));
         locationRepository.delete(loc);
     }
 

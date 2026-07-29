@@ -1,9 +1,10 @@
 package com.frezo.qlns.service.impl;
 
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.approval.entity.ApprovalRequest;
 import com.frezo.approval.service.ApprovalCreator;
 import com.frezo.common.domain.SubjectType;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -77,7 +78,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     @Transactional
     public PayrollPeriodResponse create(PayrollPeriodRequest request) {
         if (payrollPeriodRepository.findByOrgIdAndMonthAndYear(request.getOrgId(), request.getMonth(), request.getYear()).isPresent()) {
-            throw new QTHTException("Kỳ lương đã tồn tại cho tháng " + request.getMonth() + "/" + request.getYear());
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_EXISTS, request.getMonth(), request.getYear());
         }
         PayrollPeriod entity = PayrollPeriod.builder()
                 .orgId(request.getOrgId())
@@ -98,7 +99,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     public PayrollPeriodResponse update(String id, PayrollPeriodRequest request) {
         PayrollPeriod entity = findOrThrow(id);
         if (entity.getStatus() != null && (entity.getStatus() == STATUS_LOCKED || entity.getStatus() == STATUS_CLOSED)) {
-            throw new QTHTException("Không thể sửa kỳ lương đã khóa");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_LOCKED_EDIT);
         }
         entity.setName(request.getName());
         entity.setFromDate(request.getFromDate());
@@ -117,7 +118,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     public PayrollPeriodResponse lock(String id) {
         PayrollPeriod entity = findOrThrow(id);
         if (entity.getStatus() != null && (entity.getStatus() == STATUS_LOCKED || entity.getStatus() == STATUS_CLOSED)) {
-            throw new QTHTException("Kỳ lương đã được khóa");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_ALREADY_LOCKED);
         }
         entity.setStatus(STATUS_LOCKED);
         entity.setLockedAt(LocalDateTime.now());
@@ -144,7 +145,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     public PayrollPeriodResponse unlock(String id) {
         PayrollPeriod entity = findOrThrow(id);
         if (entity.getStatus() != null && entity.getStatus() == STATUS_CLOSED) {
-            throw new QTHTException("Không thể mở khóa kỳ lương đã đóng");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_CLOSED_UNLOCK);
         }
 
         // Cancel workflow instance nếu đang chạy — để không kẹt task PENDING orphan
@@ -176,7 +177,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     public PayrollPeriodResponse approve(String id, String note) {
         PayrollPeriod entity = findOrThrow(id);
         if (entity.getWorkflowInstanceId() == null) {
-            throw new QTHTException("Kỳ lương chưa có workflow — bấm 'Khoá kỳ' trước để bắt đầu duyệt.");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_NO_WORKFLOW_LOCK);
         }
         WorkflowTaskDto task = findCurrentPendingTask(entity);
         if (task == null) {
@@ -202,14 +203,14 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     public PayrollPeriodResponse reject(String id, String reason) {
         PayrollPeriod entity = findOrThrow(id);
         if (reason == null || reason.isBlank()) {
-            throw new QTHTException("Vui lòng nhập lý do từ chối");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_REJECT_REASON_REQUIRED);
         }
         if (entity.getWorkflowInstanceId() == null) {
-            throw new QTHTException("Kỳ lương chưa có workflow");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_NO_WORKFLOW);
         }
         WorkflowTaskDto task = findCurrentPendingTask(entity);
         if (task == null) {
-            throw new QTHTException("Không có bước nào đang chờ duyệt");
+            throw new AppException(QlnsErrorCode.PAYROLL_PERIOD_NO_PENDING_STEP);
         }
         workflowService.rejectTask(task.getId(), reason.trim());
 
@@ -255,7 +256,7 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
 
     private PayrollPeriod findOrThrow(String id) {
         return payrollPeriodRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy kỳ lương"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.PAYROLL_PERIOD_NOT_FOUND));
     }
 
     private WorkflowTaskDto findCurrentPendingTask(PayrollPeriod entity) {

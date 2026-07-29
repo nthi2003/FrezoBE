@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.common.service.MinioService;
 import com.frezo.qlns.dto.response.ContractTemplateResponse;
 import com.frezo.qlns.entity.ContractTemplate;
@@ -46,7 +47,7 @@ public class ContractTemplateServiceImpl implements ContractTemplateService {
     @Transactional
     public void delete(String id) {
         ContractTemplate entity = contractTemplateRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy mẫu hợp đồng"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.CONTRACT_TEMPLATE_NOT_FOUND));
         try {
             if (entity.getFileObjectName() != null) {
                 minioService.deleteFile(entity.getFileObjectName());

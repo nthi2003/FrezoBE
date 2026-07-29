@@ -114,7 +114,7 @@ FROM (VALUES
     ('WH_PO',              'Đơn mua hàng',        'Purchase Orders',      '/warehouse/purchase-orders',       'src/modules/warehouse',  'SALE_GRP_WH',  5,  'FileSpreadsheet'),
     -- CRM
     ('CRM_LEADS',          'Leads',               'Leads',                '/crm/leads',                       'src/modules/crm',        'MENU_CRM',     2,  'UserPlus'),
-    ('CRM_DEALS',          'Deals',               'Deals',                '/crm/deals',                       'src/modules/crm',        'MENU_CRM',     3,  'Briefcase'),
+    ('CRM_DEALS',          'Cơ hội bán',          'Deals',                '/crm/deals',                       'src/modules/crm',        'MENU_CRM',     3,  'Briefcase'),
     ('CRM_MEETINGS',       'Cuộc họp',            'Meetings',             '/crm/meetings',                    'src/modules/crm',        'MENU_CRM',     4,  'CalendarCheck'),
     ('CRM_EMAIL_SEQ',      'Email sequence',      'Email Sequences',      '/crm/email-sequences',             'src/modules/crm',        'MENU_CRM',     5,  'Mail'),
     -- SALE · quotes / invoices (bán hàng thuần)
@@ -158,7 +158,7 @@ UPDATE menu SET parent_code = 'MENU_HRM', order_index = 11, fe_url = '/qlns/recr
 -- === CRM (MENU_CRM) — pipeline / khách hàng (quotes+invoices → SALE) ===
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 1, fe_url = '/customer',            updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_CUSTOMER';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 2, fe_url = '/crm/leads',           updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_LEADS';
-UPDATE menu SET parent_code = 'MENU_CRM', order_index = 3, fe_url = '/crm/deals',           updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_DEALS';
+UPDATE menu SET parent_code = 'MENU_CRM', order_index = 3, fe_url = '/crm/deals', name = 'Cơ hội bán', updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_DEALS';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 4, fe_url = '/crm/meetings',        updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_MEETINGS';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 5, fe_url = '/crm/email-sequences', updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_EMAIL_SEQ';
 

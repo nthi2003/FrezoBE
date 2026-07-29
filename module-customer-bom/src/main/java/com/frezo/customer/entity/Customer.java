@@ -57,4 +57,8 @@ public class Customer extends BaseEntity implements PhoneEncryptable {
 
     @Column(name = "note", length = 1000)
     private String note;
+
+    /** URL ảnh đại diện (MinIO / CDN / demo pravatar). */
+    @Column(name = "avatar_url", length = 1000)
+    private String avatarUrl;
 }

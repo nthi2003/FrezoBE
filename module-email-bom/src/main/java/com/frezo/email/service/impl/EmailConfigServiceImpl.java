@@ -1,6 +1,7 @@
 package com.frezo.email.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.email.common.EmailErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -77,31 +78,31 @@ public class EmailConfigServiceImpl implements EmailConfigService {
 
     private void validateRequest(EmailConfigAddRequest request) {
         if (emailConfigRepository.existsByCode(request.getCode())) {
-            throw new QTHTException("valid.code.exists");
+            throw new AppException(EmailErrorCode.CODE_EXISTS);
         }
         if (emailConfigRepository.existsByName(request.getName())) {
-            throw new QTHTException("valid.name.exists");
+            throw new AppException(EmailErrorCode.NAME_EXISTS);
         }
         if (emailConfigRepository.existsBySmtp(request.getSmtp())) {
-            throw new QTHTException("valid.smtp.exists");
+            throw new AppException(EmailErrorCode.SMTP_EXISTS);
         }
         if (emailConfigRepository.existsByNameEmail(request.getNameEmail())) {
-            throw new QTHTException("valid.nameEmail.exists");
+            throw new AppException(EmailErrorCode.NAME_EMAIL_EXISTS);
         }
     }
 
     private void validateRequestEdit(String id, EmailConfigEditRequest request) {
         if (emailConfigRepository.existsByCodeAndIdNot(request.getCode(), id)) {
-            throw new QTHTException("valid.code.exists");
+            throw new AppException(EmailErrorCode.CODE_EXISTS);
         }
         if (emailConfigRepository.existsByNameAndIdNot(request.getName(), id)) {
-            throw new QTHTException("valid.name.exists");
+            throw new AppException(EmailErrorCode.NAME_EXISTS);
         }
         if (emailConfigRepository.existsBySmtpAndIdNot(request.getSmtp(), id)) {
-            throw new QTHTException("valid.smtp.exists");
+            throw new AppException(EmailErrorCode.SMTP_EXISTS);
         }
         if (emailConfigRepository.existsByNameEmailAndIdNot(request.getNameEmail(), id)) {
-            throw new QTHTException("valid.nameEmail.exists");
+            throw new AppException(EmailErrorCode.NAME_EMAIL_EXISTS);
         }
     }
 
@@ -130,7 +131,7 @@ public class EmailConfigServiceImpl implements EmailConfigService {
 
     protected EmailConfig findEntityById(String id) {
 
-        return emailConfigRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));
+        return emailConfigRepository.findById(id).orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_ENTITY_NOT_FOUND));
     }
 
     @Transactional

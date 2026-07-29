@@ -12,6 +12,8 @@ public interface GoodsIssueNoteService {
     GinResponse getByCode(String ginCode);
     PageResponse<GinResponse> filter(String status, String keyword, int page, int size);
     GinResponse create(GinCreateRequest request);
+    GinResponse submit(String id);
+    GinResponse approve(String id);
     GinResponse confirm(String id, GinConfirmRequest request);
     void batchConfirm(List<String> ids);
     void cancel(String id, String reason);

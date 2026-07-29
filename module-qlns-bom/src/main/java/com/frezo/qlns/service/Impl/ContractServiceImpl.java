@@ -1,8 +1,9 @@
 package com.frezo.qlns.service.impl;
 
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.common.constant.WebSocketChannels;
 import com.frezo.common.service.NotificationService;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -104,12 +105,12 @@ public class ContractServiceImpl implements ContractService {
 
     private void validateRequest(ContractAddRequest request) {
         if (contractRepository.existsByCode(request.getCode())) {
-            throw new QTHTException("valid.code.exists");
+            throw new AppException(QlnsErrorCode.CODE_EXISTS);
         }
     }
 
     private Contract findEntityById(String id) {
-        return contractRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));
+        return contractRepository.findById(id).orElseThrow(() -> new AppException(QlnsErrorCode.ENTITY_NOT_FOUND));
     }
 
     public ApiResponse<?> delete(String id) {
@@ -208,10 +209,10 @@ public class ContractServiceImpl implements ContractService {
         ContractAssginWork assignWork = contractAssginWorkReposirory.findByContractId(id);
 
         if (assignWork == null) {
-            throw new QTHTException("contract.not.found");
+            throw new AppException(QlnsErrorCode.CONTRACT_NOT_FOUND);
         }
         if (!currentUsername.equals(assignWork.getAssignRV())) {
-            throw new QTHTException("can.not.role");
+            throw new AppException(QlnsErrorCode.CANNOT_ROLE);
         }
 
         contract.setStatus(StatusContarct.RV_REJECTED);

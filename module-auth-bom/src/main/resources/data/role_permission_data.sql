@@ -86,6 +86,7 @@ WHERE p.is_deleted = false
              'qtht/role','qtht/permission','qtht/menu','qtht/user',
              'qtht/setting','qtht/audit-log','qtht/api-log',
              'qtht/ip-blacklist','qtht/ip-whitelist','qtht/ip-trust',
+             'qtht/dashboard', -- KPI Tổng quan: chỉ Admin/Manager
              'cms/customer','cms/order','cms/voucher',
              'fb/account','fb/group','fb/lead','fb/automation',
              -- CYCLE-DEP: Staff không xem/ghi sổ khấu hao (QA G2)
@@ -112,3 +113,16 @@ WHERE p.is_deleted = false
       WHERE r.code = 'STAFF'
         AND rp.permission_id = p.id
   );
+
+-- Revoke STAFF KPI dashboard permissions if previously granted (HOME portal không cần)
+UPDATE role_permission rp
+SET is_deleted = true,
+    updated_date = NOW(),
+    updated_by = 'system'
+FROM roles r, permission p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'STAFF'
+  AND r.app_code = 'QTHT'
+  AND p.api_path = 'qtht/dashboard'
+  AND (rp.is_deleted IS DISTINCT FROM true);

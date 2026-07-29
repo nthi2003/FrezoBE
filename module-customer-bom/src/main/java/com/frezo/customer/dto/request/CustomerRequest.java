@@ -21,4 +21,5 @@ public class CustomerRequest {
     private String status;  // ACTIVE | INACTIVE
     private String categoryCode;
     private String note;
+    private String avatarUrl;
 }

@@ -287,6 +287,13 @@ public class GlobalExceptionHandler {
             return messageSource.getMessage(key, args, locale);
         } catch (NoSuchMessageException nsm) {
             log.warn("Missing i18n key: {} (fallback: {})", key, fallback);
+            if (fallback != null && args != null && args.length > 0) {
+                try {
+                    return new java.text.MessageFormat(fallback, locale).format(args);
+                } catch (IllegalArgumentException ignored) {
+                    return fallback;
+                }
+            }
             return fallback;
         }
     }

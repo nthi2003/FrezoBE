@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.product.entity.Product;
 import com.frezo.product.repository.ProductRepository;
@@ -16,7 +17,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -60,7 +60,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
     @Override
     public StockBalanceResponse getById(String id) {
         StockBalance balance = stockBalanceRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.balance.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.STOCK_BALANCE_NOT_FOUND));
         return toResponse(balance);
     }
 
@@ -156,7 +156,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("stock.export.failed", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(WarehouseErrorCode.STOCK_EXPORT_FAILED);
         }
     }
 
@@ -164,7 +164,15 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         StockBalanceResponse r = new StockBalanceResponse();
         r.setId(balance.getId());
         r.setProductId(balance.getProductId());
+        productRepository.findById(balance.getProductId()).ifPresent(p -> {
+            r.setProductCode(p.getCode());
+            r.setProductName(p.getName());
+        });
         r.setWarehouseId(balance.getWarehouseId());
+        warehouseRepository.findById(balance.getWarehouseId()).ifPresent(wh -> {
+            r.setWarehouseName(wh.getName());
+            r.setWarehouseCode(wh.getCode());
+        });
         r.setLocationId(balance.getLocationId());
         r.setBatchId(balance.getBatchId());
         r.setQuantityOnHand(balance.getQuantityOnHand());

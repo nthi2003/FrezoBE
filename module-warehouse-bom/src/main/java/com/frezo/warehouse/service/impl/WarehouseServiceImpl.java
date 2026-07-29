@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.warehouse.dto.request.WarehouseCreateRequest;
 import com.frezo.warehouse.dto.request.WarehouseUpdateRequest;
@@ -12,7 +13,6 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,14 +28,14 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     public WarehouseResponse getById(String id) {
         Warehouse wh = warehouseRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND));
         return toResponse(wh);
     }
 
     @Override
     public WarehouseResponse getByCode(String code) {
         Warehouse wh = warehouseRepository.findByCode(code)
-                .orElseThrow(() -> new QTHTException("warehouse.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND));
         return toResponse(wh);
     }
 
@@ -67,7 +67,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public WarehouseResponse create(WarehouseCreateRequest request) {
         if (warehouseRepository.findByCode(request.getCode()).isPresent()) {
-            throw new QTHTException("warehouse.code.exists", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.WAREHOUSE_CODE_EXISTS);
         }
         Warehouse wh = Warehouse.builder()
                 .code(request.getCode())
@@ -102,7 +102,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public WarehouseResponse update(String id, WarehouseUpdateRequest request) {
         Warehouse wh = warehouseRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND));
         if (request.getName() != null) wh.setName(request.getName());
         if (request.getShortName() != null) wh.setShortName(request.getShortName());
         if (request.getType() != null) wh.setType(request.getType());
@@ -133,7 +133,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Transactional
     public void delete(String id) {
         Warehouse wh = warehouseRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND));
         warehouseRepository.delete(wh);
     }
 

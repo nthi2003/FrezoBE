@@ -1,6 +1,7 @@
 package com.frezo.qtbv.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtbv.common.DmdcErrorCode;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.workflow.dto.WorkflowInstanceDto;
@@ -172,7 +173,7 @@ public class AssetServiceImpl implements AssetService {
                 .note(req.getNote())
                 .build();
         if (assetRepository.existsByCode(e.getCode())) {
-            throw new QTHTException("error.asset.code.duplicate");
+            throw new AppException(DmdcErrorCode.ASSET_CODE_DUPLICATE);
         }
         Asset saved = assetRepository.save(e);
         return enrich(saved);
@@ -205,7 +206,7 @@ public class AssetServiceImpl implements AssetService {
         Asset e = findOrThrow(id);
         // Đang cấp phát không cho xoá
         if (STATUS_IN_USE.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.in.use.cannot.delete");
+            throw new AppException(DmdcErrorCode.ASSET_IN_USE_CANNOT_DELETE);
         }
         e.softDelete(SystemUtils.getCurrentUsername());
         assetRepository.save(e);
@@ -220,10 +221,10 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse assign(String id, AssetAssignRequest req) {
         Asset e = findOrThrow(id);
         if (!STATUS_AVAILABLE.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.not.available");
+            throw new AppException(DmdcErrorCode.ASSET_NOT_AVAILABLE);
         }
         if (req.getPersonId() == null || req.getPersonId().isBlank()) {
-            throw new QTHTException("error.asset.assign.person.required");
+            throw new AppException(DmdcErrorCode.ASSET_ASSIGN_PERSON_REQUIRED);
         }
         // Enrich personName nếu client không truyền
         String personName = req.getPersonName();
@@ -246,7 +247,7 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse unassign(String id, String note) {
         Asset e = findOrThrow(id);
         if (!STATUS_IN_USE.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.not.in.use");
+            throw new AppException(DmdcErrorCode.ASSET_NOT_IN_USE);
         }
         String personId = e.getAssignedPersonId();
         String personName = personId != null ? lookupPersonName(personId) : null;
@@ -265,7 +266,7 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse startMaintenance(String id, String note) {
         Asset e = findOrThrow(id);
         if (STATUS_DISPOSED.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.disposed");
+            throw new AppException(DmdcErrorCode.ASSET_DISPOSED);
         }
         e.setStatus(STATUS_MAINTENANCE);
         assetRepository.save(e);
@@ -278,7 +279,7 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse endMaintenance(String id, String note, BigDecimal cost) {
         Asset e = findOrThrow(id);
         if (!STATUS_MAINTENANCE.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.not.in.maintenance");
+            throw new AppException(DmdcErrorCode.ASSET_NOT_IN_MAINTENANCE);
         }
         e.setStatus(STATUS_AVAILABLE);
         assetRepository.save(e);
@@ -291,7 +292,7 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse dispose(String id, String note) {
         Asset e = findOrThrow(id);
         if (STATUS_DISPOSED.equals(e.getStatus())) {
-            throw new QTHTException("error.asset.already.disposed");
+            throw new AppException(DmdcErrorCode.ASSET_ALREADY_DISPOSED);
         }
         e.setStatus(STATUS_DISPOSED);
         // Nếu đang cấp phát → auto-return trong lịch sử trước khi dispose
@@ -360,7 +361,7 @@ public class AssetServiceImpl implements AssetService {
     private Asset findOrThrow(String id) {
         return assetRepository.findById(id)
                 .filter(a -> !Boolean.TRUE.equals(a.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.asset.not.found"));
+                .orElseThrow(() -> new AppException(DmdcErrorCode.ASSET_NOT_FOUND));
     }
 
     /**
@@ -474,24 +475,24 @@ public class AssetServiceImpl implements AssetService {
         List<AssetTransferRequest> active = transferRequestRepository
                 .findByAssetIdAndStatusIn(assetId, List.of(TR_PENDING, TR_APPROVED));
         if (!active.isEmpty()) {
-            throw new QTHTException("error.asset.transfer.active.exists");
+            throw new AppException(DmdcErrorCode.TRANSFER_ACTIVE_EXISTS);
         }
 
         if (TR_TYPE_ASSIGN.equals(type)) {
             if (!STATUS_AVAILABLE.equals(asset.getStatus())) {
-                throw new QTHTException("error.asset.not.available");
+                throw new AppException(DmdcErrorCode.ASSET_NOT_AVAILABLE);
             }
             if (req.getPersonId() == null || req.getPersonId().isBlank()) {
-                throw new QTHTException("error.asset.assign.person.required");
+                throw new AppException(DmdcErrorCode.ASSET_ASSIGN_PERSON_REQUIRED);
             }
         } else if (TR_TYPE_RETURN.equals(type)) {
             if (!STATUS_IN_USE.equals(asset.getStatus())) {
-                throw new QTHTException("error.asset.not.in.use");
+                throw new AppException(DmdcErrorCode.ASSET_NOT_IN_USE);
             }
             // Với RETURN, personId auto = người đang giữ
             req.setPersonId(asset.getAssignedPersonId());
         } else {
-            throw new QTHTException("error.asset.transfer.type.invalid");
+            throw new AppException(DmdcErrorCode.TRANSFER_TYPE_INVALID);
         }
 
         // Enrich personName nếu client không truyền
@@ -549,7 +550,7 @@ public class AssetServiceImpl implements AssetService {
         // ---- Path B: legacy fallback ----
         requireApprover();
         if (!TR_PENDING.equals(tr.getStatus())) {
-            throw new QTHTException("error.asset.transfer.not.pending");
+            throw new AppException(DmdcErrorCode.TRANSFER_NOT_PENDING);
         }
         tr.setStatus(TR_APPROVED);
         tr.setApprovedBy(SystemUtils.getCurrentUsername());
@@ -564,12 +565,12 @@ public class AssetServiceImpl implements AssetService {
     public AssetTransferRequestResponse rejectTransferRequest(String requestId, String reason) {
         AssetTransferRequest tr = findTransferOrThrow(requestId);
         if (reason == null || reason.isBlank()) {
-            throw new QTHTException("error.asset.transfer.reject.reason.required");
+            throw new AppException(DmdcErrorCode.TRANSFER_REJECT_REASON_REQUIRED);
         }
 
         if (tr.getWorkflowInstanceId() != null) {
             WorkflowTaskDto task = findCurrentPendingTask(tr);
-            if (task == null) throw new QTHTException("error.asset.transfer.no.pending.task");
+            if (task == null) throw new AppException(DmdcErrorCode.TRANSFER_NO_PENDING_TASK);
             workflowService.rejectTask(task.getId(), reason.trim());
             tr.setStatus(TR_REJECTED);
             tr.setRejectedBy(SystemUtils.getCurrentUsername());
@@ -581,7 +582,7 @@ public class AssetServiceImpl implements AssetService {
 
         requireApprover();
         if (!TR_PENDING.equals(tr.getStatus())) {
-            throw new QTHTException("error.asset.transfer.not.pending");
+            throw new AppException(DmdcErrorCode.TRANSFER_NOT_PENDING);
         }
         tr.setStatus(TR_REJECTED);
         tr.setRejectedBy(SystemUtils.getCurrentUsername());
@@ -598,11 +599,11 @@ public class AssetServiceImpl implements AssetService {
         String me = SystemUtils.getCurrentUsername();
         boolean isRequester = me != null && me.equalsIgnoreCase(tr.getRequesterUsername());
         if (!isRequester && !isAdmin()) {
-            throw new QTHTException("error.asset.transfer.cancel.forbidden");
+            throw new AppException(DmdcErrorCode.TRANSFER_CANCEL_FORBIDDEN);
         }
         // Chỉ huỷ khi chưa duyệt xong — kể cả engine mode
         if (!TR_PENDING.equals(tr.getStatus())) {
-            throw new QTHTException("error.asset.transfer.cannot.cancel");
+            throw new AppException(DmdcErrorCode.TRANSFER_CANNOT_CANCEL);
         }
 
         if (tr.getWorkflowInstanceId() != null) {
@@ -635,7 +636,7 @@ public class AssetServiceImpl implements AssetService {
         // ---- Legacy path ----
         requireApprover();
         if (!TR_APPROVED.equals(tr.getStatus())) {
-            throw new QTHTException("error.asset.transfer.not.approved");
+            throw new AppException(DmdcErrorCode.TRANSFER_NOT_APPROVED);
         }
         Asset asset = findOrThrow(tr.getAssetId());
         applyHandoverEffects(tr, asset, note);
@@ -752,7 +753,7 @@ public class AssetServiceImpl implements AssetService {
     private void applyHandoverEffects(AssetTransferRequest tr, Asset asset, String note) {
         if (TR_TYPE_ASSIGN.equals(tr.getRequestType())) {
             if (!STATUS_AVAILABLE.equals(asset.getStatus())) {
-                throw new QTHTException("error.asset.not.available");
+                throw new AppException(DmdcErrorCode.ASSET_NOT_AVAILABLE);
             }
             asset.setStatus(STATUS_IN_USE);
             asset.setAssignedPersonId(tr.getPersonId());
@@ -762,7 +763,7 @@ public class AssetServiceImpl implements AssetService {
                     LocalDate.now(), joinNote(tr.getReason(), note), null);
         } else if (TR_TYPE_RETURN.equals(tr.getRequestType())) {
             if (!STATUS_IN_USE.equals(asset.getStatus())) {
-                throw new QTHTException("error.asset.not.in.use");
+                throw new AppException(DmdcErrorCode.ASSET_NOT_IN_USE);
             }
             String pid = asset.getAssignedPersonId();
             String pn = pid != null ? lookupPersonName(pid) : null;
@@ -822,7 +823,7 @@ public class AssetServiceImpl implements AssetService {
     private AssetTransferRequest findTransferOrThrow(String id) {
         return transferRequestRepository.findById(id)
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
-                .orElseThrow(() -> new QTHTException("error.asset.transfer.not.found"));
+                .orElseThrow(() -> new AppException(DmdcErrorCode.TRANSFER_NOT_FOUND));
     }
 
     /**
@@ -831,7 +832,7 @@ public class AssetServiceImpl implements AssetService {
      */
     private void requireApprover() {
         if (!isAdmin()) {
-            throw new QTHTException("error.asset.transfer.approve.forbidden");
+            throw new AppException(DmdcErrorCode.TRANSFER_APPROVE_FORBIDDEN);
         }
     }
 

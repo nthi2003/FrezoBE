@@ -1,6 +1,7 @@
 package com.frezo.task.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.task.common.TaskErrorCode;
 import com.frezo.task.dto.request.TicketCategoryRequest;
 import com.frezo.task.dto.response.TicketCategoryResponse;
 import com.frezo.task.entity.TicketCategory;
@@ -18,9 +19,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class TicketCategoryServiceImpl implements TicketCategoryService {
 
-    private static final String ERROR_CODE_EXISTS = "TICKET_CATEGORY_CODE_EXISTS";
-    private static final String ERROR_NOT_FOUND = "TICKET_CATEGORY_NOT_FOUND";
-
     private final TicketCategoryMapper ticketCategoryMapper;
     private final TicketCategoryRepository ticketCategoryRepository;
 
@@ -29,7 +27,7 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
     public TicketCategoryResponse add(TicketCategoryRequest request) {
         validateRequest(request);
         if (ticketCategoryRepository.existsByCodeAndIsDeletedFalse(normalizeCode(request.getCode()))) {
-            throw new QTHTException(ERROR_CODE_EXISTS, "Mã danh mục đã tồn tại: " + request.getCode());
+            throw new AppException(TaskErrorCode.TICKET_CATEGORY_CODE_EXISTS, request.getCode());
         }
         TicketCategory entity = ticketCategoryMapper.toEntity(request);
         entity.setCode(normalizeCode(request.getCode()));
@@ -50,7 +48,7 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
         String newCode = normalizeCode(request.getCode());
         if (!Objects.equals(exist.getCode(), newCode)) {
             if (ticketCategoryRepository.existsByCodeAndIsDeletedFalse(newCode)) {
-                throw new QTHTException(ERROR_CODE_EXISTS, "Mã danh mục đã tồn tại: " + newCode);
+                throw new AppException(TaskErrorCode.TICKET_CATEGORY_CODE_EXISTS, newCode);
             }
         }
         validateRequest(request);
@@ -88,10 +86,10 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
 
     private void validateRequest(TicketCategoryRequest request) {
         if (request.getCode() == null || request.getCode().isBlank()) {
-            throw new QTHTException("TICKET_CATEGORY_CODE_REQUIRED", "Mã danh mục bắt buộc");
+            throw new AppException(TaskErrorCode.TICKET_CATEGORY_CODE_REQUIRED);
         }
         if (request.getName() == null || request.getName().isBlank()) {
-            throw new QTHTException("TICKET_CATEGORY_NAME_REQUIRED", "Tên danh mục bắt buộc");
+            throw new AppException(TaskErrorCode.TICKET_CATEGORY_NAME_REQUIRED);
         }
     }
 
@@ -102,6 +100,6 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
     @Transactional(readOnly = true)
     protected TicketCategory findEntityById(String id) {
         return ticketCategoryRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException(ERROR_NOT_FOUND, "Không tìm thấy danh mục: " + id));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_CATEGORY_NOT_FOUND, id));
     }
 }

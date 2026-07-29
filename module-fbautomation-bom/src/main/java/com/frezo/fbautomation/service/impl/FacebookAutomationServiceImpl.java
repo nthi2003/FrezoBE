@@ -1,6 +1,7 @@
 package com.frezo.fbautomation.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.fbautomation.common.FbAutomationErrorCode;
 import com.frezo.fbautomation.config.WebDriverConfig;
 import com.frezo.fbautomation.dto.response.AutomationSummaryResponse;
 import com.frezo.fbautomation.dto.response.FacebookGroupResponse;
@@ -116,7 +117,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
 
         } catch (Exception e) {
             log.error("Lỗi khi scrape groups cho account {}: {}", accountId, e.getMessage());
-            throw new QTHTException("Lỗi scrape groups: " + e.getMessage());
+            throw new AppException(FbAutomationErrorCode.SCRAPE_GROUPS_FAILED, e.getMessage());
         } finally {
             // Đóng driver và xóa khỏi map
             if (driver != null) {
@@ -138,7 +139,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
         try {
             FacebookAccount account = findAccount(accountId);
             FacebookGroup group = groupRepository.findByGroupId(groupId)
-                    .orElseThrow(() -> new QTHTException("Không tìm thấy group: " + groupId));
+                    .orElseThrow(() -> new AppException(FbAutomationErrorCode.GROUP_ID_NOT_FOUND, groupId));
 
             driver = WebDriverConfig.createDriver(account.getProxyIp());
             activeDrivers.put(accountId, driver);
@@ -185,7 +186,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
 
         } catch (Exception e) {
             log.error("Lỗi autoJoinGroup: {}", e.getMessage());
-            throw new QTHTException("Lỗi tham gia group: " + e.getMessage());
+            throw new AppException(FbAutomationErrorCode.JOIN_GROUP_FAILED, e.getMessage());
         } finally {
             if (driver != null) {
                 try { driver.quit(); } catch (Exception ignored) {}
@@ -279,7 +280,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     private FacebookAccount findAccount(String accountId) {
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy tài khoản Facebook"));
+                .orElseThrow(() -> new AppException(FbAutomationErrorCode.ACCOUNT_NOT_FOUND));
     }
 
     /**

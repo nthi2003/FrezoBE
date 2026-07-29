@@ -1,6 +1,7 @@
 package com.frezo.task.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.task.common.TaskErrorCode;
 import com.frezo.task.dto.request.TagRequest;
 import com.frezo.task.dto.response.TagResponse;
 import com.frezo.task.entity.Tag;
@@ -17,7 +18,6 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class TagServiceImpl implements TagService {
-    private static final String ERROR_CODE_EXISTS = "TAG_CODE_EXISTS";
 
     private final TagMapper tagMapper;
     private final TagRepository tagRepository;
@@ -67,14 +67,14 @@ public class TagServiceImpl implements TagService {
 
     private void validateRequest(TagRequest request) {
         if (tagRepository.existsByCode(request.getCode())) {
-            throw new QTHTException(ERROR_CODE_EXISTS, "Mã nhãn đã tồn tại: " + request.getCode());
+            throw new AppException(TaskErrorCode.TAG_CODE_EXISTS, request.getCode());
         }
     }
 
     @Transactional(readOnly = true)
     protected Tag findEntityById(String id) {
         return tagRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException("TAG_NOT_FOUND", "Không tìm thấy nhãn với ID: " + id));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TAG_NOT_FOUND, id));
     }
 
 }

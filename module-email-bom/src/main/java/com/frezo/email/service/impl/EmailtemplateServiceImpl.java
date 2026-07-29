@@ -1,6 +1,7 @@
 package com.frezo.email.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.email.common.EmailErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -63,15 +64,15 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
     @Transactional(readOnly = true)
     protected EmailTemplate findEntityById(String id) {
         return emailTemplateRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException("invalid.email.entity.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.TEMPLATE_NOT_FOUND));
     }
 
     private void validateRequest(EmailTemplateRequest request) {
         if (request.getCode() != null) {
             if (emailTemplateRepository.existsByCode(request.getCode())) {
-                throw new QTHTException("validate.code.exist");
+                throw new AppException(EmailErrorCode.TEMPLATE_CODE_EXISTS);
             } else if (emailTemplateRepository.existsByName(request.getName())) {
-                throw new QTHTException("validate.name.exist");
+                throw new AppException(EmailErrorCode.TEMPLATE_NAME_EXISTS);
             }
         }
     }

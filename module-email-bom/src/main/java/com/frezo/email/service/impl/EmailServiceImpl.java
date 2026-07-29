@@ -1,6 +1,7 @@
 package com.frezo.email.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.email.common.EmailErrorCode;
 import com.frezo.customer.entity.Customer;
 import com.frezo.customer.repository.CustomerRepository;
 import com.frezo.email.dto.request.BulkEmailRequest;
@@ -52,18 +53,18 @@ public class EmailServiceImpl implements EmailService {
             log.info("Email sent successfully to {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw new QTHTException("error.email.send.failed");
+            throw new AppException(EmailErrorCode.SEND_FAILED);
         }
     }
 
     @Override
     public void sendByTemplate(String templateCode, Map<String, Object> params, List<String> recipients) {
         EmailTemplate template = emailTemplateRepository.findByCode(templateCode)
-                .orElseThrow(() -> new QTHTException("error.email.template.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.EMAIL_TEMPLATE_NOT_FOUND));
 
         EmailConfig config = emailConfigRepository.findByActivatedTrue()
                 .stream().findFirst()
-                .orElseThrow(() -> new QTHTException("error.email.config.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
 
         String processedContent = processTemplate(template.getContent(), params);
         String processedSubject = processTemplate(template.getSubject(), params);
@@ -83,7 +84,7 @@ public class EmailServiceImpl implements EmailService {
     public BulkEmailResponse sendBulk(BulkEmailRequest request) {
         EmailConfig config = emailConfigRepository.findByActivatedTrue()
                 .stream().findFirst()
-                .orElseThrow(() -> new QTHTException("error.email.config.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
 
         List<String> recipients = request.getRecipients() != null ? request.getRecipients() : new ArrayList<>();
         List<Customer> customers = new ArrayList<>();
@@ -98,11 +99,11 @@ public class EmailServiceImpl implements EmailService {
         EmailTemplate template = null;
         if (useTemplate) {
             template = emailTemplateRepository.findByCode(request.getTemplateCode())
-                    .orElseThrow(() -> new QTHTException("error.email.template.not.found"));
+                    .orElseThrow(() -> new AppException(EmailErrorCode.EMAIL_TEMPLATE_NOT_FOUND));
         }
 
         if (recipients.isEmpty() && customers.isEmpty()) {
-            throw new QTHTException("error.email.no.recipients");
+            throw new AppException(EmailErrorCode.NO_RECIPIENTS);
         }
 
         long success = 0;
@@ -180,7 +181,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void testConnection(String configId) {
         EmailConfig config = emailConfigRepository.findById(configId)
-                .orElseThrow(() -> new QTHTException("error.email.config.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
 
         JavaMailSenderImpl mailSender = createMailSender(config);
         try {
@@ -188,7 +189,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("Email connection test successful for config: {}", config.getName());
         } catch (MessagingException e) {
             log.error("Email connection test failed for config {}: {}", config.getName(), e.getMessage());
-            throw new QTHTException("error.email.connection.failed");
+            throw new AppException(EmailErrorCode.CONNECTION_FAILED);
         }
     }
 

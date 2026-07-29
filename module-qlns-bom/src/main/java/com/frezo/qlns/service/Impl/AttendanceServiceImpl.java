@@ -2,7 +2,7 @@ package com.frezo.qlns.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.frezo.common.exception.AppException;
-import com.frezo.common.exception.QTHTException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -221,7 +221,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         // ThiNVQ : Phải check-in trước mới được check-out
         Attendance attendance = attendanceRepository.findByPersonIdAndAttendanceDate(
                 request.getPersonId(), request.getAttendanceDate())
-                .orElseThrow(() -> new QTHTException("error.attendance.not.checked.in"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.ATTENDANCE_NOT_CHECKED_IN));
 
         // Idempotent guard: đã check-out rồi thì trả lại record cũ, không ghi đè giờ.
         if (attendance.getCheckOutTime() != null) {
@@ -438,13 +438,13 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     public AttendanceResponse getById(String id) {
         return attendanceRepository.findById(id).map(attendanceMapper::toResponse)
-                .orElseThrow(() -> new QTHTException("error.attendance.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.ATTENDANCE_NOT_FOUND));
     }
 
     @Override
     public void approve(String id, String approvedBy) {
         Attendance attendance = attendanceRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("error.attendance.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.ATTENDANCE_NOT_FOUND));
         attendance.setApprovedBy(approvedBy);
         attendanceRepository.save(attendance);
     }
@@ -491,7 +491,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         // Phép đã duyệt trong tháng + phép năm còn lại
         double leaveApproved = 0.0, leaveBalance = DEFAULT_ANNUAL_LEAVE_DAYS;
         if (contractId != null && !contractId.isBlank()) {
-            leaveApproved = leaveRequestRepository.sumApprovedLeavesByContractAndMonth(contractId, m, y);
+            leaveApproved = leaveRequestRepository.sumApprovedLeavesByContractAndPeriod(
+                    contractId, from, to);
             double usedYear = leaveRequestRepository.sumApprovedLeavesByTypeAndPeriod(
                     contractId, "annual",
                     java.time.LocalDate.of(y, 1, 1),

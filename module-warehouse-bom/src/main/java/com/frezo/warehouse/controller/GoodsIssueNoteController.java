@@ -31,7 +31,19 @@ public class GoodsIssueNoteController {
         return ApiResponse.success(ginService.create(request));
     }
 
-    @Operation(summary = "Xác nhận xuất kho", description = "CONFIRM → cập nhật stock_ledger, stock_transactions, stock_balances")
+    @Operation(summary = "Gửi duyệt phiếu xuất kho", description = "DRAFT → PENDING_APPROVAL")
+    @PostMapping("/{id}/submit")
+    public ApiResponse<?> submit(@PathVariable String id) {
+        return ApiResponse.success(ginService.submit(id));
+    }
+
+    @Operation(summary = "Duyệt phiếu xuất kho", description = "PENDING_APPROVAL/DRAFT → APPROVED")
+    @PostMapping("/{id}/approve")
+    public ApiResponse<?> approve(@PathVariable String id) {
+        return ApiResponse.success(ginService.approve(id));
+    }
+
+    @Operation(summary = "Xác nhận xuất kho", description = "APPROVED/DRAFT → CONFIRMED — cập nhật stock")
     @PostMapping("/{id}/confirm")
     public ApiResponse<?> confirm(@PathVariable String id, @RequestBody GinConfirmRequest request) {
         return ApiResponse.success(ginService.confirm(id, request));

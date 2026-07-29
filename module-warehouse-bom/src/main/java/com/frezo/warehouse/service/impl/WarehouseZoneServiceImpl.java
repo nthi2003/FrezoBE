@@ -1,13 +1,13 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.warehouse.dto.request.WarehouseZoneRequest;
 import com.frezo.warehouse.dto.response.WarehouseZoneResponse;
 import com.frezo.warehouse.entity.WarehouseZone;
 import com.frezo.warehouse.repository.WarehouseZoneRepository;
 import com.frezo.warehouse.service.WarehouseZoneService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
     @Override
     public WarehouseZoneResponse getById(String id) {
         WarehouseZone zone = zoneRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.zone.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ZONE_NOT_FOUND));
         return toResponse(zone);
     }
 
@@ -49,7 +49,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
     @Transactional
     public WarehouseZoneResponse update(String id, WarehouseZoneRequest request) {
         WarehouseZone zone = zoneRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.zone.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ZONE_NOT_FOUND));
         if (request.getCode() != null) zone.setCode(request.getCode());
         if (request.getName() != null) zone.setName(request.getName());
         if (request.getType() != null) zone.setType(request.getType());
@@ -63,7 +63,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
     @Transactional
     public void delete(String id) {
         WarehouseZone zone = zoneRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("warehouse.zone.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ZONE_NOT_FOUND));
         zoneRepository.delete(zone);
     }
 

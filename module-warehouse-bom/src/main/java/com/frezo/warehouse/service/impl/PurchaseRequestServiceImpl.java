@@ -14,14 +14,18 @@ import com.frezo.warehouse.entity.PurchaseRequest;
 import com.frezo.warehouse.entity.PurchaseRequestLine;
 import com.frezo.warehouse.entity.ReorderRule;
 import com.frezo.warehouse.entity.StockAlert;
+import com.frezo.warehouse.entity.Warehouse;
 import com.frezo.warehouse.repository.PurchaseRequestLineRepository;
 import com.frezo.warehouse.repository.PurchaseRequestRepository;
 import com.frezo.warehouse.repository.ReorderRuleRepository;
 import com.frezo.warehouse.repository.StockAlertRepository;
+import com.frezo.warehouse.repository.WarehouseRepository;
 import com.frezo.warehouse.service.PurchaseRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +50,8 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
     private final StockAlertRepository alertRepository;
     private final ReorderRuleRepository reorderRuleRepository;
     private final ApprovalCreator approvalCreator;
+    private final WarehouseRepository warehouseRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     /** LNK-05: true = bắt buộc flow PURCHASE_REQUEST; false = bypass DRAFT→APPROVED + badge. */
     @Value("${warehouse.pr.approval.required:true}")
@@ -296,7 +302,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
                 .id(pr.getId())
                 .code(pr.getCode())
                 .supplierId(pr.getSupplierId())
+                .supplierName(resolveSupplierName(pr.getSupplierId()))
                 .warehouseId(pr.getWarehouseId())
+                .warehouseName(resolveWarehouseName(pr.getWarehouseId()))
                 .status(pr.getStatus())
                 .note(pr.getNote())
                 .approvalRequestId(pr.getApprovalRequestId())
@@ -304,5 +312,25 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
                 .createdDate(pr.getCreatedDate() != null ? pr.getCreatedDate().format(ISO) : null)
                 .lines(lines)
                 .build();
+    }
+
+    private String resolveSupplierName(String supplierId) {
+        if (supplierId == null || supplierId.isBlank()) {
+            return null;
+        }
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name FROM nccs WHERE id = ? AND COALESCE(is_deleted, false) = false LIMIT 1",
+                    String.class, supplierId);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
+    }
+
+    private String resolveWarehouseName(String warehouseId) {
+        if (warehouseId == null || warehouseId.isBlank()) {
+            return null;
+        }
+        return warehouseRepository.findById(warehouseId).map(Warehouse::getName).orElse(null);
     }
 }

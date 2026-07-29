@@ -15,7 +15,9 @@ public class PurchaseRequestDto {
     private String id;
     private String code;
     private String supplierId;
+    private String supplierName;
     private String warehouseId;
+    private String warehouseName;
     private String status;
     private String note;
     private String approvalRequestId;

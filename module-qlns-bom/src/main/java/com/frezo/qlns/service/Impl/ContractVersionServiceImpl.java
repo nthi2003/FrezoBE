@@ -1,9 +1,10 @@
 package com.frezo.qlns.service.impl;
 
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.qlns.dto.response.ContractDiffResponse;
 import com.frezo.qlns.dto.response.ContractSnapshotResponse;
 import com.frezo.qlns.dto.response.ContractVersionListResponse;
@@ -60,8 +61,8 @@ public class ContractVersionServiceImpl implements ContractVersionService {
 
             return contractVersionMapper.toResponse(versionHistoryRepository.save(history));
 
-        } catch (QTHTException e) {
-            throw new QTHTException("can.not.create.version");
+        } catch (AppException e) {
+            throw new AppException(QlnsErrorCode.CANNOT_CREATE_VERSION);
         }
     }
 
@@ -87,11 +88,11 @@ public class ContractVersionServiceImpl implements ContractVersionService {
     public ContractDiffResponse diffVersions(String contractId, Integer fromVersion, Integer toVersion) {
         ContractVersionHistory from = versionHistoryRepository
                 .findByContractIdAndVersionNumber(contractId, fromVersion)
-                .orElseThrow(() -> new QTHTException("version.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.VERSION_NOT_FOUND));
 
         ContractVersionHistory to = versionHistoryRepository
                 .findByContractIdAndVersionNumber(contractId, toVersion)
-                .orElseThrow(() -> new QTHTException("version.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.VERSION_NOT_FOUND));
 
         ContractDiffResponse diff = new ContractDiffResponse();
         diff.setFromVersion(fromVersion);
@@ -145,7 +146,7 @@ public class ContractVersionServiceImpl implements ContractVersionService {
             }
         } catch (Exception e) {
             log.error("Error comparing snapshots: {}", e.getMessage());
-            throw new QTHTException("can.not.compare.versions");
+            throw new AppException(QlnsErrorCode.CANNOT_COMPARE_VERSIONS);
         }
         return changes;
     }
@@ -155,7 +156,7 @@ public class ContractVersionServiceImpl implements ContractVersionService {
             ContractSnapshotResponse snapshot = contractVersionMapper.toSnapshotResponse(contract);
             return objectMapper.writeValueAsString(snapshot);
         } catch (Exception e) {
-            throw new QTHTException("can.not.build.snapshot");
+            throw new AppException(QlnsErrorCode.CANNOT_BUILD_SNAPSHOT);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.warehouse.dto.request.TransferConfirmRequest;
@@ -14,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,14 +37,14 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Override
     public TransferResponse getById(String id) {
         StockTransfer transfer = transferRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.transfer.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.TRANSFER_NOT_FOUND));
         return buildResponse(transfer);
     }
 
     @Override
     public TransferResponse getByCode(String transferCode) {
         StockTransfer transfer = transferRepository.findByTransferCode(transferCode)
-                .orElseThrow(() -> new QTHTException("stock.transfer.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.TRANSFER_NOT_FOUND));
         return buildResponse(transfer);
     }
 
@@ -66,7 +66,7 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Transactional
     public TransferResponse create(TransferCreateRequest request) {
         if (request.getFromWarehouseId().equals(request.getToWarehouseId())) {
-            throw new QTHTException("stock.transfer.same.warehouse", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.TRANSFER_SAME_WAREHOUSE);
         }
 
         StockTransfer transfer = transferMapper.toEntity(request);
@@ -94,10 +94,10 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Transactional
     public TransferResponse confirm(String id, TransferConfirmRequest request) {
         StockTransfer transfer = transferRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.transfer.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.TRANSFER_NOT_FOUND));
 
         if (!"DRAFT".equals(transfer.getStatus())) {
-            throw new QTHTException("stock.transfer.already.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.TRANSFER_ALREADY_CONFIRMED);
         }
 
         List<StockTransferItem> items = transferItemRepository.findByTransferId(id);
@@ -187,10 +187,10 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Transactional
     public void cancel(String id, String reason) {
         StockTransfer transfer = transferRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.transfer.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.TRANSFER_NOT_FOUND));
 
         if ("CONFIRMED".equals(transfer.getStatus())) {
-            throw new QTHTException("stock.transfer.cannot.cancel.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.TRANSFER_CANNOT_CANCEL_CONFIRMED);
         }
 
         transfer.setStatus("CANCELLED");
@@ -202,9 +202,9 @@ public class StockTransferServiceImpl implements StockTransferService {
     @Transactional
     public void delete(String id) {
         StockTransfer transfer = transferRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.transfer.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.TRANSFER_NOT_FOUND));
         if ("CONFIRMED".equals(transfer.getStatus())) {
-            throw new QTHTException("stock.transfer.cannot.delete.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.TRANSFER_CANNOT_DELETE_CONFIRMED);
         }
         transferItemRepository.findByTransferId(id).forEach(transferItemRepository::delete);
         transferRepository.delete(transfer);
@@ -228,10 +228,10 @@ public class StockTransferServiceImpl implements StockTransferService {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(
                         productId, warehouseId, locationId, batchId)
-                .orElseThrow(() -> new QTHTException("stock.balance.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.STOCK_BALANCE_NOT_FOUND));
 
         if (balance.getQuantityOnHand() < qty) {
-            throw new QTHTException("stock.balance.insufficient", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT);
         }
 
         balance.setQuantityOnHand(balance.getQuantityOnHand() - qty);

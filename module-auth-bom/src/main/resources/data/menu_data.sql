@@ -15,7 +15,8 @@
 
 INSERT INTO menu (id, code, name, name_en, app_code, fe_url, folder_path, parent_code, order_index, menu_type, icon, is_public, status, is_deleted, created_date, created_by, updated_date, updated_by)
 VALUES 
-  (gen_random_uuid(), 'DASHBOARD', 'Dashboard', 'Dashboard', 'QTHT', '/', 'src/modules/dashboard', NULL, 1, 1, 'fa-solid fa-chart-line', true, true, false, NOW(), 'system', NOW(), 'system'),
+  (gen_random_uuid(), 'HOME', 'Trang chủ', 'Home', 'QTHT', '/', 'src/modules/dashboard', NULL, 0, 1, 'fa-solid fa-home', true, true, false, NOW(), 'system', NOW(), 'system'),
+  (gen_random_uuid(), 'DASHBOARD', 'Tổng quan', 'Dashboard', 'QTHT', '/dashboard', 'src/modules/dashboard', NULL, 1, 1, 'fa-solid fa-chart-line', true, true, false, NOW(), 'system', NOW(), 'system'),
   (gen_random_uuid(), 'QLHT_ORG', 'Quản Lý Tổ Chức', 'Organization Management', 'QTHT', '/qtht/organizations', 'src/modules/qtht', NULL, 2, 1, 'fa-solid fa-sitemap', true, true, false, NOW(), 'system', NOW(), 'system'),
   (gen_random_uuid(), 'QLHT_STAFF', 'Quản Lý Nhân Viên', 'Employee Management', 'QTHT', '/qlns/persons', 'src/modules/qlns', NULL, 3, 1, 'fa-solid fa-users', true, true, false, NOW(), 'system', NOW(), 'system'),
   (gen_random_uuid(), 'QLHT_ARTICLE', 'Quản Lý Bài Viết', 'Article Management', 'QTHT', '/admin/article-management', 'src/modules/cms', NULL, 4, 1, 'fa-solid fa-newspaper', true, true, false, NOW(), 'system', NOW(), 'system'),

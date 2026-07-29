@@ -21,43 +21,40 @@ public interface AttendanceRepository extends JpaRepository<Attendance, String>,
 
     List<Attendance> findByAttendanceDateAndIsDeletedFalse(LocalDate attendanceDate);
 
+    /**
+     * Đếm ngày công theo khoảng ngày (thay FUNCTION MONTH/YEAR — không tương thích PostgreSQL).
+     */
     @Query("SELECT COUNT(a) FROM Attendance a WHERE a.personId = :personId " +
-           "AND FUNCTION('MONTH', a.attendanceDate) = :month " +
-           "AND FUNCTION('YEAR', a.attendanceDate) = :year " +
+           "AND a.attendanceDate >= :from AND a.attendanceDate <= :to " +
            "AND a.status IN (:statuses)")
-    int countByPersonIdAndMonthAndYearAndStatusIn(
+    int countByPersonIdAndAttendanceDateBetweenAndStatusIn(
             @Param("personId") String personId,
-            @Param("month") int month,
-            @Param("year") int year,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
             @Param("statuses") List<AttendanceStatus> statuses);
 
     @Query("SELECT COALESCE(SUM(a.lateMinutes), 0) FROM Attendance a WHERE a.personId = :personId " +
-           "AND FUNCTION('MONTH', a.attendanceDate) = :month " +
-           "AND FUNCTION('YEAR', a.attendanceDate) = :year")
-    int sumLateMinutesByPersonIdAndMonthAndYear(
+           "AND a.attendanceDate >= :from AND a.attendanceDate <= :to")
+    int sumLateMinutesByPersonIdAndAttendanceDateBetween(
             @Param("personId") String personId,
-            @Param("month") int month,
-            @Param("year") int year);
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
     @Query("SELECT COALESCE(SUM(a.overtimeMinutes), 0) FROM Attendance a WHERE a.personId = :personId " +
-           "AND FUNCTION('MONTH', a.attendanceDate) = :month " +
-           "AND FUNCTION('YEAR', a.attendanceDate) = :year")
-    int sumOvertimeMinutesByPersonIdAndMonthAndYear(
+           "AND a.attendanceDate >= :from AND a.attendanceDate <= :to")
+    int sumOvertimeMinutesByPersonIdAndAttendanceDateBetween(
             @Param("personId") String personId,
-            @Param("month") int month,
-            @Param("year") int year);
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
     @Query("SELECT DISTINCT a.personId FROM Attendance a WHERE " +
-           "FUNCTION('MONTH', a.attendanceDate) = :month AND " +
-           "FUNCTION('YEAR', a.attendanceDate) = :year")
-    List<String> findDistinctPersonIdByMonthAndYear(
-            @Param("month") int month,
-            @Param("year") int year);
+           "a.attendanceDate >= :from AND a.attendanceDate <= :to")
+    List<String> findDistinctPersonIdByAttendanceDateBetween(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    @Query("FROM Attendance a WHERE " +
-           "FUNCTION('MONTH', a.attendanceDate) = :month AND " +
-           "FUNCTION('YEAR', a.attendanceDate) = :year")
-    List<Attendance> findByMonthAndYear(
-            @Param("month") int month,
-            @Param("year") int year);
+    @Query("FROM Attendance a WHERE a.attendanceDate >= :from AND a.attendanceDate <= :to")
+    List<Attendance> findByAttendanceDateBetween(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

@@ -16,6 +16,8 @@ public class StockTakeResponse {
     private String id;
     private String code;
     private String warehouseId;
+    private String warehouseName;
+    private String warehouseCode;
     private LocalDate takeDate;
     private String status;
     private String note;

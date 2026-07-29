@@ -1,6 +1,7 @@
 package com.frezo.customer.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.customer.common.CustomerErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,6 +38,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
+    private final com.frezo.common.service.MinioService minioService;
 
     // ─────────────────── LIST / SEARCH ─────────────────────────────────────────
     @Override
@@ -78,7 +81,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponse create(CustomerRequest request) {
         if (SystemUtils.isNotNullOrEmpty(request.getCode())) {
             if (customerRepository.existsByCode(request.getCode()))
-                throw new QTHTException("exception.customer.code.exists", request.getCode());
+                throw new AppException(CustomerErrorCode.CUSTOMER_CODE_EXISTS, request.getCode());
         } else {
             String code;
             do { code = SecureCodeGenerator.generateCode("KH"); }
@@ -99,7 +102,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (SystemUtils.isNotNullOrEmpty(request.getCode())
                 && !request.getCode().equals(entity.getCode())
                 && customerRepository.existsByCode(request.getCode())) {
-            throw new QTHTException("exception.customer.code.exists", request.getCode());
+            throw new AppException(CustomerErrorCode.CUSTOMER_CODE_EXISTS, request.getCode());
         }
         customerMapper.updateEntity(entity, request);
         return customerMapper.toResponse(customerRepository.save(entity));
@@ -145,7 +148,7 @@ public class CustomerServiceImpl implements CustomerService {
                 create(req);
             }
         } catch (Exception e) {
-            throw new QTHTException("exception.customer.import.failed");
+            throw new AppException(CustomerErrorCode.CUSTOMER_IMPORT_FAILED);
         }
     }
 
@@ -182,7 +185,7 @@ public class CustomerServiceImpl implements CustomerService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("exception.customer.export.failed");
+            throw new AppException(CustomerErrorCode.CUSTOMER_EXPORT_FAILED);
         }
     }
 
@@ -231,14 +234,31 @@ public class CustomerServiceImpl implements CustomerService {
             return count;
         } catch (Exception e) {
             log.error("Lỗi khi kết nối FrezoAI: {}", e.getMessage());
-            throw new QTHTException("Kết nối tới hệ thống AI thất bại");
+            throw new AppException(CustomerErrorCode.AI_CONNECTION_FAILED);
         }
+    }
+
+    // ─────────────────── UPLOAD AVATAR ──────────────────────────────────────────
+    @Override
+    @Transactional
+    public String uploadAvatar(String id, MultipartFile file) {
+        Customer entity = findById(id);
+        String original = file.getOriginalFilename();
+        String extension = original != null && original.contains(".")
+                ? original.substring(original.lastIndexOf('.'))
+                : ".png";
+        String objectName = "customers/" + entity.getCode() + "/avatar_" + System.currentTimeMillis() + extension;
+        String url = minioService.uploadFile(objectName, file);
+        entity.setAvatarUrl(url);
+        customerRepository.save(entity);
+        log.info("Customer avatar uploaded: code={}, url={}", entity.getCode(), url);
+        return url;
     }
 
     // ─────────────────── PRIVATE HELPERS ────────────────────────────────────────
     private Customer findById(String id) {
         return customerRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("exception.customer.not_found"));
+                .orElseThrow(() -> new AppException(CustomerErrorCode.CUSTOMER_NOT_FOUND));
     }
 
     private String getCellValue(Row row, int idx) {

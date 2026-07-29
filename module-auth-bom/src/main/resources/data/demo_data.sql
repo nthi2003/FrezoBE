@@ -239,26 +239,46 @@ WHERE EXISTS (SELECT 1 FROM tasks WHERE title = v.task_title)
   );
 
 -- ============================================================
--- 9) CUSTOMERS — 10 khách hàng (mix COMPANY / INDIVIDUAL)
+-- 9) CUSTOMERS — 10 khách hàng (mix COMPANY / INDIVIDUAL) — đủ avatar
 -- ============================================================
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(1000);
+
 INSERT INTO customers (id, code, name, phone, phone_last4, email, address, tax_code, type, status,
-                       note, is_deleted, created_date, created_by, updated_date, updated_by)
+                       note, avatar_url, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT gen_random_uuid(), v.code, v.name, v.phone, RIGHT(v.phone, 4), v.email, v.address,
-       v.tax_code, v.type, 'ACTIVE', v.note, false,
+       v.tax_code, v.type, 'ACTIVE', v.note, v.avatar, false,
        NOW(), 'system', NOW(), 'system'
 FROM (VALUES
-    ('KH001', 'Công ty TNHH ABC Việt Nam',       '0912345001', 'contact@abc.vn',         'Tầng 5, Toà Keangnam, Hà Nội',        '0100223344', 'COMPANY',    'Khách hàng lâu năm, hợp đồng năm.'),
-    ('KH002', 'Công ty CP Xây Dựng Sao Vàng',    '0912345002', 'info@saovang.com.vn',    '123 Nguyễn Trãi, Thanh Xuân, HN',      '0100223345', 'COMPANY',    'Đối tác chiến lược từ 2020.'),
-    ('KH003', 'Nhà hàng Phố Cổ',                 '0912345003', 'phoco@gmail.com',        '15 Hàng Bạc, Hoàn Kiếm, HN',           NULL,          'COMPANY',    'Cung cấp thực phẩm hàng tuần.'),
-    ('KH004', 'Cửa hàng Tạp Hoá Minh Anh',       '0912345004', NULL,                     '45 Lê Duẩn, Đống Đa, HN',              NULL,          'INDIVIDUAL', 'Chị Anh - chủ shop.'),
-    ('KH005', 'Công ty TNHH FPT Software',       '0912345005', 'contact@fsoft.com.vn',   'Toà FPT, Duy Tân, Cầu Giấy, HN',       '0101248109',  'COMPANY',    'Đối tác công nghệ.'),
-    ('KH006', 'Anh Trần Văn Hải',                '0912345006', 'hai.tran@yahoo.com',     '78 Xuân Thủy, Cầu Giấy, HN',           NULL,          'INDIVIDUAL', 'Khách lẻ, mua định kỳ.'),
-    ('KH007', 'Chuỗi Cafe Highland',              '0912345007', 'partner@highland.vn',   '234 Nguyễn Thị Minh Khai, HCM',         '0300223346',  'COMPANY',    'Cung cấp cafe hạt.'),
-    ('KH008', 'Siêu Thị BigC Thăng Long',        '0912345008', 'purchase@bigc.vn',      '222 Trần Duy Hưng, Cầu Giấy, HN',      '0200223347',  'COMPANY',    'Đơn hàng lớn hàng tháng.'),
-    ('KH009', 'Chị Nguyễn Thị Lan',              '0912345009', NULL,                     '99 Kim Mã, Ba Đình, HN',               NULL,          'INDIVIDUAL', 'Khách quen 3 năm.'),
-    ('KH010', 'Công ty CP May Việt Tiến',         '0912345010', 'sales@viettien.com.vn', 'Số 7 Lê Minh Xuân, Bình Tân, HCM',     '0300223348',  'COMPANY',    'Đồng phục cho nhân viên.')
-) AS v(code, name, phone, email, address, tax_code, type, note)
+    ('KH001', 'Công ty TNHH ABC Việt Nam',       '0912345001', 'contact@abc.vn',         'Tầng 5, Toà Keangnam, Hà Nội',        '0100223344', 'COMPANY',    'Khách hàng lâu năm, hợp đồng năm.', 'https://i.pravatar.cc/150?img=1'),
+    ('KH002', 'Công ty CP Xây Dựng Sao Vàng',    '0912345002', 'info@saovang.com.vn',    '123 Nguyễn Trãi, Thanh Xuân, HN',      '0100223345', 'COMPANY',    'Đối tác chiến lược từ 2020.',       'https://i.pravatar.cc/150?img=5'),
+    ('KH003', 'Nhà hàng Phố Cổ',                 '0912345003', 'phoco@gmail.com',        '15 Hàng Bạc, Hoàn Kiếm, HN',           NULL,          'COMPANY',    'Cung cấp thực phẩm hàng tuần.',    'https://i.pravatar.cc/150?img=12'),
+    ('KH004', 'Cửa hàng Tạp Hoá Minh Anh',       '0912345004', NULL,                     '45 Lê Duẩn, Đống Đa, HN',              NULL,          'INDIVIDUAL', 'Chị Anh - chủ shop.',              'https://i.pravatar.cc/150?img=20'),
+    ('KH005', 'Công ty TNHH FPT Software',       '0912345005', 'contact@fsoft.com.vn',   'Toà FPT, Duy Tân, Cầu Giấy, HN',       '0101248109',  'COMPANY',    'Đối tác công nghệ.',               'https://i.pravatar.cc/150?img=33'),
+    ('KH006', 'Anh Trần Văn Hải',                '0912345006', 'hai.tran@yahoo.com',     '78 Xuân Thủy, Cầu Giấy, HN',           NULL,          'INDIVIDUAL', 'Khách lẻ, mua định kỳ.',           'https://i.pravatar.cc/150?img=14'),
+    ('KH007', 'Chuỗi Cafe Highland',              '0912345007', 'partner@highland.vn',   '234 Nguyễn Thị Minh Khai, HCM',         '0300223346',  'COMPANY',    'Cung cấp cafe hạt.',               'https://i.pravatar.cc/150?img=25'),
+    ('KH008', 'Siêu Thị BigC Thăng Long',        '0912345008', 'purchase@bigc.vn',      '222 Trần Duy Hưng, Cầu Giấy, HN',      '0200223347',  'COMPANY',    'Đơn hàng lớn hàng tháng.',         'https://i.pravatar.cc/150?img=47'),
+    ('KH009', 'Chị Nguyễn Thị Lan',              '0912345009', NULL,                     '99 Kim Mã, Ba Đình, HN',               NULL,          'INDIVIDUAL', 'Khách quen 3 năm.',                'https://i.pravatar.cc/150?img=44'),
+    ('KH010', 'Công ty CP May Việt Tiến',         '0912345010', 'sales@viettien.com.vn', 'Số 7 Lê Minh Xuân, Bình Tân, HCM',     '0300223348',  'COMPANY',    'Đồng phục cho nhân viên.',         'https://i.pravatar.cc/150?img=52')
+) AS v(code, name, phone, email, address, tax_code, type, note, avatar)
 WHERE NOT EXISTS (SELECT 1 FROM customers c WHERE c.code = v.code);
+
+-- Backfill avatar cho demo đã seed trước (không ghi đè avatar user đã upload)
+UPDATE customers AS c SET
+    avatar_url = v.avatar,
+    updated_date = NOW()
+FROM (VALUES
+    ('KH001', 'https://i.pravatar.cc/150?img=1'),
+    ('KH002', 'https://i.pravatar.cc/150?img=5'),
+    ('KH003', 'https://i.pravatar.cc/150?img=12'),
+    ('KH004', 'https://i.pravatar.cc/150?img=20'),
+    ('KH005', 'https://i.pravatar.cc/150?img=33'),
+    ('KH006', 'https://i.pravatar.cc/150?img=14'),
+    ('KH007', 'https://i.pravatar.cc/150?img=25'),
+    ('KH008', 'https://i.pravatar.cc/150?img=47'),
+    ('KH009', 'https://i.pravatar.cc/150?img=44'),
+    ('KH010', 'https://i.pravatar.cc/150?img=52')
+) AS v(code, avatar)
+WHERE c.code = v.code AND (c.avatar_url IS NULL OR c.avatar_url = '');
 
 -- ============================================================
 -- 10) NCC (Nhà cung cấp) — 5
@@ -701,4 +721,698 @@ FROM (VALUES
     ('TICKET-0008', 'Yêu cầu tích hợp SSO Google Workspace',         'Đang có yêu cầu từ khách hàng ABC Corp.',                                                            'OPEN',        'URGENT', 'FEATURE_REQUEST', 'EMP005', 'EMP001', 14, 0, NULL)
 ) AS v(code, title, description, status, priority, category, reporter_code, assignee_code, due_offset, resolved_ago, resolution_note)
 WHERE NOT EXISTS (SELECT 1 FROM tickets t WHERE t.code = v.code);
+
+-- ============================================================
+-- 20) WAREHOUSES — 3 kho FTECH (HN / HCM / Đà Lạt)
+-- ============================================================
+INSERT INTO warehouses (id, code, name, short_name, type, address_line, province, country_code,
+                        status, is_default, is_cold_storage, is_deleted,
+                        created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), v.code, v.name, v.short, v.type, v.address, v.province, 'VN',
+       'ACTIVE', v.is_default, v.cold, false,
+       NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('WH_HN',  'Kho Hà Nội', 'Kho HN',  'MAIN', 'Số 1 Phạm Văn Bạch, Cầu Giấy, Hà Nội',     'Hà Nội',     true,  false),
+    ('WH_HCM', 'Kho TP.HCM', 'Kho HCM', 'MAIN', 'Quận 7, TP. Hồ Chí Minh',                  'TP.HCM',     false, false),
+    ('WH_DL',  'Kho Đà Lạt', 'Kho ĐL',  'MAIN', 'Phường 8, Đà Lạt, Lâm Đồng',              'Lâm Đồng',   false, true)
+) AS v(code, name, short, type, address, province, is_default, cold)
+WHERE NOT EXISTS (SELECT 1 FROM warehouses w WHERE w.code = v.code);
+
+-- ============================================================
+-- 21) STOCK BALANCES — tồn mẫu (một số dòng dưới min để demo alert)
+-- ============================================================
+INSERT INTO stock_balances (id, product_id, warehouse_id, location_id, batch_id,
+                            quantity_on_hand, quantity_reserved, quantity_available,
+                            is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       NULL, NULL,
+       v.qty, 0, v.qty,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('SP001', 'WH_HN',  35.0),
+    ('SP002', 'WH_DL',   8.0),
+    ('SP003', 'WH_HN',  45.0),
+    ('SP006', 'WH_HCM', 25.0),
+    ('SP007', 'WH_HCM',  0.0),
+    ('SP009', 'WH_HCM', 80.0),
+    ('SP011', 'WH_DL',  12.0),
+    ('SP012', 'WH_HN',  22.0)
+) AS v(product_code, wh_code, qty)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM stock_balances sb
+    JOIN products p ON p.id = sb.product_id
+    JOIN warehouses w ON w.id = sb.warehouse_id
+    WHERE p.code = v.product_code AND w.code = v.wh_code
+      AND COALESCE(sb.is_deleted, false) = false
+  );
+
+-- ============================================================
+-- 22) REORDER RULES — quy tắc tái nhập kho (min/max + NCC ưu tiên)
+-- ============================================================
+INSERT INTO reorder_rule (id, warehouse_id, product_id, min_qty, max_qty, reorder_qty,
+                          preferred_supplier_id, active, is_deleted,
+                          created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.min_qty, v.max_qty, v.reorder_qty,
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       true, false,
+       NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('SP001', 'WH_HN',  50, 200, 100, 'NCC001'),
+    ('SP002', 'WH_DL',  10,  80,  40, 'NCC001'),
+    ('SP003', 'WH_HN',  30, 150,  60, 'NCC002'),
+    ('SP006', 'WH_HCM', 15, 100,  40, 'NCC004'),
+    ('SP007', 'WH_HCM',  5,  50,  20, 'NCC003'),
+    ('SP009', 'WH_HCM', 20, 500, 100, 'NCC005'),
+    ('SP011', 'WH_DL',   5,  40,  15, 'NCC004'),
+    ('SP012', 'WH_HN',  15, 100,  50, 'NCC002')
+) AS v(product_code, wh_code, min_qty, max_qty, reorder_qty, ncc_code)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM reorder_rule rr
+    JOIN products p ON p.id = rr.product_id
+    JOIN warehouses w ON w.id = rr.warehouse_id
+    WHERE p.code = v.product_code AND w.code = v.wh_code
+      AND COALESCE(rr.is_deleted, false) = false
+  );
+
+-- ============================================================
+-- 23) GRN — phiếu nhập kho mẫu (DRAFT / CONFIRMED / CANCELLED)
+--     Dùng lại WH_HN/HCM/DL · SP001–SP012 · NCC001–NCC005
+-- ============================================================
+INSERT INTO goods_receipt_notes (id, grn_code, purchase_order_id, warehouse_id, supplier_id,
+                                 status, total_value, received_by, received_at, note,
+                                 is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.grn_code, NULL,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       v.status, v.total_value, v.received_by, v.received_at, v.note,
+       false, v.created_at, 'system', v.created_at, 'system'
+FROM (VALUES
+    ('aaaaaaaa-grn-0001-4000-8000-000000000001', 'GRN-DEMO-001', 'WH_HN',  'NCC001', 'DRAFT',
+     NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '2 days',
+     'Nhập rau cải từ HTX Đà Lạt — chờ kiểm hàng thực tế'),
+    ('aaaaaaaa-grn-0002-4000-8000-000000000002', 'GRN-DEMO-002', 'WH_HCM', 'NCC005', 'DRAFT',
+     NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '1 day',
+     'Nhập gạo ST25 lô tháng 7 — chưa xác nhận'),
+    ('aaaaaaaa-grn-0003-4000-8000-000000000003', 'GRN-DEMO-003', 'WH_DL',  'NCC001', 'CONFIRMED',
+     3600000.0, 'system', NOW() - INTERVAL '5 days',
+     NOW() - INTERVAL '6 days',
+     'Đã nhập dâu tây tươi — phiếu xác nhận hoàn tất'),
+    ('aaaaaaaa-grn-0004-4000-8000-000000000004', 'GRN-DEMO-004', 'WH_HN',  'NCC002', 'CANCELLED',
+     NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '3 days',
+     'Huỷ do chất lượng cà chua không đạt tiêu chuẩn VietGAP')
+) AS v(id, grn_code, wh_code, ncc_code, status, total_value, received_by, received_at, created_at, note)
+WHERE NOT EXISTS (SELECT 1 FROM goods_receipt_notes g WHERE g.grn_code = v.grn_code);
+
+INSERT INTO goods_receipt_note_items (id, grn_id, product_id, batch_id,
+                                      qty_expected, qty_received, unit_cost, location_id,
+                                      is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.item_id,
+       (SELECT id FROM goods_receipt_notes WHERE grn_code = v.grn_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       NULL, v.qty_expected, v.qty_received, v.unit_cost, NULL,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('bbbbbbbb-grn-0001-4000-8000-000000000001', 'GRN-DEMO-001', 'SP001', 100.0, 0.0,   25000.0),
+    ('bbbbbbbb-grn-0002-4000-8000-000000000002', 'GRN-DEMO-002', 'SP009',  50.0, 0.0,  185000.0),
+    ('bbbbbbbb-grn-0003-4000-8000-000000000003', 'GRN-DEMO-003', 'SP002',  20.0, 20.0, 180000.0),
+    ('bbbbbbbb-grn-0004-4000-8000-000000000004', 'GRN-DEMO-004', 'SP003',  30.0, 0.0,   35000.0)
+) AS v(item_id, grn_code, product_code, qty_expected, qty_received, unit_cost)
+WHERE (SELECT id FROM goods_receipt_notes WHERE grn_code = v.grn_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM goods_receipt_note_items gi
+    JOIN goods_receipt_notes g ON g.id = gi.grn_id
+    JOIN products p ON p.id = gi.product_id
+    WHERE g.grn_code = v.grn_code AND p.code = v.product_code
+      AND COALESCE(gi.is_deleted, false) = false
+  );
+
+-- Sổ kho + giao dịch cho GRN đã CONFIRMED (GRN-DEMO-003)
+INSERT INTO stock_transactions (id, transaction_code, transaction_type, reference_type, reference_id,
+                                warehouse_id, total_amount, status, note,
+                                is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'cccccccc-stx-grn03-4000-8000-000000000003', 'ST-DEMO-GRN-003', 'RECEIPT', 'GRN',
+       (SELECT id FROM goods_receipt_notes WHERE grn_code = 'GRN-DEMO-003' LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = 'WH_DL' LIMIT 1),
+       3600000.0, 'CONFIRMED', 'Từ phiếu nhập kho GRN-DEMO-003',
+       false, NOW() - INTERVAL '5 days', 'system', NOW() - INTERVAL '5 days', 'system'
+WHERE EXISTS (SELECT 1 FROM goods_receipt_notes WHERE grn_code = 'GRN-DEMO-003' AND status = 'CONFIRMED')
+  AND NOT EXISTS (SELECT 1 FROM stock_transactions st WHERE st.transaction_code = 'ST-DEMO-GRN-003');
+
+INSERT INTO stock_ledger (id, product_id, batch_id, warehouse_id, location_id, transaction_id,
+                          transaction_type, quantity, unit_cost, total_value,
+                          reference_type, reference_id, note,
+                          is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'dddddddd-ldg-grn03-4000-8000-000000000003',
+       (SELECT id FROM products WHERE code = 'SP002' LIMIT 1),
+       NULL,
+       (SELECT id FROM warehouses WHERE code = 'WH_DL' LIMIT 1),
+       NULL,
+       (SELECT id FROM stock_transactions WHERE transaction_code = 'ST-DEMO-GRN-003' LIMIT 1),
+       'IN', 20.0, 180000.0, 3600000.0,
+       'GRN',
+       (SELECT id FROM goods_receipt_notes WHERE grn_code = 'GRN-DEMO-003' LIMIT 1),
+       'Nhập kho từ phiếu GRN-DEMO-003',
+       false, NOW() - INTERVAL '5 days', 'system', NOW() - INTERVAL '5 days', 'system'
+WHERE EXISTS (SELECT 1 FROM stock_transactions WHERE transaction_code = 'ST-DEMO-GRN-003')
+  AND NOT EXISTS (SELECT 1 FROM stock_ledger sl WHERE sl.id = 'dddddddd-ldg-grn03-4000-8000-000000000003');
+
+-- ============================================================
+-- 24) GIN — phiếu xuất kho mẫu (DRAFT / CONFIRMED / CANCELLED)
+-- ============================================================
+INSERT INTO goods_issue_notes (id, gin_code, warehouse_id, customer_id, order_id,
+                               issue_type, status, total_value, issued_by, issued_at, note,
+                               is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.gin_code,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM customers WHERE code = v.kh_code LIMIT 1),
+       NULL, v.issue_type, v.status, v.total_value, v.issued_by, v.issued_at, v.note,
+       false, v.created_at, 'system', v.created_at, 'system'
+FROM (VALUES
+    ('aaaaaaaa-gin-0001-4000-8000-000000000001', 'GIN-DEMO-001', 'WH_HN',  'KH003', 'SALES',
+     'DRAFT', NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '1 day',
+     'Xuất bán cho Nhà hàng Phố Cổ — chờ thủ kho xác nhận'),
+    ('aaaaaaaa-gin-0002-4000-8000-000000000002', 'GIN-DEMO-002', 'WH_HCM', NULL,    'INTERNAL_TRANSFER',
+     'DRAFT', NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '12 hours',
+     'Chuyển gạo ST25 sang kho HN — phiếu nháp'),
+    ('aaaaaaaa-gin-0003-4000-8000-000000000003', 'GIN-DEMO-003', 'WH_HN',  'KH008', 'SALES',
+     'CONFIRMED', 680000.0, 'system', NOW() - INTERVAL '4 days',
+     NOW() - INTERVAL '5 days',
+     'Xuất trứng gà ta cho Siêu Thị BigC — đã xác nhận'),
+    ('aaaaaaaa-gin-0004-4000-8000-000000000004', 'GIN-DEMO-004', 'WH_HCM', 'KH007', 'SALES',
+     'CANCELLED', NULL::double precision, NULL, NULL,
+     NOW() - INTERVAL '2 days',
+     'Huỷ xuất xoài cát — khách đổi lịch giao hàng')
+) AS v(id, gin_code, wh_code, kh_code, issue_type, status, total_value, issued_by, issued_at, created_at, note)
+WHERE NOT EXISTS (SELECT 1 FROM goods_issue_notes g WHERE g.gin_code = v.gin_code);
+
+INSERT INTO goods_issue_note_items (id, gin_id, product_id, batch_id,
+                                    qty_requested, qty_issued, unit_cost, location_id,
+                                    is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.item_id,
+       (SELECT id FROM goods_issue_notes WHERE gin_code = v.gin_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       NULL, v.qty_requested, v.qty_issued, v.unit_cost, NULL,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('bbbbbbbb-gin-0001-4000-8000-000000000001', 'GIN-DEMO-001', 'SP001', 10.0, 0.0,  25000.0),
+    ('bbbbbbbb-gin-0002-4000-8000-000000000002', 'GIN-DEMO-002', 'SP009',  5.0, 0.0, 185000.0),
+    ('bbbbbbbb-gin-0003-4000-8000-000000000003', 'GIN-DEMO-003', 'SP012',  8.0, 8.0,  85000.0),
+    ('bbbbbbbb-gin-0004-4000-8000-000000000004', 'GIN-DEMO-004', 'SP006', 15.0, 0.0,  95000.0)
+) AS v(item_id, gin_code, product_code, qty_requested, qty_issued, unit_cost)
+WHERE (SELECT id FROM goods_issue_notes WHERE gin_code = v.gin_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM goods_issue_note_items gi
+    JOIN goods_issue_notes g ON g.id = gi.gin_id
+    JOIN products p ON p.id = gi.product_id
+    WHERE g.gin_code = v.gin_code AND p.code = v.product_code
+      AND COALESCE(gi.is_deleted, false) = false
+  );
+
+INSERT INTO stock_transactions (id, transaction_code, transaction_type, reference_type, reference_id,
+                                warehouse_id, total_amount, status, note,
+                                is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'cccccccc-stx-gin03-4000-8000-000000000003', 'ST-DEMO-GIN-003', 'ISSUE', 'GIN',
+       (SELECT id FROM goods_issue_notes WHERE gin_code = 'GIN-DEMO-003' LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = 'WH_HN' LIMIT 1),
+       680000.0, 'CONFIRMED', 'Từ phiếu xuất kho GIN-DEMO-003',
+       false, NOW() - INTERVAL '4 days', 'system', NOW() - INTERVAL '4 days', 'system'
+WHERE EXISTS (SELECT 1 FROM goods_issue_notes WHERE gin_code = 'GIN-DEMO-003' AND status = 'CONFIRMED')
+  AND NOT EXISTS (SELECT 1 FROM stock_transactions st WHERE st.transaction_code = 'ST-DEMO-GIN-003');
+
+INSERT INTO stock_ledger (id, product_id, batch_id, warehouse_id, location_id, transaction_id,
+                          transaction_type, quantity, unit_cost, total_value,
+                          reference_type, reference_id, note,
+                          is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'dddddddd-ldg-gin03-4000-8000-000000000003',
+       (SELECT id FROM products WHERE code = 'SP012' LIMIT 1),
+       NULL,
+       (SELECT id FROM warehouses WHERE code = 'WH_HN' LIMIT 1),
+       NULL,
+       (SELECT id FROM stock_transactions WHERE transaction_code = 'ST-DEMO-GIN-003' LIMIT 1),
+       'OUT', -8.0, 85000.0, -680000.0,
+       'GIN',
+       (SELECT id FROM goods_issue_notes WHERE gin_code = 'GIN-DEMO-003' LIMIT 1),
+       'Xuất kho từ phiếu GIN-DEMO-003',
+       false, NOW() - INTERVAL '4 days', 'system', NOW() - INTERVAL '4 days', 'system'
+WHERE EXISTS (SELECT 1 FROM stock_transactions WHERE transaction_code = 'ST-DEMO-GIN-003')
+  AND NOT EXISTS (SELECT 1 FROM stock_ledger sl WHERE sl.id = 'dddddddd-ldg-gin03-4000-8000-000000000003');
+
+-- ============================================================
+-- STOCK TAKES — phiếu kiểm kê demo (DRAFT / IN_PROGRESS / SUBMITTED)
+-- ============================================================
+INSERT INTO stock_take (id, code, warehouse_id, take_date, status, note,
+                        started_at, submitted_at, posted_at,
+                        is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.code,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.take_date::date, v.status, v.note,
+       CASE WHEN v.started THEN NOW() - INTERVAL '2 days' ELSE NULL END,
+       CASE WHEN v.submitted THEN NOW() - INTERVAL '1 day' ELSE NULL END,
+       NULL,
+       false, NOW() - INTERVAL '3 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('st-demo-hn-001', 'ST-DEMO-HN-001', 'WH_HN',  CURRENT_DATE - 1, 'DRAFT',       'Kiểm kê định kỳ kho HN — chờ bắt đầu', false, false),
+    ('st-demo-hcm-001', 'ST-DEMO-HCM-001', 'WH_HCM', CURRENT_DATE,     'IN_PROGRESS', 'Đang đếm kho TP.HCM', true, false),
+    ('st-demo-dl-001', 'ST-DEMO-DL-001', 'WH_DL',  CURRENT_DATE - 2, 'SUBMITTED',   'Đã gửi số đếm — chờ điều chỉnh tồn', true, true)
+) AS v(id, code, wh_code, take_date, status, note, started, submitted)
+WHERE (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_take st WHERE st.code = v.code);
+
+INSERT INTO stock_take_line (id, stock_take_id, product_id, system_qty, counted_qty, variance_qty, note,
+                             is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.line_id,
+       (SELECT id FROM stock_take WHERE code = v.st_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.system_qty, v.counted_qty, v.variance_qty, v.note,
+       false, NOW() - INTERVAL '3 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('stl-demo-hn-001', 'ST-DEMO-HN-001', 'SP001', 35.0, NULL, NULL, NULL),
+    ('stl-demo-hn-002', 'ST-DEMO-HN-001', 'SP003', 45.0, NULL, NULL, NULL),
+    ('stl-demo-hn-003', 'ST-DEMO-HN-001', 'SP012', 22.0, NULL, NULL, NULL),
+    ('stl-demo-hcm-001', 'ST-DEMO-HCM-001', 'SP006', 25.0, 24.0, NULL, 'Đang đếm'),
+    ('stl-demo-hcm-002', 'ST-DEMO-HCM-001', 'SP009', 80.0, NULL, NULL, NULL),
+    ('stl-demo-dl-001', 'ST-DEMO-DL-001', 'SP002', 8.0, 7.0, -1.0, 'Thiếu 1'),
+    ('stl-demo-dl-002', 'ST-DEMO-DL-001', 'SP011', 12.0, 14.0, 2.0, 'Thừa 2')
+) AS v(line_id, st_code, product_code, system_qty, counted_qty, variance_qty, note)
+WHERE (SELECT id FROM stock_take WHERE code = v.st_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_take_line stl WHERE stl.id = v.line_id);
+
+-- ============================================================
+-- 25) STOCK BALANCES — mở rộng SP004–SP010 + phủ thêm 3 kho
+--     (một số dòng dưới min để demo Stock Alerts)
+-- ============================================================
+INSERT INTO stock_balances (id, product_id, warehouse_id, location_id, batch_id,
+                            quantity_on_hand, quantity_reserved, quantity_available,
+                            is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       NULL, NULL,
+       v.qty, 0, v.qty,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('SP001', 'WH_HCM', 12.0),
+    ('SP003', 'WH_DL',   6.0),
+    ('SP004', 'WH_HCM', 18.0),
+    ('SP004', 'WH_DL',  20.0),
+    ('SP005', 'WH_HN',  30.0),
+    ('SP005', 'WH_HCM',  8.0),
+    ('SP006', 'WH_HN',  10.0),
+    ('SP008', 'WH_HCM', 42.0),
+    ('SP008', 'WH_HN',  15.0),
+    ('SP009', 'WH_HN',  25.0),
+    ('SP010', 'WH_HN',  40.0),
+    ('SP010', 'WH_DL',  55.0),
+    ('SP012', 'WH_HCM',  5.0)
+) AS v(product_code, wh_code, qty)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM stock_balances sb
+    JOIN products p ON p.id = sb.product_id
+    JOIN warehouses w ON w.id = sb.warehouse_id
+    WHERE p.code = v.product_code AND w.code = v.wh_code
+      AND COALESCE(sb.is_deleted, false) = false
+  );
+
+-- ============================================================
+-- 26) REORDER RULES — bổ sung SP004–SP010 + SP001 HCM, SP003 ĐL
+-- ============================================================
+INSERT INTO reorder_rule (id, warehouse_id, product_id, min_qty, max_qty, reorder_qty,
+                          preferred_supplier_id, active, is_deleted,
+                          created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.min_qty, v.max_qty, v.reorder_qty,
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       true, false,
+       NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('SP001', 'WH_HCM', 20, 120,  60, 'NCC001'),
+    ('SP003', 'WH_DL',  10,  80,  40, 'NCC002'),
+    ('SP004', 'WH_HCM', 25, 150,  50, 'NCC004'),
+    ('SP004', 'WH_DL',  15, 100,  40, 'NCC004'),
+    ('SP005', 'WH_HN',  25, 200,  80, 'NCC002'),
+    ('SP005', 'WH_HCM', 15, 100,  50, 'NCC004'),
+    ('SP008', 'WH_HCM', 30, 200,  60, 'NCC003'),
+    ('SP008', 'WH_HN',  20, 120,  50, 'NCC003'),
+    ('SP010', 'WH_HN',  30, 200,  80, 'NCC004'),
+    ('SP010', 'WH_DL',  40, 250, 100, 'NCC004'),
+    ('SP012', 'WH_HCM', 15, 100,  40, 'NCC002')
+) AS v(product_code, wh_code, min_qty, max_qty, reorder_qty, ncc_code)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM reorder_rule rr
+    JOIN products p ON p.id = rr.product_id
+    JOIN warehouses w ON w.id = rr.warehouse_id
+    WHERE p.code = v.product_code AND w.code = v.wh_code
+      AND COALESCE(rr.is_deleted, false) = false
+  );
+
+-- ============================================================
+-- 27) STOCK ALERTS — cảnh báo tồn thấp (OPEN / DISMISSED / RESOLVED)
+-- ============================================================
+INSERT INTO stock_alert (id, warehouse_id, product_id, current_qty, min_qty, severity, status,
+                         triggered_at, dismissed_at, idempotency_key, purchase_request_id,
+                         is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.current_qty, v.min_qty, v.severity, v.status,
+       NOW() - v.triggered_ago,
+       CASE WHEN v.status = 'DISMISSED' THEN NOW() - INTERVAL '1 day' ELSE NULL END,
+       v.idem_key, NULL,
+       false, NOW() - v.triggered_ago, 'system', NOW(), 'system'
+FROM (VALUES
+    ('alert-demo-001', 'SP001', 'WH_HN',  35.0, 50.0, 'WARNING',  'OPEN',      INTERVAL '2 days', 'demo|SP001|WH_HN'),
+    ('alert-demo-002', 'SP002', 'WH_DL',   8.0, 10.0, 'WARNING',  'OPEN',      INTERVAL '1 day',  'demo|SP002|WH_DL'),
+    ('alert-demo-003', 'SP007', 'WH_HCM',  0.0,  5.0, 'CRITICAL', 'OPEN',      INTERVAL '6 hours','demo|SP007|WH_HCM'),
+    ('alert-demo-004', 'SP012', 'WH_HCM',  5.0, 15.0, 'WARNING',  'OPEN',      INTERVAL '3 hours','demo|SP012|WH_HCM'),
+    ('alert-demo-005', 'SP003', 'WH_DL',   6.0, 10.0, 'WARNING',  'OPEN',      INTERVAL '5 hours','demo|SP003|WH_DL'),
+    ('alert-demo-006', 'SP001', 'WH_HCM', 12.0, 20.0, 'WARNING',  'DISMISSED', INTERVAL '4 days','demo|SP001|WH_HCM|dismissed'),
+    ('alert-demo-007', 'SP005', 'WH_HCM',  8.0, 15.0, 'WARNING',  'RESOLVED',  INTERVAL '7 days','demo|SP005|WH_HCM|resolved')
+) AS v(id, product_code, wh_code, current_qty, min_qty, severity, status, triggered_ago, idem_key)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_alert sa WHERE sa.id = v.id OR sa.idempotency_key = v.idem_key);
+
+-- ============================================================
+-- 28) PURCHASE REQUESTS — PR mẫu (DRAFT / PENDING / APPROVED / REJECTED)
+--     Pipeline: Alert → PR → (Approval) → PO
+-- ============================================================
+INSERT INTO purchase_request (id, code, supplier_id, warehouse_id, status, note,
+                              approval_request_id, submitted_at,
+                              is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.code,
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.status, v.note, NULL,
+       CASE WHEN v.status IN ('PENDING', 'APPROVED', 'REJECTED')
+            THEN NOW() - v.submitted_ago ELSE NULL END,
+       false, NOW() - INTERVAL '5 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('pr-demo-001', 'PR-DEMO-001', 'NCC001', 'WH_HN',
+     'APPROVED', 'Tái nhập rau cải HN — từ alert SP001', INTERVAL '3 days'),
+    ('pr-demo-002', 'PR-DEMO-002', 'NCC003', 'WH_HCM',
+     'DRAFT', 'Đặt tôm sú khẩn — từ alert SP007 (chưa submit)', NULL::interval),
+    ('pr-demo-003', 'PR-DEMO-003', 'NCC002', 'WH_HN',
+     'PENDING', 'Đặt trứng gà ta — chờ duyệt thủ kho trưởng', INTERVAL '1 day'),
+    ('pr-demo-004', 'PR-DEMO-004', 'NCC005', 'WH_HCM',
+     'REJECTED', 'Đặt gạo ST25 vượt ngân sách tháng — từ chối', INTERVAL '2 days')
+) AS v(id, code, ncc_code, wh_code, status, note, submitted_ago)
+WHERE NOT EXISTS (SELECT 1 FROM purchase_request pr WHERE pr.code = v.code);
+
+INSERT INTO purchase_request_line (id, purchase_request_id, product_id, warehouse_id, qty,
+                                   stock_alert_id, note,
+                                   is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.line_id,
+       (SELECT id FROM purchase_request WHERE code = v.pr_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.qty,
+       CASE WHEN v.alert_id IS NOT NULL
+            THEN (SELECT id FROM stock_alert WHERE id = v.alert_id LIMIT 1) ELSE NULL END,
+       v.note,
+       false, NOW() - INTERVAL '5 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('prl-demo-001', 'PR-DEMO-001', 'SP001', 'WH_HN',  100.0, 'alert-demo-001', 'Bổ sung tồn rau cải'),
+    ('prl-demo-002', 'PR-DEMO-002', 'SP007', 'WH_HCM',  20.0, 'alert-demo-003', 'Tôm sú size L — giao trong 48h'),
+    ('prl-demo-003', 'PR-DEMO-003', 'SP012', 'WH_HN',   50.0, NULL,             'Trứng gà ta vỉ 30'),
+    ('prl-demo-004', 'PR-DEMO-004', 'SP009', 'WH_HCM', 200.0, NULL,             'Gạo ST25 — đơn lớn tháng 7')
+) AS v(line_id, pr_code, product_code, wh_code, qty, alert_id, note)
+WHERE (SELECT id FROM purchase_request WHERE code = v.pr_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM purchase_request_line prl WHERE prl.id = v.line_id);
+
+-- Gắn alert ↔ PR (1 alert ↔ 1 PR active)
+UPDATE stock_alert sa SET purchase_request_id = pr.id, updated_date = NOW()
+FROM purchase_request pr
+JOIN purchase_request_line prl ON prl.purchase_request_id = pr.id AND COALESCE(prl.is_deleted, false) = false
+WHERE prl.stock_alert_id = sa.id
+  AND pr.code IN ('PR-DEMO-001', 'PR-DEMO-002')
+  AND sa.purchase_request_id IS NULL;
+
+-- ============================================================
+-- 29) PURCHASE ORDERS — PO từ PR APPROVED + PO thủ công
+-- ============================================================
+INSERT INTO purchase_order (id, code, pr_id, supplier_id, warehouse_id, status, note,
+                            confirmed_at, received_at,
+                            is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.code,
+       (SELECT id FROM purchase_request WHERE code = v.pr_code LIMIT 1),
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.status, v.note,
+       CASE WHEN v.status IN ('CONFIRMED', 'RECEIVED') THEN NOW() - INTERVAL '2 days' ELSE NULL END,
+       CASE WHEN v.status = 'RECEIVED' THEN NOW() - INTERVAL '1 day' ELSE NULL END,
+       false, NOW() - INTERVAL '4 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('po-demo-001', 'PO-DEMO-001', 'PR-DEMO-001', 'NCC001', 'WH_HN',
+     'CONFIRMED', 'PO từ PR-DEMO-001 — rau cải HN'),
+    ('po-demo-002', 'PO-DEMO-002', NULL,          'NCC002', 'WH_HN',
+     'RECEIVED',  'PO thủ công trứng + cà chua — đã nhận hàng'),
+    ('po-demo-003', 'PO-DEMO-003', NULL,          'NCC004', 'WH_DL',
+     'DRAFT',     'PO nháp sầu riêng Ri6 mùa hè')
+) AS v(id, code, pr_code, ncc_code, wh_code, status, note)
+WHERE NOT EXISTS (SELECT 1 FROM purchase_order po WHERE po.code = v.code);
+
+INSERT INTO purchase_order_line (id, purchase_order_id, pr_line_id, product_id, warehouse_id,
+                                 qty, received_qty, note,
+                                 is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.line_id,
+       (SELECT id FROM purchase_order WHERE code = v.po_code LIMIT 1),
+       (SELECT id FROM purchase_request_line WHERE id = v.pr_line_id LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.qty, v.received_qty, v.note,
+       false, NOW() - INTERVAL '4 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('pol-demo-001', 'PO-DEMO-001', 'prl-demo-001', 'SP001', 'WH_HN', 100.0, 0.0,  'Chờ GRN'),
+    ('pol-demo-002', 'PO-DEMO-002', NULL,           'SP012', 'WH_HN',  30.0, 30.0, 'Đã nhận đủ'),
+    ('pol-demo-003', 'PO-DEMO-002', NULL,           'SP003', 'WH_HN',  40.0, 40.0, 'Đã nhận đủ'),
+    ('pol-demo-004', 'PO-DEMO-003', NULL,           'SP011', 'WH_DL',  15.0, 0.0,  'Chờ NCC giao')
+) AS v(line_id, po_code, pr_line_id, product_code, wh_code, qty, received_qty, note)
+WHERE (SELECT id FROM purchase_order WHERE code = v.po_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM purchase_order_line pol WHERE pol.id = v.line_id);
+
+-- Liên kết GRN nháp với PO đã CONFIRMED
+UPDATE goods_receipt_notes g SET purchase_order_id = po.id, updated_date = NOW()
+FROM purchase_order po
+WHERE po.code = 'PO-DEMO-001'
+  AND g.grn_code = 'GRN-DEMO-001'
+  AND g.purchase_order_id IS NULL;
+
+-- GRN mới gắn PO (chờ nhập)
+INSERT INTO goods_receipt_notes (id, grn_code, purchase_order_id, warehouse_id, supplier_id,
+                                 status, total_value, received_by, received_at, note,
+                                 is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.grn_code,
+       (SELECT id FROM purchase_order WHERE code = v.po_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       'DRAFT', NULL::double precision, NULL, NULL,
+       NOW() - INTERVAL '6 hours',
+       v.note,
+       false, NOW() - INTERVAL '6 hours', 'system', NOW() - INTERVAL '6 hours', 'system'
+FROM (VALUES
+    ('aaaaaaaa-grn-0005-4000-8000-000000000005', 'GRN-DEMO-005', 'PO-DEMO-001', 'WH_HN', 'NCC001',
+     'Phiếu nhập từ PO-DEMO-001 — chờ kiểm hàng rau cải')
+) AS v(id, grn_code, po_code, wh_code, ncc_code, note)
+WHERE NOT EXISTS (SELECT 1 FROM goods_receipt_notes g WHERE g.grn_code = v.grn_code);
+
+INSERT INTO goods_receipt_note_items (id, grn_id, product_id, batch_id,
+                                      qty_expected, qty_received, unit_cost, location_id,
+                                      is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'bbbbbbbb-grn-0005-4000-8000-000000000005',
+       (SELECT id FROM goods_receipt_notes WHERE grn_code = 'GRN-DEMO-005' LIMIT 1),
+       (SELECT id FROM products WHERE code = 'SP001' LIMIT 1),
+       NULL, 100.0, 0.0, 25000.0, NULL,
+       false, NOW(), 'system', NOW(), 'system'
+WHERE EXISTS (SELECT 1 FROM goods_receipt_notes WHERE grn_code = 'GRN-DEMO-005')
+  AND NOT EXISTS (
+    SELECT 1 FROM goods_receipt_note_items gi
+    JOIN goods_receipt_notes g ON g.id = gi.grn_id
+    WHERE g.grn_code = 'GRN-DEMO-005'
+      AND COALESCE(gi.is_deleted, false) = false
+  );
+
+-- GRN/GIN — bổ sung hóa đơn NCC, chứng từ xuất, trạng thái duyệt (idempotent)
+UPDATE goods_receipt_notes SET
+  invoice_no = 'HD-NCC-2026-0001234',
+  invoice_date = (CURRENT_DATE - INTERVAL '2 days')::date,
+  updated_date = NOW()
+WHERE grn_code = 'GRN-DEMO-001' AND invoice_no IS NULL;
+
+UPDATE goods_receipt_notes SET
+  status = 'PENDING_APPROVAL',
+  invoice_no = 'HD-NCC-2026-0005678',
+  invoice_date = (CURRENT_DATE - INTERVAL '1 day')::date,
+  updated_date = NOW()
+WHERE grn_code = 'GRN-DEMO-002' AND status = 'DRAFT';
+
+UPDATE goods_receipt_notes SET
+  invoice_no = 'HD-NCC-2026-0009012',
+  invoice_date = (CURRENT_DATE - INTERVAL '6 days')::date,
+  approved_by = 'system',
+  approved_at = NOW() - INTERVAL '5 days',
+  updated_date = NOW()
+WHERE grn_code = 'GRN-DEMO-003' AND invoice_no IS NULL;
+
+UPDATE goods_receipt_notes SET
+  invoice_no = 'HD-NCC-PO-2026-001',
+  invoice_date = CURRENT_DATE,
+  updated_date = NOW()
+WHERE grn_code = 'GRN-DEMO-005' AND invoice_no IS NULL;
+
+UPDATE goods_issue_notes SET
+  document_no = 'PX-2026-0042',
+  document_date = (CURRENT_DATE - INTERVAL '1 day')::date,
+  updated_date = NOW()
+WHERE gin_code = 'GIN-DEMO-001' AND document_no IS NULL;
+
+UPDATE goods_issue_notes SET
+  status = 'PENDING_APPROVAL',
+  document_no = 'CK-2026-0015',
+  document_date = CURRENT_DATE,
+  updated_date = NOW()
+WHERE gin_code = 'GIN-DEMO-002' AND status = 'DRAFT';
+
+UPDATE goods_issue_notes SET
+  document_no = 'HD-XK-2026-0088',
+  document_date = (CURRENT_DATE - INTERVAL '5 days')::date,
+  approved_by = 'system',
+  approved_at = NOW() - INTERVAL '4 days',
+  updated_date = NOW()
+WHERE gin_code = 'GIN-DEMO-003' AND document_no IS NULL;
+
+-- ============================================================
+-- 30) STOCK TRANSFERS — chuyển kho HCM → HN (DRAFT / CONFIRMED)
+-- ============================================================
+INSERT INTO stock_transfers (id, transfer_code, from_warehouse_id, to_warehouse_id,
+                             status, total_value, transferred_by, transferred_at, note,
+                             is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.code,
+       (SELECT id FROM warehouses WHERE code = v.from_wh LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.to_wh LIMIT 1),
+       v.status, v.total_value, v.transferred_by, v.transferred_at, v.note,
+       false, NOW() - INTERVAL '3 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('tf-demo-001', 'TF-DEMO-001', 'WH_HCM', 'WH_HN', 'DRAFT',
+     NULL::double precision, NULL, NULL,
+     'Chuyển gạo ST25 sang kho HN — phiếu nháp (khớp GIN-DEMO-002)'),
+    ('tf-demo-002', 'TF-DEMO-002', 'WH_HCM', 'WH_HN', 'CONFIRMED',
+     950000.0, 'system', NOW() - INTERVAL '2 days',
+     'Đã chuyển xoài cát Hoà Lộc — xác nhận hoàn tất')
+) AS v(id, code, from_wh, to_wh, status, total_value, transferred_by, transferred_at, note)
+WHERE NOT EXISTS (SELECT 1 FROM stock_transfers st WHERE st.transfer_code = v.code);
+
+INSERT INTO stock_transfer_items (id, transfer_id, product_id, batch_id, qty_transferred, unit_cost,
+                                  from_location_id, to_location_id,
+                                  is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.item_id,
+       (SELECT id FROM stock_transfers WHERE transfer_code = v.tf_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       NULL, v.qty, v.unit_cost, NULL, NULL,
+       false, NOW() - INTERVAL '3 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('tfi-demo-001', 'TF-DEMO-001', 'SP009',  5.0, 185000.0),
+    ('tfi-demo-002', 'TF-DEMO-002', 'SP006', 10.0,  95000.0)
+) AS v(item_id, tf_code, product_code, qty, unit_cost)
+WHERE (SELECT id FROM stock_transfers WHERE transfer_code = v.tf_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_transfer_items sti WHERE sti.id = v.item_id);
+
+-- Sổ kho cho transfer CONFIRMED (TF-DEMO-002): xuất HCM + nhập HN
+INSERT INTO stock_transactions (id, transaction_code, transaction_type, reference_type, reference_id,
+                                warehouse_id, total_amount, status, note,
+                                is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT 'cccccccc-stx-tf02-4000-8000-000000000002', 'ST-DEMO-TF-002', 'TRANSFER', 'TRANSFER',
+       (SELECT id FROM stock_transfers WHERE transfer_code = 'TF-DEMO-002' LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = 'WH_HCM' LIMIT 1),
+       950000.0, 'CONFIRMED', 'Chuyển kho TF-DEMO-002 — xuất kho HCM',
+       false, NOW() - INTERVAL '2 days', 'system', NOW() - INTERVAL '2 days', 'system'
+WHERE EXISTS (SELECT 1 FROM stock_transfers WHERE transfer_code = 'TF-DEMO-002' AND status = 'CONFIRMED')
+  AND NOT EXISTS (SELECT 1 FROM stock_transactions st WHERE st.transaction_code = 'ST-DEMO-TF-002');
+
+INSERT INTO stock_ledger (id, product_id, batch_id, warehouse_id, location_id, transaction_id,
+                          transaction_type, quantity, unit_cost, total_value,
+                          reference_type, reference_id, note,
+                          is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id,
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       NULL,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       NULL,
+       (SELECT id FROM stock_transactions WHERE transaction_code = 'ST-DEMO-TF-002' LIMIT 1),
+       v.tx_type, v.qty, v.unit_cost, v.total_value,
+       'TRANSFER',
+       (SELECT id FROM stock_transfers WHERE transfer_code = 'TF-DEMO-002' LIMIT 1),
+       v.note,
+       false, NOW() - INTERVAL '2 days', 'system', NOW() - INTERVAL '2 days', 'system'
+FROM (VALUES
+    ('dddddddd-ldg-tf02-out-4000-8000-0000000001', 'SP006', 'WH_HCM', 'OUT', -10.0, 95000.0, -950000.0, 'Xuất chuyển kho TF-DEMO-002'),
+    ('dddddddd-ldg-tf02-in-4000-8000-00000000002', 'SP006', 'WH_HN',  'IN',   10.0, 95000.0,  950000.0, 'Nhập chuyển kho TF-DEMO-002')
+) AS v(id, product_code, wh_code, tx_type, qty, unit_cost, total_value, note)
+WHERE EXISTS (SELECT 1 FROM stock_transactions WHERE transaction_code = 'ST-DEMO-TF-002')
+  AND NOT EXISTS (SELECT 1 FROM stock_ledger sl WHERE sl.id = v.id);
+
+-- ============================================================
+-- 31) WAREHOUSE ZONES & LOCATIONS — master data 3 kho
+-- ============================================================
+INSERT INTO warehouse_zones (id, warehouse_id, code, name, type, status,
+                             is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.code, v.name, v.type, 'ACTIVE',
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('wz-hn-a', 'WH_HN',  'A', 'Khu A — Rau củ',     'STORAGE'),
+    ('wz-hn-b', 'WH_HN',  'B', 'Khu B — Thực phẩm',  'STORAGE'),
+    ('wz-hcm-a','WH_HCM', 'A', 'Khu A — Khô',        'STORAGE'),
+    ('wz-hcm-b','WH_HCM', 'B', 'Khu B — Lạnh',       'STORAGE'),
+    ('wz-dl-a', 'WH_DL',  'A', 'Khu lạnh ĐL',        'STORAGE'),
+    ('wz-dl-b', 'WH_DL',  'B', 'Khu staging',        'STAGING')
+) AS v(id, wh_code, code, name, type)
+WHERE (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM warehouse_zones wz
+    JOIN warehouses w ON w.id = wz.warehouse_id
+    WHERE w.code = v.wh_code AND wz.code = v.code
+      AND COALESCE(wz.is_deleted, false) = false
+  );
+
+INSERT INTO warehouse_locations (id, zone_id, aisle, rack, level, bin, barcode, max_weight_kg, is_active,
+                                 is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.zone_id, v.aisle, v.rack, v.level, v.bin, v.barcode, v.max_kg, true,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('wl-hn-a-01', 'wz-hn-a',  '01', 'R1', 'L1', 'B01', 'WH-HN-A-01-R1-L1-B01', 500.0),
+    ('wl-hn-a-02', 'wz-hn-a',  '01', 'R1', 'L2', 'B01', 'WH-HN-A-01-R1-L2-B01', 500.0),
+    ('wl-hn-b-01', 'wz-hn-b',  '02', 'R2', 'L1', 'B01', 'WH-HN-B-02-R2-L1-B01', 800.0),
+    ('wl-hcm-a-01','wz-hcm-a', '01', 'R1', 'L1', 'B01', 'WH-HCM-A-01-R1-L1-B01', 1000.0),
+    ('wl-hcm-b-01','wz-hcm-b', '03', 'R1', 'L1', 'B01', 'WH-HCM-B-03-R1-L1-B01', 300.0),
+    ('wl-dl-a-01', 'wz-dl-a',  '01', 'R1', 'L1', 'B01', 'WH-DL-A-01-R1-L1-B01', 200.0)
+) AS v(id, zone_id, aisle, rack, level, bin, barcode, max_kg)
+WHERE EXISTS (SELECT 1 FROM warehouse_zones wz WHERE wz.id = v.zone_id)
+  AND NOT EXISTS (SELECT 1 FROM warehouse_locations wl WHERE wl.id = v.id);
 

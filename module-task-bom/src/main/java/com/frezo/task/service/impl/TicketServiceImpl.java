@@ -1,7 +1,8 @@
 package com.frezo.task.service.impl;
 
+import com.frezo.common.exception.AppException;
+import com.frezo.task.common.TaskErrorCode;
 import com.frezo.auth.repository.UserRepository;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.repository.CommentAttachmentRepository;
 import com.frezo.common.repository.CommentRepository;
@@ -86,7 +87,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketResponse update(String id, TicketRequest request) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Ticket not found"));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
 
         if (request.getCategory() != null) {
             validateCategoryCode(request.getCategory());
@@ -130,7 +131,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public void delete(String id) {
         if (!ticketRepository.existsById(id)) {
-            throw new QTHTException("Ticket not found");
+            throw new AppException(TaskErrorCode.TICKET_NOT_FOUND);
         }
         ticketRepository.deleteById(id);
     }
@@ -138,7 +139,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public TicketResponse findById(String id) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Ticket not found"));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
         return enrichCounts(ticketMapper.toResponse(ticket));
     }
 
@@ -158,7 +159,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketResponse updateStatus(String id, String status) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Ticket not found"));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
 
         Ticket.TicketStatus oldStatus = ticket.getStatus();
         try {
@@ -173,7 +174,7 @@ public class TicketServiceImpl implements TicketService {
             }
             return enrichCounts(ticketMapper.toResponse(saved));
         } catch (IllegalArgumentException e) {
-            throw new QTHTException("Invalid ticket status");
+            throw new AppException(TaskErrorCode.TICKET_STATUS_INVALID);
         }
     }
 
@@ -181,7 +182,7 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public TicketResponse assignTicket(String id, String assigneeId) {
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Ticket not found"));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
 
         String oldAssigneeId = ticket.getAssigneeId();
         ticket.setAssigneeId(assigneeId);
@@ -239,9 +240,7 @@ public class TicketServiceImpl implements TicketService {
             return;
         }
         ticketCategoryRepository.findByCodeAndIsDeletedFalse(code.trim())
-                .orElseThrow(() -> new QTHTException(
-                        "TICKET_CATEGORY_INVALID",
-                        "Danh mục không hợp lệ: " + code));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_CATEGORY_INVALID, code));
     }
 
     private Map<String, String> loadCategoryNameMap() {

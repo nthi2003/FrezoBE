@@ -34,13 +34,13 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Stri
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
+    /** Tổng phép đã duyệt theo khoảng ngày (portable — không dùng MONTH/YEAR MySQL). */
     @Query("SELECT COALESCE(SUM(lr.durationDays), 0) FROM LeaveRequest lr " +
            "WHERE lr.contractId = :contractId " +
            "AND lr.status = 'APPROVED' " +
-           "AND FUNCTION('MONTH', lr.startDate) = :month " +
-           "AND FUNCTION('YEAR', lr.startDate) = :year")
-    double sumApprovedLeavesByContractAndMonth(
+           "AND lr.startDate >= :from AND lr.startDate <= :to")
+    double sumApprovedLeavesByContractAndPeriod(
             @Param("contractId") String contractId,
-            @Param("month") int month,
-            @Param("year") int year);
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

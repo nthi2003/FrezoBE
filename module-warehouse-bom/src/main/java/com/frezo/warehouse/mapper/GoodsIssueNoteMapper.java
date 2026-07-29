@@ -16,6 +16,8 @@ public interface GoodsIssueNoteMapper {
     @Mapping(target = "totalValue", ignore = true)
     @Mapping(target = "issuedBy", ignore = true)
     @Mapping(target = "issuedAt", ignore = true)
+    @Mapping(target = "approvedBy", ignore = true)
+    @Mapping(target = "approvedAt", ignore = true)
     GoodsIssueNote toEntity(GinCreateRequest request);
 
     GinResponse toResponse(GoodsIssueNote gin);

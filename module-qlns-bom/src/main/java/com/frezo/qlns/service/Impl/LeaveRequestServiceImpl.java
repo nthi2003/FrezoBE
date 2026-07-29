@@ -1,8 +1,8 @@
 package com.frezo.qlns.service.impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.common.exception.CommonErrorCode;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.service.NotificationService;
@@ -89,15 +89,15 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     @Transactional
     public LeaveRequestResponse cancel(String id) {
         LeaveRequest entity = leaveRequestRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("error.leave.request.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.LEAVE_REQUEST_NOT_FOUND));
 
         String currentStatus = normalizeStatus(entity.getStatus());
         if (!STATUS_PENDING_MANAGER.equals(currentStatus) && !STATUS_PENDING_HR.equals(currentStatus)) {
-            throw new QTHTException("error.leave.request.invalid.status");
+            throw new AppException(QlnsErrorCode.LEAVE_REQUEST_INVALID_STATUS);
         }
         String actor = SystemUtils.getCurrentUsername();
         if (!approvalBridge.isCurrentUserAdmin() && !actor.equals(entity.getCreatedBy())) {
-            throw new QTHTException("error.leave.request.permission.denied");
+            throw new AppException(QlnsErrorCode.LEAVE_REQUEST_PERMISSION_DENIED);
         }
 
         entity.setStatus(STATUS_CANCELLED);

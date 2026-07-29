@@ -2,6 +2,7 @@ package com.frezo.warehouse.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -12,6 +13,11 @@ public class GrnCreateRequest {
     private String warehouseId;
 
     private String supplierId;
+
+    /** Số hóa đơn NCC (GTGT đầu vào). */
+    private String invoiceNo;
+
+    private LocalDate invoiceDate;
 
     private String note;
 

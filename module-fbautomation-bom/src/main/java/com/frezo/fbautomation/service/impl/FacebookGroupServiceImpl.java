@@ -1,6 +1,7 @@
 package com.frezo.fbautomation.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.fbautomation.common.FbAutomationErrorCode;
 import com.frezo.fbautomation.dto.response.FacebookGroupResponse;
 import com.frezo.fbautomation.entity.FacebookGroup;
 import com.frezo.fbautomation.mapper.FacebookGroupMapper;
@@ -49,6 +50,6 @@ public class FacebookGroupServiceImpl implements FacebookGroupService {
 
     private FacebookGroup findById(String id) {
         return groupRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy group Facebook"));
+                .orElseThrow(() -> new AppException(FbAutomationErrorCode.GROUP_NOT_FOUND));
     }
 }

@@ -1,6 +1,7 @@
 package com.frezo.qtbv.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qtbv.common.DmdcErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -70,14 +71,14 @@ public class CategoryServiceImpl implements CategoryService {
                 ? categoryRepository.existsByCodeAndIsDeletedFalse(request.getCode())
                 : categoryRepository.existsByCodeAndIsDeletedFalseAndIdNot(request.getCode(), excludeId);
         if (codeExists) {
-            throw new QTHTException("category.code.exist", request.getCode());
+            throw new AppException(DmdcErrorCode.CATEGORY_CODE_EXISTS, request.getCode());
         }
 
         boolean nameExists = excludeId == null
                 ? categoryRepository.existsByNameAndIsDeletedFalse(request.getName())
                 : categoryRepository.existsByNameAndIsDeletedFalseAndIdNot(request.getName(), excludeId);
         if (nameExists) {
-            throw new QTHTException("category.name.exist", request.getName());
+            throw new AppException(DmdcErrorCode.CATEGORY_NAME_EXISTS, request.getName());
         }
 
         if (request.getNameEn() != null) {
@@ -85,14 +86,14 @@ public class CategoryServiceImpl implements CategoryService {
                     ? categoryRepository.existsByNameEnAndIsDeletedFalse(request.getNameEn())
                     : categoryRepository.existsByNameEnAndIsDeletedFalseAndIdNot(request.getNameEn(), excludeId);
             if (nameEnExists) {
-                throw new QTHTException("category.name.en.exist", request.getNameEn());
+                throw new AppException(DmdcErrorCode.CATEGORY_NAME_EN_EXISTS, request.getNameEn());
             }
         }
     }
 
     protected Category findEntityById(String id) {
 
-        return categoryRepository.findById(id).orElseThrow(() -> new QTHTException("valid.not.found"));
+        return categoryRepository.findById(id).orElseThrow(() -> new AppException(DmdcErrorCode.ENTITY_NOT_FOUND));
     }
     private Specification<Category> createSpecification (CategoryFilter filter) {
         Specification<Category> specification = Specification

@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.warehouse.dto.request.StockAdjustmentCreateRequest;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,10 +77,10 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
     @Transactional
     public StockAdjustmentResponse confirm(String id) {
         StockAdjustment adj = adjustmentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.adjustment.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ADJUSTMENT_NOT_FOUND));
 
         if (!"DRAFT".equals(adj.getStatus())) {
-            throw new QTHTException("stock.adjustment.already.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.ADJUSTMENT_ALREADY_CONFIRMED);
         }
 
         List<StockAdjustmentItem> items = adjustmentItemRepository.findByAdjustmentId(id);
@@ -129,9 +129,9 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
     @Transactional
     public void cancel(String id, String reason) {
         StockAdjustment adj = adjustmentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.adjustment.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ADJUSTMENT_NOT_FOUND));
         if ("CONFIRMED".equals(adj.getStatus())) {
-            throw new QTHTException("stock.adjustment.cannot.cancel.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.ADJUSTMENT_CANNOT_CANCEL_CONFIRMED);
         }
         adj.setStatus("CANCELLED");
         adj.setNote(reason);
@@ -141,14 +141,14 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
     @Override
     public StockAdjustmentResponse getById(String id) {
         StockAdjustment adj = adjustmentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.adjustment.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ADJUSTMENT_NOT_FOUND));
         return buildResponse(adj);
     }
 
     @Override
     public StockAdjustmentResponse getByCode(String code) {
         StockAdjustment adj = adjustmentRepository.findByAdjustmentCode(code)
-                .orElseThrow(() -> new QTHTException("stock.adjustment.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ADJUSTMENT_NOT_FOUND));
         return buildResponse(adj);
     }
 
@@ -175,9 +175,9 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
     @Transactional
     public void delete(String id) {
         StockAdjustment adj = adjustmentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("stock.adjustment.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.ADJUSTMENT_NOT_FOUND));
         if ("CONFIRMED".equals(adj.getStatus())) {
-            throw new QTHTException("stock.adjustment.cannot.delete.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.ADJUSTMENT_CANNOT_DELETE_CONFIRMED);
         }
         adjustmentItemRepository.deleteByAdjustmentId(id);
         adjustmentRepository.delete(adj);

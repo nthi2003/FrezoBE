@@ -8,9 +8,11 @@ import com.frezo.warehouse.dto.response.StockTakeLineResponse;
 import com.frezo.warehouse.dto.response.StockTakeResponse;
 import com.frezo.warehouse.entity.StockTake;
 import com.frezo.warehouse.entity.StockTakeLine;
+import com.frezo.warehouse.entity.Warehouse;
 import com.frezo.warehouse.repository.StockBalanceRepository;
 import com.frezo.warehouse.repository.StockTakeLineRepository;
 import com.frezo.warehouse.repository.StockTakeRepository;
+import com.frezo.warehouse.repository.WarehouseRepository;
 import com.frezo.warehouse.service.StockTakeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ public class StockTakeServiceImpl implements StockTakeService {
     private final StockTakeRepository stockTakeRepository;
     private final StockTakeLineRepository lineRepository;
     private final StockBalanceRepository stockBalanceRepository;
+    private final WarehouseRepository warehouseRepository;
 
     @Override
     public List<StockTakeResponse> list(String warehouseId) {
@@ -149,7 +152,24 @@ public class StockTakeServiceImpl implements StockTakeService {
                 .toList();
         return StockTakeResponse.builder()
                 .id(st.getId()).code(st.getCode()).warehouseId(st.getWarehouseId())
+                .warehouseName(resolveWarehouseName(st.getWarehouseId()))
+                .warehouseCode(resolveWarehouseCode(st.getWarehouseId()))
                 .takeDate(st.getTakeDate()).status(st.getStatus()).note(st.getNote())
                 .lines(lines).build();
+    }
+
+    private String resolveWarehouseName(String warehouseId) {
+        return resolveWarehouse(warehouseId).map(Warehouse::getName).orElse(null);
+    }
+
+    private String resolveWarehouseCode(String warehouseId) {
+        return resolveWarehouse(warehouseId).map(Warehouse::getCode).orElse(null);
+    }
+
+    private java.util.Optional<Warehouse> resolveWarehouse(String warehouseId) {
+        if (warehouseId == null || warehouseId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return warehouseRepository.findById(warehouseId);
     }
 }

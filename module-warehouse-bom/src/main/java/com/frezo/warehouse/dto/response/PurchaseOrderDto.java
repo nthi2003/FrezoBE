@@ -16,7 +16,9 @@ public class PurchaseOrderDto {
     private String code;
     private String prId;
     private String supplierId;
+    private String supplierName;
     private String warehouseId;
+    private String warehouseName;
     private String status;
     private String note;
     private String confirmedAt;

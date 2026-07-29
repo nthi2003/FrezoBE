@@ -3,6 +3,7 @@ package com.frezo.warehouse.entity;
 import com.frezo.common.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -26,8 +27,21 @@ public class GoodsReceiptNote extends BaseEntity {
     @Column(name = "supplier_id")
     private String supplierId; // NCC_id
 
-    @Column(name = "status", length = 20)
-    private String status; // DRAFT, CONFIRMED, CANCELLED
+    @Column(name = "status", length = 30)
+    private String status; // DRAFT, PENDING_APPROVAL, APPROVED, CONFIRMED, CANCELLED
+
+    /** Số hóa đơn GTGT đầu vào từ NCC (T3/AMIS). */
+    @Column(name = "invoice_no", length = 50)
+    private String invoiceNo;
+
+    @Column(name = "invoice_date")
+    private LocalDate invoiceDate;
+
+    @Column(name = "approved_by", length = 100)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
 
     @Column(name = "total_value")
     private Double totalValue;

@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qtht.entity.Person;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qlns.common.AttendanceStatus;
@@ -11,7 +12,6 @@ import com.frezo.qlns.service.TimesheetReportService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -33,13 +33,15 @@ public class TimesheetReportServiceImpl implements TimesheetReportService {
         List<Attendance> records;
         List<String> personIds;
 
+        LocalDate from = LocalDate.of(year, month, 1);
+        LocalDate to = LocalDate.of(year, month, YearMonth.of(year, month).lengthOfMonth());
+
         if (personId != null && !personId.isBlank()) {
-            records = attendanceRepository.findByPersonIdAndAttendanceDateBetween(
-                    personId, LocalDate.of(year, month, 1), LocalDate.of(year, month, YearMonth.of(year, month).lengthOfMonth()));
+            records = attendanceRepository.findByPersonIdAndAttendanceDateBetween(personId, from, to);
             personIds = List.of(personId);
         } else {
-            records = attendanceRepository.findByMonthAndYear(month, year);
-            personIds = attendanceRepository.findDistinctPersonIdByMonthAndYear(month, year);
+            records = attendanceRepository.findByAttendanceDateBetween(from, to);
+            personIds = attendanceRepository.findDistinctPersonIdByAttendanceDateBetween(from, to);
         }
 
         Map<String, List<Attendance>> grouped = records.stream()
@@ -218,7 +220,7 @@ public class TimesheetReportServiceImpl implements TimesheetReportService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("Bảng chấm công xuất Excel thất bại", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(QlnsErrorCode.TIMESHEET_EXPORT_FAILED);
         }
     }
 }

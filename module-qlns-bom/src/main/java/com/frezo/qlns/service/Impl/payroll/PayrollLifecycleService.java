@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl.payroll;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.entity.Payroll;
 import com.frezo.qlns.repository.PayrollPeriodRepository;
 import com.frezo.qlns.repository.PayrollRepository;
@@ -30,12 +31,12 @@ public class PayrollLifecycleService {
         if (payroll.getPayrollPeriodId() != null) {
             payrollPeriodRepository.findById(payroll.getPayrollPeriodId()).ifPresent(period -> {
                 if (period.getStatus() == 1 || period.getStatus() == 2) {
-                    throw new QTHTException("Không thể thay đổi bảng lương trong kỳ đã khóa");
+                    throw new AppException(QlnsErrorCode.PAYROLL_LOCKED_PERIOD);
                 }
             });
         }
         if (payroll.getStatus() != null && payroll.getStatus() > 0) {
-            throw new QTHTException("error.payroll.cannot.update");
+            throw new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE);
         }
     }
 
@@ -54,7 +55,7 @@ public class PayrollLifecycleService {
     @Transactional
     public Payroll confirm(String id) {
         Payroll p = findOrThrow(id);
-        if (p.getStatus() != 0) throw new QTHTException("error.payroll.cannot.update");
+        if (p.getStatus() != 0) throw new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE);
         p.setStatus(1);
         return payrollRepository.save(p);
     }
@@ -62,7 +63,7 @@ public class PayrollLifecycleService {
     @Transactional
     public Payroll pay(String id) {
         Payroll p = findOrThrow(id);
-        if (p.getStatus() != 1) throw new QTHTException("Chỉ có thể thanh toán bảng lương đã xác nhận");
+        if (p.getStatus() != 1) throw new AppException(QlnsErrorCode.PAYROLL_PAY_REQUIRES_CONFIRMED);
         p.setStatus(2);
         p.setPaidAt(LocalDate.now());
         return payrollRepository.save(p);
@@ -78,6 +79,6 @@ public class PayrollLifecycleService {
 
     private Payroll findOrThrow(String id) {
         return payrollRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("error.payroll.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.PAYROLL_NOT_FOUND));
     }
 }

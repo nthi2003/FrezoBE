@@ -3,7 +3,6 @@ package com.frezo.qlns.service.Impl;
 import com.frezo.auth.dto.request.RegisterRequest;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.exception.AppException;
-import com.frezo.common.exception.QTHTException;
 import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.JobApplicationRequest;
 import com.frezo.qlns.dto.response.JobApplicationResponse;
@@ -190,8 +189,8 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         if (userRepository.findByUserName(username).isPresent()) {
             try {
                 userAdminService.assignRole(username, roleCode, APP_CODE);
-            } catch (QTHTException ex) {
-                if (!ERR_USER_ROLE_EXISTS.equals(ex.getMessage())) {
+            } catch (AppException ex) {
+                if (!ERR_USER_ROLE_EXISTS.equals(ex.messageKey())) {
                     throw ex;
                 }
             }

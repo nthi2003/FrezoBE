@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.entity.LeaveRecord;
 import com.frezo.qlns.repository.LeaveRecordRepository;
 import com.frezo.qlns.service.LeaveService;
@@ -31,7 +32,7 @@ public class LeaveServiceImpl implements LeaveService {
     public LeaveRecord approve(String id, String managerId) {
         // ThiNVQ : Phê duyệt nghỉ phép và cập nhật thông tin người duyệt
         LeaveRecord leave = leaveRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("exception.leave.not_found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.LEAVE_NOT_FOUND));
         leave.setStatus("APPROVED");
         leave.setApprovedBy(managerId);
         return leaveRepository.save(leave);

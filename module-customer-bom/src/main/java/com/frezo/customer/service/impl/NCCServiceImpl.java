@@ -1,5 +1,7 @@
 package com.frezo.customer.service.impl;
 
+import com.frezo.common.exception.AppException;
+import com.frezo.customer.common.CustomerErrorCode;
 import com.frezo.customer.dto.NCCCertificateDTO;
 import com.frezo.customer.dto.request.NCCFilterRequest;
 import com.frezo.customer.dto.request.NCCRequest;
@@ -16,7 +18,6 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import com.frezo.common.exception.QTHTException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -69,7 +70,7 @@ public class NCCServiceImpl implements NCCService {
 
     @Override
     public NCCResponse getById(String id) {
-        NCC ncc = nccRepository.findById(id).orElseThrow(() -> new QTHTException("exception.ncc.not_found"));
+        NCC ncc = nccRepository.findById(id).orElseThrow(() -> new AppException(CustomerErrorCode.NCC_NOT_FOUND));
         return mapToResponse(ncc);
     }
 
@@ -86,7 +87,7 @@ public class NCCServiceImpl implements NCCService {
             request.setCode(code);
         } else {
             if (nccRepository.findByCode(code).isPresent()) {
-                throw new QTHTException("exception.ncc.code.exists", code);
+                throw new AppException(CustomerErrorCode.NCC_CODE_EXISTS, code);
             }
         }
         
@@ -101,11 +102,11 @@ public class NCCServiceImpl implements NCCService {
     @Override
     @Transactional
     public NCCResponse updateNCC(String id, NCCRequest request) {
-        NCC ncc = nccRepository.findById(id).orElseThrow(() -> new QTHTException("exception.ncc.not_found"));
+        NCC ncc = nccRepository.findById(id).orElseThrow(() -> new AppException(CustomerErrorCode.NCC_NOT_FOUND));
         
         Optional<NCC> existingByCode = nccRepository.findByCode(request.getCode());
         if (existingByCode.isPresent() && !existingByCode.get().getId().equals(id)) {
-            throw new QTHTException("exception.ncc.code.exists", request.getCode());
+            throw new AppException(CustomerErrorCode.NCC_CODE_EXISTS, request.getCode());
         }
 
         nccMapper.updateEntity(ncc, request);

@@ -1,6 +1,7 @@
 package com.frezo.fbautomation.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.fbautomation.common.FbAutomationErrorCode;
 import com.frezo.fbautomation.dto.request.FacebookAccountRequest;
 import com.frezo.fbautomation.dto.response.AutomationSummaryResponse;
 import com.frezo.fbautomation.dto.response.FacebookAccountResponse;
@@ -39,7 +40,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
     @Transactional
     public FacebookAccountResponse create(FacebookAccountRequest request) {
         if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new QTHTException("Tài khoản " + request.getUsername() + " đã tồn tại");
+            throw new AppException(FbAutomationErrorCode.ACCOUNT_EXISTS, request.getUsername());
         }
         FacebookAccount entity = accountMapper.toEntity(request);
         if (entity.getStatus() == null) {
@@ -93,6 +94,6 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
 
     private FacebookAccount findById(String id) {
         return accountRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy tài khoản Facebook"));
+                .orElseThrow(() -> new AppException(FbAutomationErrorCode.ACCOUNT_NOT_FOUND));
     }
 }

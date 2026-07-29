@@ -1,6 +1,7 @@
 package com.frezo.email.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.email.common.EmailErrorCode;
 import com.frezo.email.dto.response.EmailInboxResponse;
 import com.frezo.email.entity.EmailConfig;
 import com.frezo.email.repository.EmailConfigRepository;
@@ -77,7 +78,7 @@ public class EmailInboxServiceImpl implements EmailInboxService {
             return result;
         } catch (MessagingException e) {
             log.error("IMAP error fetchInbox config={} folder={}: {}", configId, folder, e.getMessage(), e);
-            throw new QTHTException("error.email.inbox.fetch.failed: " + e.getMessage());
+            throw new AppException(EmailErrorCode.INBOX_FETCH_FAILED, e.getMessage());
         } finally {
             closeQuietly(imapFolder, store);
         }
@@ -153,10 +154,10 @@ public class EmailInboxServiceImpl implements EmailInboxService {
                 } catch (MessagingException ignored) {
                 }
             }
-            throw new QTHTException("error.email.not.found");
+            throw new AppException(EmailErrorCode.EMAIL_NOT_FOUND);
         } catch (MessagingException e) {
             log.error("IMAP error fetchEmailById uid={}: {}", uid, e.getMessage(), e);
-            throw new QTHTException("error.email.inbox.fetch.failed: " + e.getMessage());
+            throw new AppException(EmailErrorCode.INBOX_FETCH_FAILED, e.getMessage());
         } finally {
             closeQuietly(imapFolder, store);
         }
@@ -184,7 +185,7 @@ public class EmailInboxServiceImpl implements EmailInboxService {
             }
         } catch (MessagingException e) {
             log.error("IMAP error markAsRead uid={}: {}", uid, e.getMessage(), e);
-            throw new QTHTException("error.email.inbox.mark.read.failed: " + e.getMessage());
+            throw new AppException(EmailErrorCode.INBOX_MARK_READ_FAILED, e.getMessage());
         } finally {
             closeQuietly(imapFolder, store);
         }
@@ -310,7 +311,7 @@ public class EmailInboxServiceImpl implements EmailInboxService {
 
     private EmailConfig getConfig(String configId) {
         return emailConfigRepository.findById(configId)
-                .orElseThrow(() -> new QTHTException("error.email.config.not.found"));
+                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
     }
 
     private String deriveImapHost(String smtpHost) {

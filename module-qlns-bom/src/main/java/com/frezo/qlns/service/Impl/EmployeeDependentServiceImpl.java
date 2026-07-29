@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.dto.request.EmployeeDependentRequest;
 import com.frezo.qlns.dto.response.EmployeeDependentResponse;
 import com.frezo.qlns.entity.EmployeeDependent;
@@ -31,7 +32,7 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
     @Transactional
     public EmployeeDependentResponse update(String id, EmployeeDependentRequest request) {
         EmployeeDependent entity = employeeDependentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy người phụ thuộc"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.DEPENDENT_NOT_FOUND));
         entity.setFullName(request.getFullName());
         entity.setRelationship(request.getRelationship());
         entity.setBirthDate(request.getBirthDate());
@@ -48,7 +49,7 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
     @Transactional
     public void delete(String id) {
         EmployeeDependent entity = employeeDependentRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy người phụ thuộc"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.DEPENDENT_NOT_FOUND));
         entity.setIsDeleted(true);
         employeeDependentRepository.save(entity);
     }
@@ -57,7 +58,7 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
     public EmployeeDependentResponse getById(String id) {
         return employeeDependentRepository.findById(id)
                 .map(employeeDependentMapper::toResponse)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy người phụ thuộc"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.DEPENDENT_NOT_FOUND));
     }
 
     @Override

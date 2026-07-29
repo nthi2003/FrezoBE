@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.warehouse.dto.response.GinResponse;
 import com.frezo.warehouse.dto.response.GrnResponse;
 import com.frezo.warehouse.dto.response.TransferResponse;
@@ -10,7 +11,6 @@ import com.frezo.warehouse.service.StockTransferService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -334,7 +334,7 @@ public class DocumentPrintService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("stock.export.failed", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(WarehouseErrorCode.STOCK_EXPORT_FAILED);
         }
     }
 
@@ -401,7 +401,7 @@ public class DocumentPrintService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("stock.export.failed", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(WarehouseErrorCode.STOCK_EXPORT_FAILED);
         }
     }
 

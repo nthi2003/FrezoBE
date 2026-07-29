@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.dto.request.InsuranceConfigRequest;
 import com.frezo.qlns.dto.response.InsuranceConfigResponse;
 import com.frezo.qlns.entity.InsuranceConfig;
@@ -49,6 +50,6 @@ public class InsuranceConfigServiceImpl implements InsuranceConfigService {
     public InsuranceConfigResponse getByYear(Integer year) {
         return insuranceConfigRepository.findByYearAndIsActiveTrue(year)
                 .map(insuranceConfigMapper::toResponse)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy cấu hình bảo hiểm cho năm " + year));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.INSURANCE_CONFIG_NOT_FOUND, year));
     }
 }

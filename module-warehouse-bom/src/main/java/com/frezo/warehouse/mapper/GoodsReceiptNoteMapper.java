@@ -16,6 +16,8 @@ public interface GoodsReceiptNoteMapper {
     @Mapping(target = "totalValue", ignore = true)
     @Mapping(target = "receivedBy", ignore = true)
     @Mapping(target = "receivedAt", ignore = true)
+    @Mapping(target = "approvedBy", ignore = true)
+    @Mapping(target = "approvedAt", ignore = true)
     GoodsReceiptNote toEntity(GrnCreateRequest request);
 
     GrnResponse toResponse(GoodsReceiptNote grn);

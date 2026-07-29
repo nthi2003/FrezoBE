@@ -1,6 +1,7 @@
 package com.frezo.fbautomation.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.fbautomation.common.FbAutomationErrorCode;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.customer.dto.request.CustomerRequest;
 import com.frezo.customer.entity.Customer;
@@ -82,7 +83,7 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
         // 1. Lấy lead từ DB
         FacebookLead lead = findById(id);
         if ("IMPORTED".equals(lead.getStatus())) {
-            throw new QTHTException("Lead này đã được import trước đó");
+            throw new AppException(FbAutomationErrorCode.LEAD_ALREADY_IMPORTED);
         }
 
         // 2. Tạo CustomerRequest từ lead
@@ -149,6 +150,6 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
 
     private FacebookLead findById(String id) {
         return leadRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("Không tìm thấy lead Facebook"));
+                .orElseThrow(() -> new AppException(FbAutomationErrorCode.LEAD_NOT_FOUND));
     }
 }

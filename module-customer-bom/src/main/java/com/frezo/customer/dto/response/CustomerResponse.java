@@ -15,6 +15,7 @@ public class CustomerResponse {
     private String status;
     private String categoryCode;
     private String note;
+    private String avatarUrl;
     private String createdBy;
     private String createdDate;
 }

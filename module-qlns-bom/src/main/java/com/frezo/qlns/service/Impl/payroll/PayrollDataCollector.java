@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl.payroll;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.common.AttendanceStatus;
 import com.frezo.qlns.common.StatusContarct;
 import com.frezo.qlns.engine.PayrollEngine;
@@ -84,18 +85,16 @@ public class PayrollDataCollector {
                 .stream()
                 .filter(this::isEligibleContract)
                 .findFirst()
-                .orElseThrow(() -> new QTHTException(
-                        "Không thể tính lương: nhân viên chưa có hợp đồng đang hiệu lực (activated/ACTIVE). personId="
-                                + personId));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.NO_ACTIVE_CONTRACT, personId));
 
         LocalDate start = LocalDate.of(year, month, 1);
         LocalDate end = start.with(TemporalAdjusters.lastDayOfMonth());
 
-        int workingDays = attendanceRepository.countByPersonIdAndMonthAndYearAndStatusIn(
-                personId, month, year,
+        int workingDays = attendanceRepository.countByPersonIdAndAttendanceDateBetweenAndStatusIn(
+                personId, start, end,
                 List.of(AttendanceStatus.PRESENT, AttendanceStatus.LATE, AttendanceStatus.HALF_DAY));
-        int lateMinutes = attendanceRepository.sumLateMinutesByPersonIdAndMonthAndYear(personId, month, year);
-        int overtimeMinutes = attendanceRepository.sumOvertimeMinutesByPersonIdAndMonthAndYear(personId, month, year);
+        int lateMinutes = attendanceRepository.sumLateMinutesByPersonIdAndAttendanceDateBetween(personId, start, end);
+        int overtimeMinutes = attendanceRepository.sumOvertimeMinutesByPersonIdAndAttendanceDateBetween(personId, start, end);
 
         List<LeaveRecord> leaves = leaveRepository.findApprovedByPersonAndMonth(personId, start, end);
         int leavePaidCount = 0;

@@ -77,4 +77,11 @@ public class CustomerController {
         response.setHeader("Content-Disposition", "attachment; filename=khach-hang.xlsx");
         response.getOutputStream().write(data);
     }
+
+    @Operation(summary = "Upload / cập nhật avatar khách hàng")
+    @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<?> uploadAvatar(@PathVariable String id,
+                                       @RequestParam("file") MultipartFile file) {
+        return ApiResponse.ok(customerService.uploadAvatar(id, file));
+    }
 }

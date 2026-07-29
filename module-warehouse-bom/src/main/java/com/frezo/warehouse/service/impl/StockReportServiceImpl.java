@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.product.entity.Product;
 import com.frezo.product.repository.ProductRepository;
 import com.frezo.warehouse.dto.response.LowStockAlertResponse;
@@ -14,7 +15,6 @@ import com.frezo.warehouse.service.StockReportService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -154,7 +154,7 @@ public class StockReportServiceImpl implements StockReportService {
             wb.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new QTHTException("stock.export.failed", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new AppException(WarehouseErrorCode.STOCK_EXPORT_FAILED);
         }
     }
 

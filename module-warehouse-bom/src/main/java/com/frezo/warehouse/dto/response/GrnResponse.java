@@ -1,6 +1,7 @@
 package com.frezo.warehouse.dto.response;
 
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,9 +10,17 @@ public class GrnResponse {
     private String id;
     private String grnCode;
     private String purchaseOrderId;
+    private String purchaseOrderCode;
     private String warehouseId;
+    private String warehouseName;
+    private String warehouseCode;
     private String supplierId;
+    private String supplierName;
     private String status;
+    private String invoiceNo;
+    private LocalDate invoiceDate;
+    private String approvedBy;
+    private LocalDateTime approvedAt;
     private Double totalValue;
     private String receivedBy;
     private LocalDateTime receivedAt;

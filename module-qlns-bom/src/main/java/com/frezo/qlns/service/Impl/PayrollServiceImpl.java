@@ -1,6 +1,7 @@
 package com.frezo.qlns.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.response.PageResponse;
@@ -119,7 +120,7 @@ public class PayrollServiceImpl implements PayrollService {
     public PayrollResponse getById(String id) {
         return payrollRepository.findById(id)
                 .map(enricher::enrichFull)
-                .orElseThrow(() -> new QTHTException("error.payroll.not.found"));
+                .orElseThrow(() -> new AppException(QlnsErrorCode.PAYROLL_NOT_FOUND));
     }
 
     @Override

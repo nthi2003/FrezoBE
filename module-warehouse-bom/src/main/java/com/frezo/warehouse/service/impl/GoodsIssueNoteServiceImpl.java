@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.warehouse.dto.request.GinConfirmRequest;
@@ -12,9 +13,11 @@ import com.frezo.warehouse.repository.*;
 import com.frezo.warehouse.service.GoodsIssueNoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,31 +36,42 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     private final StockLedgerRepository stockLedgerRepository;
     private final StockBalanceRepository stockBalanceRepository;
     private final GoodsIssueNoteMapper ginMapper;
+    private final WarehouseRepository warehouseRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public GinResponse getById(String id) {
         GoodsIssueNote gin = ginRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
         return buildResponse(gin);
     }
 
     @Override
     public GinResponse getByCode(String ginCode) {
         GoodsIssueNote gin = ginRepository.findByGinCode(ginCode)
-                .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
         return buildResponse(gin);
     }
 
     @Override
     public PageResponse<GinResponse> filter(String status, String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
-        Page<GoodsIssueNote> ginPage;
-        if (status != null && !status.isBlank()) {
-            ginPage = ginRepository.findAll((root, query, cb) ->
-                    cb.equal(root.get("status"), status), pageable);
-        } else {
-            ginPage = ginRepository.findAll(pageable);
-        }
+        Specification<GoodsIssueNote> spec = (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (status != null && !status.isBlank()) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("ginCode")), pattern),
+                        cb.like(cb.lower(cb.coalesce(root.get("documentNo"), "")), pattern),
+                        cb.like(cb.lower(cb.coalesce(root.get("note"), "")), pattern)
+                ));
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        Page<GoodsIssueNote> ginPage = ginRepository.findAll(spec, pageable);
         List<GinResponse> responses = ginPage.getContent().stream().map(this::buildResponse).toList();
         return PageResponse.of(page, size, ginPage, responses);
     }
@@ -92,12 +106,42 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
 
     @Override
     @Transactional
+    public GinResponse submit(String id) {
+        GoodsIssueNote gin = ginRepository.findById(id)
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
+        if (!"DRAFT".equals(gin.getStatus())) {
+            throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
+        }
+        gin.setStatus("PENDING_APPROVAL");
+        ginRepository.save(gin);
+        return buildResponse(gin);
+    }
+
+    @Override
+    @Transactional
+    public GinResponse approve(String id) {
+        GoodsIssueNote gin = ginRepository.findById(id)
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
+        String st = gin.getStatus();
+        if (!"PENDING_APPROVAL".equals(st) && !"DRAFT".equals(st)) {
+            throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
+        }
+        gin.setStatus("APPROVED");
+        gin.setApprovedBy(gin.getCreatedBy());
+        gin.setApprovedAt(LocalDateTime.now());
+        ginRepository.save(gin);
+        return buildResponse(gin);
+    }
+
+    @Override
+    @Transactional
     public GinResponse confirm(String id, GinConfirmRequest request) {
         GoodsIssueNote gin = ginRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
 
-        if (!"DRAFT".equals(gin.getStatus())) {
-            throw new QTHTException("goods.issue.note.already.confirmed", HttpStatus.BAD_REQUEST);
+        String st = gin.getStatus();
+        if (!"DRAFT".equals(st) && !"APPROVED".equals(st)) {
+            throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
         }
 
         List<GoodsIssueNoteItem> items = ginItemRepository.findByGinId(id);
@@ -160,9 +204,10 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     public void batchConfirm(List<String> ids) {
         for (String id : ids) {
             GoodsIssueNote gin = ginRepository.findById(id)
-                    .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
-            if (!"DRAFT".equals(gin.getStatus())) {
-                throw new QTHTException("goods.issue.note.already.confirmed", HttpStatus.BAD_REQUEST);
+                    .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
+            String st = gin.getStatus();
+            if (!"DRAFT".equals(st) && !"APPROVED".equals(st)) {
+                throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
             }
         }
         for (String id : ids) {
@@ -174,10 +219,10 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     @Transactional
     public void cancel(String id, String reason) {
         GoodsIssueNote gin = ginRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
 
         if ("CONFIRMED".equals(gin.getStatus())) {
-            throw new QTHTException("goods.issue.note.cannot.cancel.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.GIN_CANNOT_CANCEL_CONFIRMED);
         }
 
         gin.setStatus("CANCELLED");
@@ -197,9 +242,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     @Transactional
     public void delete(String id) {
         GoodsIssueNote gin = ginRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("goods.issue.note.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.GIN_NOT_FOUND));
         if ("CONFIRMED".equals(gin.getStatus())) {
-            throw new QTHTException("goods.issue.note.cannot.delete.confirmed", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.GIN_CANNOT_DELETE_CONFIRMED);
         }
         ginItemRepository.findByGinId(id).forEach(ginItemRepository::delete);
         ginRepository.delete(gin);
@@ -207,9 +252,39 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
 
     private GinResponse buildResponse(GoodsIssueNote gin) {
         GinResponse response = ginMapper.toResponse(gin);
+        if (gin.getWarehouseId() != null) {
+            warehouseRepository.findById(gin.getWarehouseId()).ifPresent(wh -> {
+                response.setWarehouseName(wh.getName());
+                response.setWarehouseCode(wh.getCode());
+            });
+        }
+        if (gin.getTransferWarehouseId() != null) {
+            warehouseRepository.findById(gin.getTransferWarehouseId()).ifPresent(wh ->
+                    response.setTransferWarehouseName(wh.getName()));
+        }
+        response.setCustomerName(resolveCustomerName(gin.getCustomerId()));
         List<GoodsIssueNoteItem> items = ginItemRepository.findByGinId(gin.getId());
         response.setItems(items.stream().map(ginMapper::toItemResponse).toList());
         return response;
+    }
+
+    private String resolveCustomerName(String customerId) {
+        if (customerId == null || customerId.isBlank()) {
+            return null;
+        }
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name FROM customers WHERE id = ? AND COALESCE(is_deleted, false) = false LIMIT 1",
+                    String.class, customerId);
+        } catch (EmptyResultDataAccessException ex) {
+            try {
+                return jdbcTemplate.queryForObject(
+                        "SELECT name FROM khs WHERE id = ? AND COALESCE(is_deleted, false) = false LIMIT 1",
+                        String.class, customerId);
+            } catch (EmptyResultDataAccessException ex2) {
+                return null;
+            }
+        }
     }
 
     private GinConfirmRequest.GinConfirmItem findConfirmItem(GinConfirmRequest request, String itemId) {
@@ -223,10 +298,10 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(
                         productId, warehouseId, locationId, batchId)
-                .orElseThrow(() -> new QTHTException("stock.balance.not.found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.STOCK_BALANCE_NOT_FOUND));
 
         if (balance.getQuantityOnHand() < qty) {
-            throw new QTHTException("stock.balance.insufficient", HttpStatus.BAD_REQUEST);
+            throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT);
         }
 
         balance.setQuantityOnHand(balance.getQuantityOnHand() - qty);

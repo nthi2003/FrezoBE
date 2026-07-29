@@ -20,6 +20,8 @@ import com.frezo.warehouse.repository.WarehouseRepository;
 import com.frezo.warehouse.service.ReorderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +49,7 @@ public class ReorderServiceImpl implements ReorderService {
     private final StockBalanceRepository stockBalanceRepository;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<WarehouseOptionDto> listWarehouses() {
@@ -194,12 +197,31 @@ public class ReorderServiceImpl implements ReorderService {
                 .productId(r.getProductId())
                 .productCode(p != null ? p.getCode() : null)
                 .productName(p != null ? p.getName() : null)
+                .categoryName(p != null ? resolveCategoryName(p.getCategoryId()) : null)
                 .minQty(r.getMinQty())
                 .maxQty(r.getMaxQty())
                 .reorderQty(r.getReorderQty())
                 .active(Boolean.TRUE.equals(r.getActive()))
                 .updatedAt(r.getUpdatedDate() != null ? r.getUpdatedDate().format(ISO) : null)
                 .build();
+    }
+
+    private String resolveCategoryName(String categoryId) {
+        if (categoryId == null || categoryId.isBlank()) {
+            return null;
+        }
+        try {
+            return jdbcTemplate.queryForObject(
+                    """
+                    SELECT name FROM categories
+                    WHERE id = ? AND COALESCE(is_deleted, false) = false
+                    LIMIT 1
+                    """,
+                    String.class,
+                    categoryId);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
     }
 
     private StockAlertDto toAlertDto(StockAlert a) {

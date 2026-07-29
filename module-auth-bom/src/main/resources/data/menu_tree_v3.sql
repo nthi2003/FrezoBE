@@ -8,7 +8,7 @@
 -- Root parents (folder, fe_url NULL):
 --   MENU_HRM, MENU_CRM, MENU_PRODUCT, MENU_WAREHOUSE,
 --   MENU_ACCOUNTING, MENU_APPROVAL, MENU_TASK, MENU_GROWTH, MENU_QTHT
--- Root leaves: DASHBOARD, PROFILE
+-- Root leaves: HOME, DASHBOARD, PROFILE
 --
 -- Stable: leaf code / fe_url / permission map unchanged.
 -- Idempotent: INSERT WHERE NOT EXISTS + UPDATE parent_code / order.
@@ -90,7 +90,7 @@ FROM (VALUES
     ('WH_GIN',             'Phiếu xuất kho',       'Goods Issue Notes',    '/warehouse/gin',                  'src/modules/warehouse',  'MENU_WAREHOUSE',  7,  'PackageMinus'),
     -- CRM
     ('CRM_LEADS',          'Leads',                'Leads',                '/crm/leads',                       'src/modules/crm',        'MENU_CRM',        2,  'UserPlus'),
-    ('CRM_DEALS',          'Deals',                'Deals',                '/crm/deals',                       'src/modules/crm',        'MENU_CRM',        3,  'Briefcase'),
+    ('CRM_DEALS',          'Cơ hội bán',           'Deals',                '/crm/deals',                       'src/modules/crm',        'MENU_CRM',        3,  'Briefcase'),
     ('CRM_MEETINGS',       'Cuộc họp',             'Meetings',             '/crm/meetings',                    'src/modules/crm',        'MENU_CRM',        4,  'CalendarCheck'),
     ('CRM_EMAIL_SEQ',      'Email sequence',       'Email Sequences',      '/crm/email-sequences',             'src/modules/crm',        'MENU_CRM',        5,  'Mail'),
     ('CRM_QUOTES',         'Báo giá',              'Quotes',               '/crm/quotes',                      'src/modules/crm',        'MENU_CRM',        6,  'FileCheck'),
@@ -131,7 +131,7 @@ UPDATE menu SET parent_code = 'MENU_HRM', order_index = 11, fe_url = '/qlns/recr
 -- === CRM & Customer (C5) ===
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 1, fe_url = '/customer',            is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_CUSTOMER';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 2, fe_url = '/crm/leads',           is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_LEADS';
-UPDATE menu SET parent_code = 'MENU_CRM', order_index = 3, fe_url = '/crm/deals',           is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_DEALS';
+UPDATE menu SET parent_code = 'MENU_CRM', order_index = 3, fe_url = '/crm/deals', name = 'Cơ hội bán', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_DEALS';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 4, fe_url = '/crm/meetings',        is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_MEETINGS';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 5, fe_url = '/crm/email-sequences', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_EMAIL_SEQ';
 UPDATE menu SET parent_code = 'MENU_CRM', order_index = 6, fe_url = '/crm/quotes',          is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'CRM_QUOTES';
@@ -240,9 +240,20 @@ WHERE app_code = 'QTHT'
   AND (is_deleted IS DISTINCT FROM true OR status IS DISTINCT FROM false);
 
 -- ------------------------------------------------------------
--- 5) Root leaves
+-- 5) Root leaves — HOME (portal, mọi user) vs DASHBOARD (KPI, Admin/level cao)
 -- ------------------------------------------------------------
-UPDATE menu SET parent_code = NULL, order_index = 0,  fe_url = '/',        is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system'
+INSERT INTO menu (id, code, name, name_en, app_code, fe_url, folder_path, parent_code, order_index, menu_type, icon, is_public, status, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), 'HOME', 'Trang chủ', 'Home', 'QTHT', '/', 'src/modules/dashboard', NULL, 0, 1, 'Home', true, true, false, NOW(), 'system', NOW(), 'system'
+WHERE NOT EXISTS (
+    SELECT 1 FROM menu m WHERE m.app_code = 'QTHT' AND m.code = 'HOME'
+);
+
+UPDATE menu SET parent_code = NULL, order_index = 0,  fe_url = '/',           name = 'Trang chủ', name_en = 'Home', icon = 'Home',
+    is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system'
+WHERE app_code = 'QTHT' AND code = 'HOME';
+
+UPDATE menu SET parent_code = NULL, order_index = 1,  fe_url = '/dashboard', name = 'Tổng quan', name_en = 'Dashboard', icon = 'dashboard',
+    is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system'
 WHERE app_code = 'QTHT' AND code = 'DASHBOARD';
 
 UPDATE menu SET parent_code = NULL, order_index = 97, fe_url = '/profile', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system'

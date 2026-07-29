@@ -11,14 +11,18 @@ import com.frezo.warehouse.entity.PurchaseOrderLine;
 import com.frezo.warehouse.entity.PurchaseRequest;
 import com.frezo.warehouse.entity.PurchaseRequestLine;
 import com.frezo.warehouse.entity.StockBalance;
+import com.frezo.warehouse.entity.Warehouse;
 import com.frezo.warehouse.repository.PurchaseOrderLineRepository;
 import com.frezo.warehouse.repository.PurchaseOrderRepository;
 import com.frezo.warehouse.repository.PurchaseRequestLineRepository;
 import com.frezo.warehouse.repository.PurchaseRequestRepository;
 import com.frezo.warehouse.repository.StockBalanceRepository;
+import com.frezo.warehouse.repository.WarehouseRepository;
 import com.frezo.warehouse.service.PurchaseOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +43,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final PurchaseRequestRepository prRepository;
     private final PurchaseRequestLineRepository prLineRepository;
     private final StockBalanceRepository stockBalanceRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public FePage<PurchaseOrderDto> list() {
@@ -247,7 +253,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .code(po.getCode())
                 .prId(po.getPrId())
                 .supplierId(po.getSupplierId())
+                .supplierName(resolveSupplierName(po.getSupplierId()))
                 .warehouseId(po.getWarehouseId())
+                .warehouseName(resolveWarehouseName(po.getWarehouseId()))
                 .status(po.getStatus())
                 .note(po.getNote())
                 .confirmedAt(po.getConfirmedAt() != null ? po.getConfirmedAt().format(ISO) : null)
@@ -255,5 +263,25 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .createdDate(po.getCreatedDate() != null ? po.getCreatedDate().format(ISO) : null)
                 .lines(lines)
                 .build();
+    }
+
+    private String resolveSupplierName(String supplierId) {
+        if (supplierId == null || supplierId.isBlank()) {
+            return null;
+        }
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name FROM nccs WHERE id = ? AND COALESCE(is_deleted, false) = false LIMIT 1",
+                    String.class, supplierId);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
+    }
+
+    private String resolveWarehouseName(String warehouseId) {
+        if (warehouseId == null || warehouseId.isBlank()) {
+            return null;
+        }
+        return warehouseRepository.findById(warehouseId).map(Warehouse::getName).orElse(null);
     }
 }

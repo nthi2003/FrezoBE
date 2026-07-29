@@ -1,6 +1,7 @@
 package com.frezo.task.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.task.common.TaskErrorCode;
 import com.frezo.task.common.TaskStatusEnum;
 import com.frezo.task.dto.request.TaskRequest;
 import com.frezo.task.dto.response.TaskResponse;
@@ -95,7 +96,7 @@ public class TaskServiceImpl implements TaskService {
         try {
             task.setStatus(TaskStatusEnum.valueOf(status.toUpperCase()));
         } catch (IllegalArgumentException e) {
-            throw new QTHTException("INVALID_STATUS", "Trạng thái không hợp lệ: " + status);
+            throw new AppException(TaskErrorCode.INVALID_STATUS, status);
         }
         Task savedTask = taskRepository.save(task);
         return taskMapper.toResponse(savedTask);
@@ -103,6 +104,6 @@ public class TaskServiceImpl implements TaskService {
 
     private Task findEntityById(String id) {
         return taskRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new QTHTException("TASK_NOT_FOUND", "Không tìm thấy công việc với ID: " + id));
+                .orElseThrow(() -> new AppException(TaskErrorCode.TASK_NOT_FOUND, id));
     }
 }

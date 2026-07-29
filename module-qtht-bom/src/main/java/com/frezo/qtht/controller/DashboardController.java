@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.response.DashboardSummaryResponse;
 import com.frezo.qtht.service.DashboardService;
 import com.frezo.qtht.service.ReportService;
@@ -23,12 +24,14 @@ public class DashboardController {
     private final ReportService reportService;
 
     @GetMapping("/summary")
+    @CheckPermission(api = "qtht/dashboard", action = "VIEW")
     @Operation(summary = "Get summary data for the main dashboard")
     public ApiResponse<DashboardSummaryResponse> getSummary() {
         return ApiResponse.success(dashboardService.getSummary());
     }
 
     @GetMapping("/export/attendance")
+    @CheckPermission(api = "qtht/dashboard", action = "EXPORT")
     @Operation(summary = "Export monthly attendance report to Excel")
     public void exportAttendance(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         byte[] excelData = reportService.exportMonthlyAttendance(LocalDate.now().getMonthValue(), LocalDate.now().getYear());

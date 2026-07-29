@@ -1,6 +1,7 @@
 package com.frezo.customer.service.impl;
 
-import com.frezo.common.exception.QTHTException;
+import com.frezo.common.exception.AppException;
+import com.frezo.customer.common.CustomerErrorCode;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.helper.SystemUtils;
@@ -55,7 +56,7 @@ public class VoucherServiceImpl {
             while (voucherRepository.existsByCode(code));
             request.setCode(code);
         } else if (voucherRepository.existsByCode(request.getCode())) {
-            throw new QTHTException("exception.voucher.code.exists", request.getCode());
+            throw new AppException(CustomerErrorCode.VOUCHER_CODE_EXISTS, request.getCode());
         }
         if (request.getStatus() == null) request.setStatus("ACTIVE");
         if (request.getUsedCount() == null) request.setUsedCount(0);
@@ -91,24 +92,24 @@ public class VoucherServiceImpl {
      */
     public Voucher validate(String code, BigDecimal orderValue) {
         Voucher voucher = voucherRepository.findByCode(code)
-                .orElseThrow(() -> new QTHTException("exception.voucher.not_found"));
+                .orElseThrow(() -> new AppException(CustomerErrorCode.VOUCHER_NOT_FOUND));
         if (!"ACTIVE".equals(voucher.getStatus()))
-            throw new QTHTException("exception.voucher.inactive");
+            throw new AppException(CustomerErrorCode.VOUCHER_INACTIVE);
         LocalDate today = LocalDate.now();
         if (voucher.getEndDate() != null && today.isAfter(voucher.getEndDate()))
-            throw new QTHTException("exception.voucher.expired");
+            throw new AppException(CustomerErrorCode.VOUCHER_EXPIRED);
         if (voucher.getStartDate() != null && today.isBefore(voucher.getStartDate()))
-            throw new QTHTException("exception.voucher.not_started");
+            throw new AppException(CustomerErrorCode.VOUCHER_NOT_STARTED);
         if (voucher.getMinOrderValue() != null && orderValue.compareTo(voucher.getMinOrderValue()) < 0)
-            throw new QTHTException("exception.voucher.min_order_not_met");
+            throw new AppException(CustomerErrorCode.VOUCHER_MIN_ORDER_NOT_MET);
         if (voucher.getMaxUsage() != null && voucher.getUsedCount() >= voucher.getMaxUsage())
-            throw new QTHTException("exception.voucher.max_usage");
+            throw new AppException(CustomerErrorCode.VOUCHER_MAX_USAGE);
         return voucher;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
     private Voucher findById(String id) {
         return voucherRepository.findById(id)
-                .orElseThrow(() -> new QTHTException("exception.voucher.not_found"));
+                .orElseThrow(() -> new AppException(CustomerErrorCode.VOUCHER_NOT_FOUND));
     }
 }

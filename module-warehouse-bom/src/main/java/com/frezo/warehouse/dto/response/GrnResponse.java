@@ -33,6 +33,8 @@ public class GrnResponse {
         private String id;
         private String grnId;
         private String productId;
+        private String productCode;
+        private String productName;
         private String batchId;
         private Double qtyExpected;
         private Double qtyReceived;

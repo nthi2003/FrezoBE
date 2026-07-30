@@ -1416,3 +1416,112 @@ FROM (VALUES
 WHERE EXISTS (SELECT 1 FROM warehouse_zones wz WHERE wz.id = v.zone_id)
   AND NOT EXISTS (SELECT 1 FROM warehouse_locations wl WHERE wl.id = v.id);
 
+-- ============================================================
+-- 32) STOCK BATCH — demo lô SP001/SP002/SP003/SP007 tại 3 kho
+-- ============================================================
+INSERT INTO stock_batch (id, batch_code, product_id, warehouse_id, supplier_id,
+                         warehouse_location_id, received_date, expiry_date, qty_on_hand, status,
+                         is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.batch_code,
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       v.loc_id,
+       (CURRENT_DATE - v.received_days)::date,
+       (CURRENT_DATE + v.expiry_days)::date,
+       v.qty, 'ACTIVE',
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('sb-demo-001', 'LOT-SP001-NCC001-20260725-001', 'SP001', 'WH_HN',  'NCC001', 'wl-hn-a-01', 4,  1,  35.0),
+    ('sb-demo-002', 'LOT-SP001-NCC001-20260728-001', 'SP001', 'WH_HCM', 'NCC001', 'wl-hcm-b-01', 1,  2,  12.0),
+    ('sb-demo-003', 'LOT-SP002-NCC001-20260727-001', 'SP002', 'WH_HN',  'NCC001', 'wl-hn-b-01', 2,  1,  8.0),
+    ('sb-demo-004', 'LOT-SP003-NCC002-20260726-001', 'SP003', 'WH_HCM', 'NCC002', 'wl-hcm-a-01', 3,  4,  25.0),
+    ('sb-demo-005', 'LOT-SP003-NCC002-20260729-001', 'SP003', 'WH_DL',  'NCC002', 'wl-dl-a-01',  0,  5,  40.0),
+    ('sb-demo-006', 'LOT-SP007-NCC003-20260728-001', 'SP007', 'WH_HN',  'NCC003', 'wl-hn-a-02', 1,  0,  5.0),
+    ('sb-demo-007', 'LOT-SP007-NCC003-20260727-001', 'SP007', 'WH_HCM', 'NCC003', 'wl-hcm-b-01', 2, -1, 3.0)
+) AS v(id, batch_code, product_code, wh_code, ncc_code, loc_id, received_days, expiry_days, qty)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_batch sb WHERE sb.id = v.id);
+
+-- ============================================================
+-- 33) STOCK SHRINKAGE — 2-3 phiếu demo
+-- ============================================================
+INSERT INTO stock_shrinkage (id, shrinkage_code, warehouse_id, status, note, confirmed_at,
+                             is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.code,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       v.status, v.note,
+       CASE WHEN v.status = 'CONFIRMED' THEN NOW() - INTERVAL '1 day' ELSE NULL END,
+       false, NOW() - v.created_days * INTERVAL '1 day', 'system', NOW(), 'system'
+FROM (VALUES
+    ('shr-demo-001', 'SHR-DEMO-001', 'WH_HN',  'CONFIRMED', 'Dập vận chuyển rau cải', 5),
+    ('shr-demo-002', 'SHR-DEMO-002', 'WH_HCM', 'DRAFT',     'Co hụt tự nhiên cà chua', 1),
+    ('shr-demo-003', 'SHR-DEMO-003', 'WH_HCM', 'CONFIRMED', 'Quá hạn tôm sú', 3)
+) AS v(id, code, wh_code, status, note, created_days)
+WHERE (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_shrinkage s WHERE s.id = v.id);
+
+INSERT INTO stock_shrinkage_line (id, shrinkage_id, batch_id, product_id, reason, qty, note,
+                                  is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.shrinkage_id, v.batch_id,
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.reason, v.qty, v.note,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('shrl-demo-001', 'shr-demo-001', 'sb-demo-001', 'SP001', 'DAMAGE',  3.0, 'Dập pallet'),
+    ('shrl-demo-002', 'shr-demo-002', 'sb-demo-004', 'SP003', 'SHRINK',  2.0, 'Co hụt kệ mát'),
+    ('shrl-demo-003', 'shr-demo-003', 'sb-demo-007', 'SP007', 'EXPIRED', 1.5, 'Không bán kịp')
+) AS v(id, shrinkage_id, batch_id, product_code, reason, qty, note)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND EXISTS (SELECT 1 FROM stock_shrinkage s WHERE s.id = v.shrinkage_id)
+  AND NOT EXISTS (SELECT 1 FROM stock_shrinkage_line sl WHERE sl.id = v.id);
+
+-- ============================================================
+-- 34) EXPIRY ALERTS — demo cận hạn từ lô sb-demo-006/007
+-- ============================================================
+INSERT INTO stock_alert (id, warehouse_id, product_id, current_qty, min_qty, severity, status,
+                         alert_type, batch_id, expiry_date, days_to_expiry,
+                         triggered_at, idempotency_key,
+                         is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.qty, 0, v.severity, 'OPEN',
+       'EXPIRY_SOON', v.batch_id,
+       (CURRENT_DATE + v.expiry_days)::date, v.expiry_days,
+       NOW() - INTERVAL '2 hours', v.idem_key,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('alert-expiry-001', 'SP007', 'WH_HN',  'sb-demo-006', 5.0, 0,  'CRITICAL', 'demo|expiry|sb-demo-006'),
+    ('alert-expiry-002', 'SP007', 'WH_HCM', 'sb-demo-007', 3.0, -1, 'CRITICAL', 'demo|expiry|sb-demo-007')
+) AS v(id, product_code, wh_code, batch_id, qty, expiry_days, severity, idem_key)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_alert sa WHERE sa.id = v.id OR sa.idempotency_key = v.idem_key);
+
+-- ============================================================
+-- 35) RESIGNATION REQUEST — demo offboarding wizard
+-- ============================================================
+INSERT INTO resignation_request (id, request_code, person_id, person_name, expected_last_day, actual_last_day,
+                                 reason, status, manager_approved_by, manager_approved_at,
+                                 laptop_returned, badge_returned, docs_handed_over,
+                                 is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.request_code,
+       (SELECT id FROM person WHERE code = v.person_code LIMIT 1),
+       (SELECT name FROM person WHERE code = v.person_code LIMIT 1),
+       (CURRENT_DATE + v.expected_days)::date,
+       CASE WHEN v.status IN ('APPROVED', 'HANDOVER_DONE', 'PAYROLL_SETTLED', 'COMPLETED')
+            THEN (CURRENT_DATE + v.expected_days)::date ELSE NULL END,
+       v.reason, v.status,
+       CASE WHEN v.status != 'REQUESTED' THEN 'hr.demo' ELSE NULL END,
+       CASE WHEN v.status != 'REQUESTED' THEN NOW() - INTERVAL '1 day' ELSE NULL END,
+       false, false, false,
+       false, NOW() - INTERVAL '2 days', 'system', NOW(), 'system'
+FROM (VALUES
+    ('res-demo-001', 'RES-DEMO-001', 'EMP007', 14, 'Chuyển công ty khác — backend engineer', 'REQUESTED'),
+    ('res-demo-002', 'RES-DEMO-002', 'EMP004', 21, 'Nghỉ phép dài hạn — chăm sóc gia đình', 'APPROVED')
+) AS v(id, request_code, person_code, expected_days, reason, status)
+WHERE (SELECT id FROM person WHERE code = v.person_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM resignation_request r WHERE r.id = v.id);
+

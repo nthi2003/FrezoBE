@@ -75,7 +75,21 @@ public enum QlnsErrorCode implements ErrorCode {
     // -------------------- DEPENDENT / INSURANCE --------------------
     DEPENDENT_NOT_FOUND("qlns.dependent.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy người phụ thuộc"),
     INSURANCE_CONFIG_NOT_FOUND("qlns.insurance.config.not.found", HttpStatus.NOT_FOUND,
-            "Không tìm thấy cấu hình bảo hiểm cho năm {0}");
+            "Không tìm thấy cấu hình bảo hiểm cho năm {0}"),
+
+    // -------------------- OFFBOARDING --------------------
+    RESIGNATION_NOT_FOUND("qlns.resignation.not.found", HttpStatus.NOT_FOUND,
+            "Không tìm thấy đơn nghỉ việc"),
+    RESIGNATION_INVALID_STATUS("qlns.resignation.invalid.status", HttpStatus.BAD_REQUEST,
+            "Trạng thái đơn nghỉ việc không hợp lệ cho thao tác này"),
+    RESIGNATION_PERSON_REQUIRED("qlns.resignation.person.required", HttpStatus.BAD_REQUEST,
+            "Vui lòng chọn nhân viên"),
+    RESIGNATION_LAST_DAY_REQUIRED("qlns.resignation.last.day.required", HttpStatus.BAD_REQUEST,
+            "Vui lòng nhập ngày làm việc cuối dự kiến"),
+    RESIGNATION_PERSON_INACTIVE("qlns.resignation.person.inactive", HttpStatus.BAD_REQUEST,
+            "Nhân viên đã ngừng hoạt động — không thể tạo đơn nghỉ việc"),
+    RESIGNATION_HANDOVER_INCOMPLETE("qlns.resignation.handover.incomplete", HttpStatus.BAD_REQUEST,
+            "Vui lòng xác nhận đủ checklist bàn giao (laptop, thẻ, tài liệu)");
 
     private final String key;
     private final HttpStatus status;

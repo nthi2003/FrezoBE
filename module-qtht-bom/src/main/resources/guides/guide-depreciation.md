@@ -1,6 +1,6 @@
 # Khấu hao tài sản
 
-Sinh lịch một lần → mỗi tháng **Xem trước** rồi **Ghi sổ**. Demo **FTECH** · *LT-IT-015*.
+Sinh lịch một lần → mỗi tháng **Xem trước** rồi **Ghi sổ**. Demo **FTECH**.
 
 **Ảnh minh hoạ:** `/docs-assets/eu/` (FTECH demo)
 
@@ -10,33 +10,39 @@ Sinh lịch một lần → mỗi tháng **Xem trước** rồi **Ghi sổ**. De
 
 ---
 
-## Sinh lịch
+## 1. Sinh lịch
 
 ![Hàng thao tác — mở tài sản / tab](/docs-assets/eu/cta-row-actions.png)
 
-- **Tài sản** → **Quản lý tài sản** → mở *LT-IT-015* (giá *22.500.000*) → tab **Khấu hao**
-- **Sinh lịch** → *36* tháng (mỗi TS một lịch)
+1. Vào **Quản lý tài sản** (`/admin/qlts`)
+2. Mở một tài sản có **giá mua** (ví dụ *AS-2026-0001*)
+3. Tab **Khấu hao** → **Sinh lịch** (thường *36* tháng, phương pháp **Đường thẳng**)
+4. Mỗi tài sản chỉ có **một** lịch đang hiệu lực
 
 ---
 
-## Ghi sổ tháng
+## 2. Ghi sổ tháng
 
 ![Màn chứng từ — KPI + chọn kỳ](/docs-assets/eu/acc-journals-list.png)
 
-![Bốn thẻ tổng kỳ đang xem](/docs-assets/eu/cta-acc-journal-kpi.png)
+1. Vào **Khấu hao tài sản** (`/assets/depreciation`)
+2. Chọn **Năm** / **Tháng** trên thanh lọc
+3. Bấm **Xem trước / Tính khấu hao** — kiểm tra tổng tiền và số dòng
+4. Bấm **Ghi sổ** → xác nhận trong hộp thoại
+5. Trạng thái chuyển **Đã ghi sổ** — cùng tháng chạy lại **không ghi đôi**
 
-![Sổ cái — sau khi ghi sổ khấu hao](/docs-assets/eu/acc-ledger.png)
-
-- **Tài sản** → **Khấu hao TSCĐ** → năm *2026* · tháng *8* → **Xem trước** (~*22.500.000 ÷ 36*)
-- **Ghi sổ** → xác nhận → **Đã ghi sổ** (cùng tháng không ghi đôi)
+KPI trên trang: **Tổng tài sản** · **Giá trị còn lại** · **Khấu hao kỳ** · **Số dòng**.
 
 ---
 
-## Lỗi thường gặp
+## 3. Lỗi thường gặp
 
 ![Hub tài liệu — liên quan KT](/docs-assets/eu/docs-hub-list.png)
 
-- Không **Sinh lịch** / **Ghi sổ** → thiếu quyền · nhờ KT trưởng / Admin
-- **Không có lịch** / **Kỳ đã đóng** → sinh lịch trước · đổi tháng hoặc mở kỳ
+| Hiện tượng | Việc cần làm |
+| --- | --- |
+| Không thấy **Sinh lịch** / **Ghi sổ** | Thiếu quyền — nhờ KT trưởng / Admin |
+| **Không có lịch** | Sinh lịch trên tài sản trước |
+| **Kỳ đã đóng** | Đổi tháng hoặc nhờ kế toán mở lại kỳ |
 
 → [Quản lý tài sản](/docs/guide-qlts) · [Chứng từ](/docs/guide-accounting-journal)

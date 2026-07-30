@@ -13,5 +13,6 @@ public class GrnConfirmRequest {
         private Double qtyReceived;
         private String batchCode;
         private String locationId;
+        private String expiryDate;
     }
 }

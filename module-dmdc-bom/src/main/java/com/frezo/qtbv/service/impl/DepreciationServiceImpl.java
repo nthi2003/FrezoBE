@@ -249,6 +249,7 @@ public class DepreciationServiceImpl implements DepreciationService {
                 .method(s.getMethod())
                 .startDate(s.getStartDate())
                 .months(s.getMonths())
+                .purchasePrice(asset != null ? asset.getPurchasePrice() : null)
                 .monthlyAmount(s.getMonthlyAmount())
                 .remainingValue(s.getRemainingValue())
                 .status(s.getStatus())

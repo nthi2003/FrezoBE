@@ -128,7 +128,31 @@ public class GuideDataInitializer implements ApplicationRunner {
                     "guides/guide-warehouse-grn-gin.md"),
             new Seed("guide-warehouse-stock-takes", "Kiểm kê kho", "Kho",
                     "Đối chiếu tồn sổ vs đếm thực tế — 4 bước: tạo phiếu → đếm → gửi → điều chỉnh.", 27,
-                    "guides/guide-warehouse-stock-takes.md")
+                    "guides/guide-warehouse-stock-takes.md"),
+            new Seed("guide-warehouse-sme-rau-cu", "Kho rau củ — quy trình SME", "Kho",
+                    "Nhập theo lô · xuất FEFO · hao hụt riêng · zone nhiệt độ · cảnh báo cận hạn.", 28,
+                    "guides/guide-warehouse-sme-rau-cu.md"),
+            new Seed("guide-hr-onboarding", "Onboarding & thử việc", "Nhân sự",
+                    "Cấp thiết bị · đào tạo · mentor · đánh giá hết thử việc.", 29,
+                    "guides/guide-hr-onboarding.md"),
+            new Seed("guide-hr-payroll", "Chấm công & bảng lương", "Nhân sự",
+                    "Chấm công → duyệt nghỉ → tổng hợp công → tính lương → chi trả.", 30,
+                    "guides/guide-hr-payroll.md"),
+            new Seed("guide-hr-kpi", "KPI & OKR", "Nhân sự",
+                    "Đặt mục tiêu · check-in giữa kỳ · đánh giá cuối kỳ · cập nhật hồ sơ.", 31,
+                    "guides/guide-hr-kpi.md"),
+            new Seed("guide-hr-offboarding", "Nghỉ việc & offboarding", "Nhân sự",
+                    "Đề xuất nghỉ → bàn giao TS → quyết toán lương → thu hồi tài khoản.", 32,
+                    "guides/guide-hr-offboarding.md"),
+            new Seed("guide-accounting-revenue", "Ghi nhận doanh thu", "Kế toán",
+                    "Hoá đơn bán → thu công nợ → hạch toán kỳ → báo cáo KQKD.", 33,
+                    "guides/guide-accounting-revenue.md"),
+            new Seed("guide-accounting-tax", "Kê khai thuế GTGT", "Kế toán",
+                    "Tổng hợp HĐ đầu vào/ra → tính GTGT → lập tờ khai → nộp & lưu CT.", 34,
+                    "guides/guide-accounting-tax.md"),
+            new Seed("guide-contract-digital", "Hợp đồng số & ký điện tử", "Hợp đồng",
+                    "Soạn mẫu → duyệt nội bộ → ký OTP → xác thực → kho HĐ.", 35,
+                    "guides/guide-contract-digital.md")
     );
 
     @Override

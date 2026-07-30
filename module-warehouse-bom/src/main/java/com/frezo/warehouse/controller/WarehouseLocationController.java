@@ -23,6 +23,12 @@ public class WarehouseLocationController {
         return ApiResponse.success(locationService.getByZoneId(zoneId));
     }
 
+    @Operation(summary = "Location theo kho (tất cả zone)")
+    @GetMapping("/by-warehouse/{warehouseId}")
+    public ApiResponse<?> getByWarehouse(@PathVariable String warehouseId) {
+        return ApiResponse.success(locationService.getByWarehouseId(warehouseId));
+    }
+
     @Operation(summary = "Chi tiết location")
     @GetMapping("/{id}")
     public ApiResponse<?> getById(@PathVariable String id) {

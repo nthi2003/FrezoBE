@@ -1,43 +1,122 @@
 # Phiếu nhập & xuất kho
 
-Làm việc **nhập hàng (GRN/PNK)** và **xuất hàng (GIN/PXK)** theo quy trình kho–kế toán Việt Nam (T3, AMIS, Fast).
+Làm việc **phiếu nhập kho** (GRN; viết tắt kế toán: PNK) và **phiếu xuất kho** (GIN; viết tắt: PXK) — chỉ khi **Xác nhận** thì tồn kho mới đổi.
 
 **Màn hình:**
+- **Tổng quan kho** → `/warehouse`
 - **Phiếu nhập kho** → `/warehouse/grn`
 - **Phiếu xuất kho** → `/warehouse/gin`
 
----
+**Ảnh minh hoạ:** `/docs-assets/eu/` (FTECH demo)
 
-## Quy trình chung (5 trạng thái)
-
-| Bước | Trạng thái | Nút UI | Tồn kho |
-|------|------------|--------|---------|
-| 1 | **DRAFT** (Nháp) | **Lưu nháp** / **Tạo PNK/PXK** | Chưa đổi |
-| 2 | **PENDING_APPROVAL** (Chờ duyệt) | **Gửi duyệt** | Chưa đổi |
-| 3 | **APPROVED** (Đã duyệt) | **Duyệt** | Chưa đổi |
-| 4 | **CONFIRMED** (Đã xác nhận) | **Xác nhận nhập** / **Xác nhận xuất** | **Đã cộng/trừ** |
-| — | **CANCELLED** (Huỷ) | **Huỷ** | Không đổi |
-
-Pipeline trên màn chi tiết: **Nháp → Chờ duyệt → Đã duyệt → Đã nhập/xuất kho**.
+![Menu — nhóm Kho](/docs-assets/eu/menu-sidebar.png)
 
 ---
 
-## Phiếu nhập kho (GRN / PNK)
+## Ai dùng, để làm gì?
 
-Block **Hóa đơn NCC & PO** trên chi tiết: NCC, Số HĐ, Ngày HĐ, liên kết PO.
+| Vai trò | Việc chính |
+|---------|------------|
+| **Thủ kho** | Tạo phiếu, kiểm số thực tế, bấm **Xác nhận** |
+| **Mua hàng / Kế toán** | Theo dõi phiếu nhập sau PO, nhập **số HĐ NCC**, duyệt trước nhập kho |
+| **Kinh doanh / giao hàng** | Tạo phiếu xuất bán, chuyển kho hoặc xuất nội bộ |
 
-1. **Tạo PNK** — số HĐ NCC, dòng hàng.
-2. **Gửi duyệt** → **Duyệt**.
-3. **Xác nhận nhập** → tồn tăng.
-
-Demo: GRN-DEMO-001 (nháp), GRN-DEMO-002 (chờ duyệt), GRN-DEMO-003 (đã nhập).
+**Mục đích:** Ghi nhận biến động tồn có thời điểm rõ ràng — khác với hoá đơn CRM (chỉ giấy tờ bán).
 
 ---
 
-## Phiếu xuất kho (GIN / PXK)
+## Luồng mua hàng → nhập kho (chuẩn Frezo)
 
-Block **Chứng từ xuất**: loại xuất, số CT/HĐ, khách, kho đích.
+1. **Cảnh báo tồn** → **Yêu cầu mua (PR)** → duyệt ở Hộp thư.
+2. Tạo **Đơn mua (PO)** khi cần.
+3. Hàng về → **Phiếu nhập kho**: nháp → (tuỳ quy mô) **Gửi duyệt → Duyệt** → nhập **số HĐ NCC** nếu gắn PO/NCC → **Xác nhận nhập** → tồn tăng.
 
-1. **Tạo PXK** → **Gửi duyệt** → **Duyệt** → **Xác nhận xuất**.
+> Phiếu gắn **PO hoặc NCC** bắt buộc có **số hóa đơn GTGT đầu vào** trước khi xác nhận nhập (theo chuẩn SAP/AMIS).
 
-Demo: GIN-DEMO-001 (nháp), GIN-DEMO-002 (chờ duyệt), GIN-DEMO-003 (đã xuất).
+---
+
+## Trạng thái phiếu nhập / xuất
+
+| Trạng thái | Ý nghĩa | Tồn kho |
+|------------|---------|---------|
+| **DRAFT** (Nháp) | Phiếu mới tạo, chỉnh sửa / huỷ được | **Chưa đổi** |
+| **PENDING_APPROVAL** | Chờ duyệt (phiếu nhập/xuất) | **Chưa đổi** |
+| **APPROVED** | Đã duyệt, chờ thủ kho xác nhận | **Chưa đổi** |
+| **CONFIRMED** (Đã xác nhận) | Thủ kho đã kiểm và chốt số lượng | **Đã tăng (nhập) hoặc giảm (xuất)** |
+| **CANCELLED** (Đã huỷ) | Không thực hiện | **Không đổi** |
+
+> Demo FTECH có sẵn phiếu mẫu: `GRN-DEMO-001`…`004`, `GIN-DEMO-001`…`004` với đủ các trạng thái.
+
+---
+
+## Phiếu nhập kho
+
+### Làm việc chính
+
+1. Vào **Kho** → **Phiếu nhập kho** (`/warehouse/grn`).
+2. Bấm **Tạo phiếu nhập** (hoặc **Nhận hàng** từ đơn mua).
+3. Chọn **kho**, **NCC**, thêm dòng hàng: sản phẩm, SL dự kiến, đơn giá.
+4. Nhập **số HĐ NCC** và ngày HĐ nếu phiếu gắn PO/NCC.
+5. Lưu → phiếu ở trạng thái **DRAFT**.
+6. (Tuỳ chọn) **Gửi duyệt** → kế toán **Duyệt**.
+7. Khi hàng về đủ, bấm **Xác nhận nhập** → nhập SL thực nhận → tồn **tăng**.
+
+### Ví dụ demo
+
+| Mã phiếu | Kho | Sản phẩm | Trạng thái | Ghi chú |
+|----------|-----|----------|------------|---------|
+| GRN-DEMO-001 | Kho Hà Nội | SP001 Rau Cải Xanh | DRAFT | Chờ kiểm 100 kg |
+| GRN-DEMO-003 | Kho Đà Lạt | SP002 Dâu Tây | CONFIRMED | Đã nhập 20 hộp |
+| GRN-DEMO-004 | Kho Hà Nội | SP003 Cà Chua Bi | CANCELLED | Huỷ chất lượng |
+
+---
+
+## Phiếu xuất kho
+
+### Loại xuất
+
+| Loại | Khi nào dùng |
+|------|----------------|
+| **Xuất bán** | Giao hàng cho khách — tồn giảm tại kho xuất |
+| **Chuyển kho** | Chuyển sang kho đích (chọn kho nhận) |
+| **Xuất nội bộ** | Tiêu hao nội bộ, không qua bán hàng |
+
+### Làm việc chính
+
+1. Vào **Kho** → **Phiếu xuất kho** (`/warehouse/gin`).
+2. Bấm **Tạo phiếu xuất** → chọn kho, loại xuất, khách (nếu xuất bán).
+3. Thêm dòng hàng → lưu **DRAFT**.
+4. **Gửi duyệt** (nếu công ty bật quy trình) → **Duyệt** → **Xác nhận xuất**.
+5. Tồn **giảm**. Nếu thiếu tồn, hệ thống báo lỗi.
+
+### Ví dụ demo
+
+| Mã phiếu | Kho | Sản phẩm | Loại | Trạng thái | Ghi chú |
+|----------|-----|----------|------|------------|---------|
+| GIN-DEMO-001 | Kho Hà Nội | SP001 | Xuất bán | DRAFT | Nhà hàng Phố Cổ |
+| GIN-DEMO-002 | Kho TP.HCM | SP009 | Chuyển kho | DRAFT | Chuyển gạo ST25 |
+| GIN-DEMO-003 | Kho Hà Nội | SP012 Trứng gà | Xuất bán | CONFIRMED | BigC — 8 vỉ |
+| GIN-DEMO-004 | Kho TP.HCM | SP006 Xoài | Xuất bán | CANCELLED | Khách đổi lịch |
+
+---
+
+## Liên quan luồng mua hàng
+
+1. **Cảnh báo tồn** → **Yêu cầu mua (PR)** → duyệt ở Hộp thư.
+2. Tạo **Đơn mua (PO)** khi cần.
+3. **Phiếu nhập xác nhận** → tồn tăng.
+
+Duyệt PR **không** tự nhập kho — xem [Quy tắc tái nhập kho](/docs/guide-warehouse-reorder-rules).
+
+---
+
+## Lỗi / hiểu nhầm thường gặp
+
+| Mong đợi | Thực tế |
+|----------|---------|
+| Tạo phiếu nháp → tồn đã đổi | **Chưa** — phải **Xác nhận** |
+| Xuất hoá đơn CRM → tồn giảm | **Chưa** — phải làm phiếu xuất |
+| Huỷ phiếu đã xác nhận | **Không được** — cần phiếu điều chỉnh (nếu có) |
+| Phiếu nhập từ PO không cần HĐ NCC | **Sai** — phải có số HĐ trước khi xác nhận nhập |
+
+→ [Đơn hàng & tồn kho](/docs/guide-warehouse-sales) · [Quy tắc tái nhập kho](/docs/guide-warehouse-reorder-rules) · [Cảnh báo tồn kho](/warehouse/stock-alerts)

@@ -6,6 +6,7 @@ import lombok.Data;
 public class WarehouseLocationResponse {
     private String id;
     private String zoneId;
+    private String zoneName;
     private String aisle;
     private String rack;
     private String level;

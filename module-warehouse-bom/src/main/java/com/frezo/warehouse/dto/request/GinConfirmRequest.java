@@ -11,6 +11,7 @@ public class GinConfirmRequest {
     public static class GinConfirmItem {
         private String itemId;
         private Double qtyIssued;
+        private String batchId;
         private String batchCode;
         private String locationId;
     }

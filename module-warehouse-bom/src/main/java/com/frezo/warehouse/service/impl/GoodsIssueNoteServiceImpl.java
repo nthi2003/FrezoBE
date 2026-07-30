@@ -36,6 +36,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     private final StockLedgerRepository stockLedgerRepository;
     private final StockBalanceRepository stockBalanceRepository;
     private final GoodsIssueNoteMapper ginMapper;
+    private final StockBatchRepository stockBatchRepository;
     private final WarehouseRepository warehouseRepository;
     private final JdbcTemplate jdbcTemplate;
 
@@ -152,10 +153,18 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
             GinConfirmRequest.GinConfirmItem confirmItem = findConfirmItem(request, item.getId());
             double qtyIssued = confirmItem != null ? confirmItem.getQtyIssued() : item.getQtyIssued();
 
+            if (confirmItem != null && confirmItem.getBatchId() != null) {
+                item.setBatchId(confirmItem.getBatchId());
+            }
+            if (confirmItem != null && confirmItem.getLocationId() != null) {
+                item.setLocationId(confirmItem.getLocationId());
+            }
             item.setQtyIssued(qtyIssued);
             ginItemRepository.save(item);
 
             if (qtyIssued > 0) {
+                deductBatchQty(item.getBatchId(), qtyIssued);
+
                 StockLedger ledger = StockLedger.builder()
                         .productId(item.getProductId())
                         .batchId(item.getBatchId())
@@ -307,5 +316,20 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         balance.setQuantityOnHand(balance.getQuantityOnHand() - qty);
         balance.setQuantityAvailable(balance.getQuantityOnHand() - balance.getQuantityReserved());
         stockBalanceRepository.save(balance);
+    }
+
+    private void deductBatchQty(String batchId, double qty) {
+        if (batchId == null || batchId.isBlank()) return;
+        StockBatch batch = stockBatchRepository.findById(batchId)
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.BATCH_NOT_FOUND));
+        double onHand = batch.getQtyOnHand() != null ? batch.getQtyOnHand() : 0;
+        if (onHand < qty) {
+            throw new AppException(WarehouseErrorCode.BATCH_INSUFFICIENT);
+        }
+        batch.setQtyOnHand(onHand - qty);
+        if (batch.getQtyOnHand() <= 0) {
+            batch.setStatus("DEPLETED");
+        }
+        stockBatchRepository.save(batch);
     }
 }

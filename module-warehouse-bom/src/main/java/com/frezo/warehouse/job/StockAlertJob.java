@@ -4,6 +4,7 @@ import com.frezo.approval.service.ApproverResolver;
 import com.frezo.common.service.NotificationService;
 import com.frezo.warehouse.entity.StockAlert;
 import com.frezo.warehouse.repository.StockAlertRepository;
+import com.frezo.warehouse.service.ExpiryAlertService;
 import com.frezo.warehouse.service.ReorderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +25,14 @@ public class StockAlertJob {
     private final StockAlertRepository alertRepository;
     private final NotificationService notificationService;
     private final ApproverResolver approverResolver;
+    private final ExpiryAlertService expiryAlertService;
 
     /** 06:00 mỗi ngày — scan ReorderRule active → raise StockAlert OPEN + notify. */
     @Scheduled(cron = "0 0 6 * * *")
     public void runMorningScan() {
         log.info("[StockAlertJob] start morning scan");
         reorderService.scanAndRaiseAlerts();
+        expiryAlertService.scanAndRaiseExpiryAlerts();
         notifyTodaysAlerts();
     }
 

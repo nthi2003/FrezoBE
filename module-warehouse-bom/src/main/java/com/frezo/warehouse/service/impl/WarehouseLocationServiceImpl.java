@@ -5,12 +5,15 @@ import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.warehouse.dto.request.WarehouseLocationRequest;
 import com.frezo.warehouse.dto.response.WarehouseLocationResponse;
 import com.frezo.warehouse.entity.WarehouseLocation;
+import com.frezo.warehouse.entity.WarehouseZone;
 import com.frezo.warehouse.repository.WarehouseLocationRepository;
+import com.frezo.warehouse.repository.WarehouseZoneRepository;
 import com.frezo.warehouse.service.WarehouseLocationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,6 +21,21 @@ import java.util.List;
 public class WarehouseLocationServiceImpl implements WarehouseLocationService {
 
     private final WarehouseLocationRepository locationRepository;
+    private final WarehouseZoneRepository zoneRepository;
+
+    @Override
+    public List<WarehouseLocationResponse> getByWarehouseId(String warehouseId) {
+        List<WarehouseZone> zones = zoneRepository.findByWarehouseId(warehouseId);
+        List<WarehouseLocationResponse> result = new ArrayList<>();
+        for (WarehouseZone zone : zones) {
+            for (WarehouseLocation loc : locationRepository.findByZoneId(zone.getId())) {
+                WarehouseLocationResponse r = toResponse(loc);
+                r.setZoneName(zone.getName());
+                result.add(r);
+            }
+        }
+        return result;
+    }
 
     @Override
     public WarehouseLocationResponse getById(String id) {

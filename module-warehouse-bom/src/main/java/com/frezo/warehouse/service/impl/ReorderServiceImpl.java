@@ -16,7 +16,9 @@ import com.frezo.warehouse.entity.Warehouse;
 import com.frezo.warehouse.repository.ReorderRuleRepository;
 import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.repository.StockBalanceRepository;
+import com.frezo.warehouse.repository.StockBatchRepository;
 import com.frezo.warehouse.repository.WarehouseRepository;
+import com.frezo.warehouse.service.ExpiryAlertService;
 import com.frezo.warehouse.service.ReorderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,9 +50,11 @@ public class ReorderServiceImpl implements ReorderService {
     private final ReorderRuleRepository ruleRepository;
     private final StockAlertRepository alertRepository;
     private final StockBalanceRepository stockBalanceRepository;
+    private final StockBatchRepository stockBatchRepository;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final ExpiryAlertService expiryAlertService;
 
     @Override
     public List<WarehouseOptionDto> listWarehouses() {
@@ -123,7 +128,9 @@ public class ReorderServiceImpl implements ReorderService {
     }
 
     @Override
-    public FePage<StockAlertDto> listAlerts(String status) {
+    public FePage<StockAlertDto> listAlerts(String status, String alertType) {
+        expiryAlertService.scanAndRaiseExpiryAlerts();
+
         List<StockAlert> alerts;
         if (status == null || status.isBlank() || "all".equalsIgnoreCase(status)) {
             alerts = alertRepository.findByIsDeletedFalseOrderByTriggeredAtDesc();
@@ -136,6 +143,12 @@ public class ReorderServiceImpl implements ReorderService {
                         .filter(a -> !"OPEN".equals(a.getStatus()))
                         .toList();
             }
+        }
+        if (alertType != null && !alertType.isBlank()) {
+            String type = alertType.toUpperCase();
+            alerts = alerts.stream()
+                    .filter(a -> type.equals(a.getAlertType() != null ? a.getAlertType() : "LOW_STOCK"))
+                    .toList();
         }
         return FePage.all(alerts.stream().map(this::toAlertDto).toList());
     }
@@ -179,6 +192,7 @@ public class ReorderServiceImpl implements ReorderService {
                     .status("OPEN")
                     .triggeredAt(LocalDateTime.now())
                     .idempotencyKey(idem)
+                    .alertType("LOW_STOCK")
                     .build();
             alert.setId(UUID.randomUUID().toString());
             alertRepository.save(alert);
@@ -227,6 +241,12 @@ public class ReorderServiceImpl implements ReorderService {
     private StockAlertDto toAlertDto(StockAlert a) {
         Warehouse wh = warehouseRepository.findById(a.getWarehouseId()).orElse(null);
         Product p = productRepository.findById(a.getProductId()).orElse(null);
+        String batchCode = null;
+        if (a.getBatchId() != null) {
+            batchCode = stockBatchRepository.findById(a.getBatchId())
+                    .map(b -> b.getBatchCode())
+                    .orElse(null);
+        }
         return StockAlertDto.builder()
                 .id(a.getId())
                 .warehouseId(a.getWarehouseId())
@@ -234,12 +254,18 @@ public class ReorderServiceImpl implements ReorderService {
                 .productId(a.getProductId())
                 .productCode(p != null ? p.getCode() : null)
                 .productName(p != null ? p.getName() : null)
+                .categoryName(p != null ? resolveCategoryName(p.getCategoryId()) : null)
                 .currentQty(a.getCurrentQty())
                 .minQty(a.getMinQty())
                 .severity(a.getSeverity())
                 .status(a.getStatus())
                 .triggeredAt(a.getTriggeredAt() != null ? a.getTriggeredAt().format(ISO) : null)
                 .dismissedAt(a.getDismissedAt() != null ? a.getDismissedAt().format(ISO) : null)
+                .alertType(a.getAlertType() != null ? a.getAlertType() : "LOW_STOCK")
+                .batchId(a.getBatchId())
+                .batchCode(batchCode)
+                .expiryDate(a.getExpiryDate() != null ? a.getExpiryDate().toString() : null)
+                .daysToExpiry(a.getDaysToExpiry())
                 .build();
     }
 }

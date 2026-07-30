@@ -4,8 +4,7 @@ import com.frezo.common.exception.AppException;
 import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
-import com.frezo.product.entity.Batch;
-import com.frezo.product.repository.BatchRepository;
+import com.frezo.product.repository.ProductRepository;
 import com.frezo.warehouse.dto.request.GrnConfirmRequest;
 import com.frezo.warehouse.dto.request.GrnCreateRequest;
 import com.frezo.warehouse.dto.request.GrnUpdateRequest;
@@ -14,6 +13,7 @@ import com.frezo.warehouse.entity.*;
 import com.frezo.warehouse.mapper.GoodsReceiptNoteMapper;
 import com.frezo.warehouse.repository.*;
 import com.frezo.warehouse.service.GoodsReceiptNoteService;
+import com.frezo.warehouse.service.StockBatchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -41,7 +41,8 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
     private final StockLedgerRepository stockLedgerRepository;
     private final StockBalanceRepository stockBalanceRepository;
     private final GoodsReceiptNoteMapper grnMapper;
-    private final BatchRepository batchRepository;
+    private final StockBatchRepository stockBatchRepository;
+    private final StockBatchService stockBatchService;
     private final ApplicationEventPublisher eventPublisher;
     private final WarehouseRepository warehouseRepository;
     private final PurchaseOrderRepository purchaseOrderRepository;
@@ -185,20 +186,40 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
             GrnConfirmRequest.GrnConfirmItem confirmItem = findConfirmItem(request, item.getId());
             double qtyReceived = confirmItem != null ? confirmItem.getQtyReceived() : item.getQtyReceived();
 
+            String locationId = confirmItem != null && confirmItem.getLocationId() != null
+                    ? confirmItem.getLocationId() : item.getLocationId();
+            if (qtyReceived > 0 && (locationId == null || locationId.isBlank())) {
+                throw new AppException(WarehouseErrorCode.GRN_LOCATION_REQUIRED);
+            }
+            item.setLocationId(locationId);
             item.setQtyReceived(qtyReceived);
             grnItemRepository.save(item);
 
             if (qtyReceived > 0) {
-                if (item.getBatchId() == null && confirmItem != null && confirmItem.getBatchCode() != null) {
-                    Batch newBatch = Batch.builder()
+                LocalDate receivedDate = LocalDate.now();
+                LocalDate expiryDate = confirmItem != null && confirmItem.getExpiryDate() != null
+                        ? LocalDate.parse(confirmItem.getExpiryDate())
+                        : stockBatchService.computeExpiryDate(item.getProductId(), receivedDate);
+
+                if (item.getBatchId() == null) {
+                    String batchCode = confirmItem != null && confirmItem.getBatchCode() != null
+                            ? confirmItem.getBatchCode()
+                            : stockBatchService.generateBatchCode(
+                                    item.getProductId(), grn.getSupplierId(), receivedDate);
+                    StockBatch newBatch = StockBatch.builder()
+                            .batchCode(batchCode)
                             .productId(item.getProductId())
-                            .batchCode(confirmItem.getBatchCode())
-                            .initialQuantity(qtyReceived)
-                            .currentQuantity(qtyReceived)
-                            .importDate(LocalDate.now())
-                            .costPrice(item.getUnitCost())
+                            .warehouseId(grn.getWarehouseId())
+                            .supplierId(grn.getSupplierId())
+                            .grnId(grn.getId())
+                            .grnItemId(item.getId())
+                            .warehouseLocationId(locationId)
+                            .receivedDate(receivedDate)
+                            .expiryDate(expiryDate)
+                            .qtyOnHand(qtyReceived)
+                            .status("ACTIVE")
                             .build();
-                    newBatch = batchRepository.save(newBatch);
+                    newBatch = stockBatchRepository.save(newBatch);
                     item.setBatchId(newBatch.getId());
                     grnItemRepository.save(item);
                 }
@@ -289,8 +310,29 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
                     .ifPresent(po -> response.setPurchaseOrderCode(po.getCode()));
         }
         List<GoodsReceiptNoteItem> items = grnItemRepository.findByGrnId(grn.getId());
-        response.setItems(items.stream().map(grnMapper::toItemResponse).toList());
+        response.setItems(items.stream().map(item -> {
+            GrnResponse.GrnItemResponse ir = grnMapper.toItemResponse(item);
+            enrichProductFields(ir);
+            return ir;
+        }).toList());
         return response;
+    }
+
+    private void enrichProductFields(GrnResponse.GrnItemResponse item) {
+        if (item.getProductId() == null || item.getProductId().isBlank()) {
+            return;
+        }
+        try {
+            jdbcTemplate.query(
+                    "SELECT code, name FROM products WHERE id = ? LIMIT 1",
+                    rs -> {
+                        item.setProductCode(rs.getString("code"));
+                        item.setProductName(rs.getString("name"));
+                    },
+                    item.getProductId());
+        } catch (Exception ex) {
+            log.debug("Product enrich skip for {}", item.getProductId());
+        }
     }
 
     private String resolveSupplierName(String supplierId) {

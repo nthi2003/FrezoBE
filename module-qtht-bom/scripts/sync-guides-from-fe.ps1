@@ -29,7 +29,15 @@ $files = @(
     "guide-accounting-bank.md", "guide-accounting-reports.md",
     "guide-warehouse-reorder-rules.md",
     "guide-warehouse-grn-gin.md",
-    "guide-warehouse-stock-takes.md"
+    "guide-warehouse-stock-takes.md",
+    "guide-warehouse-sme-rau-cu.md",
+    "guide-hr-onboarding.md",
+    "guide-hr-payroll.md",
+    "guide-hr-kpi.md",
+    "guide-hr-offboarding.md",
+    "guide-accounting-revenue.md",
+    "guide-accounting-tax.md",
+    "guide-contract-digital.md"
 )
 
 $copied = 0

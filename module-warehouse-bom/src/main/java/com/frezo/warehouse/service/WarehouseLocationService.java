@@ -8,6 +8,7 @@ import java.util.List;
 public interface WarehouseLocationService {
     WarehouseLocationResponse getById(String id);
     List<WarehouseLocationResponse> getByZoneId(String zoneId);
+    List<WarehouseLocationResponse> getByWarehouseId(String warehouseId);
     WarehouseLocationResponse getByBarcode(String barcode);
     WarehouseLocationResponse create(WarehouseLocationRequest request);
     WarehouseLocationResponse update(String id, WarehouseLocationRequest request);

@@ -5,6 +5,7 @@ import com.frezo.warehouse.dto.request.GinConfirmRequest;
 import com.frezo.warehouse.dto.request.GinCreateRequest;
 import com.frezo.warehouse.service.DocumentPrintService;
 import com.frezo.warehouse.service.GoodsIssueNoteService;
+import com.frezo.warehouse.service.StockBatchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +25,16 @@ public class GoodsIssueNoteController {
 
     private final GoodsIssueNoteService ginService;
     private final DocumentPrintService documentPrintService;
+    private final StockBatchService batchService;
+
+    @Operation(summary = "Gợi ý lô FEFO cho dòng xuất", description = "Sort expiryDate ASC, phân bổ SL")
+    @GetMapping("/fefo-suggest")
+    public ApiResponse<?> fefoSuggest(
+            @RequestParam String warehouseId,
+            @RequestParam String productId,
+            @RequestParam(defaultValue = "0") double qty) {
+        return ApiResponse.success(batchService.suggestFefo(warehouseId, productId, qty));
+    }
 
     @Operation(summary = "Tạo phiếu xuất kho")
     @PostMapping

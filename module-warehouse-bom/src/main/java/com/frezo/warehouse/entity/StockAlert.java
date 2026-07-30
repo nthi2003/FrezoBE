@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -58,4 +59,17 @@ public class StockAlert extends BaseEntity {
     /** PR đang active gắn alert (1 alert ↔ 1 PR active). */
     @Column(name = "purchase_request_id", length = 36)
     private String purchaseRequestId;
+
+    /** LOW_STOCK / EXPIRY_SOON */
+    @Column(name = "alert_type", length = 30)
+    private String alertType;
+
+    @Column(name = "batch_id", length = 36)
+    private String batchId;
+
+    @Column(name = "expiry_date")
+    private LocalDate expiryDate;
+
+    @Column(name = "days_to_expiry")
+    private Integer daysToExpiry;
 }

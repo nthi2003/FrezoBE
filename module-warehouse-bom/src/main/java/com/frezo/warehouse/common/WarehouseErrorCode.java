@@ -60,7 +60,20 @@ public enum WarehouseErrorCode implements ErrorCode {
     GIN_CANNOT_DELETE_CONFIRMED("goods.issue.note.cannot.delete.confirmed", HttpStatus.BAD_REQUEST,
             "Không thể xóa phiếu xuất kho đã xác nhận"),
     GIN_INVALID_STATUS("goods.issue.note.invalid.status", HttpStatus.BAD_REQUEST,
-            "Trạng thái phiếu xuất kho không hợp lệ cho thao tác này");
+            "Trạng thái phiếu xuất kho không hợp lệ cho thao tác này"),
+
+    // -------------------- BATCH / LOT --------------------
+    BATCH_NOT_FOUND("stock.batch.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy lô hàng"),
+    BATCH_INSUFFICIENT("stock.batch.insufficient", HttpStatus.BAD_REQUEST, "Tồn lô không đủ"),
+    GRN_LOCATION_REQUIRED("goods.receipt.note.location.required", HttpStatus.BAD_REQUEST,
+            "Mỗi dòng GRN cần vị trí kho trước khi xác nhận nhập"),
+
+    // -------------------- SHRINKAGE --------------------
+    SHRINKAGE_NOT_FOUND("stock.shrinkage.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy phiếu hao hụt"),
+    SHRINKAGE_ALREADY_CONFIRMED("stock.shrinkage.already.confirmed", HttpStatus.BAD_REQUEST,
+            "Phiếu hao hụt đã xác nhận"),
+    SHRINKAGE_CANNOT_CANCEL_CONFIRMED("stock.shrinkage.cannot.cancel.confirmed", HttpStatus.BAD_REQUEST,
+            "Không thể hủy phiếu hao hụt đã xác nhận");
 
     private final String key;
     private final HttpStatus status;

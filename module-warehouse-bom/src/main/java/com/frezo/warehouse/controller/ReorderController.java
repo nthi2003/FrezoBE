@@ -71,8 +71,9 @@ public class ReorderController {
 
     @GetMapping("/stock-alerts")
     public ApiResponse<FePage<StockAlertDto>> listAlerts(
-            @RequestParam(required = false) String status) {
-        return ApiResponse.ok(reorderService.listAlerts(status));
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String alertType) {
+        return ApiResponse.ok(reorderService.listAlerts(status, alertType));
     }
 
     @PostMapping("/stock-alerts/{id}/dismiss")

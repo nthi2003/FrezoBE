@@ -23,4 +23,10 @@ public class StockAlertDto {
     private String status;
     private String triggeredAt;
     private String dismissedAt;
+    /** LOW_STOCK / EXPIRY_SOON */
+    private String alertType;
+    private String batchId;
+    private String batchCode;
+    private String expiryDate;
+    private Integer daysToExpiry;
 }

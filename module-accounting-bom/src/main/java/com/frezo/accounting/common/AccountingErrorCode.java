@@ -9,10 +9,13 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum AccountingErrorCode implements ErrorCode {
 
-    ACCOUNT_NOT_FOUND("accounting.account.not_found", HttpStatus.NOT_FOUND, "Tài khoản kế toán không tồn tại"),
+    ACCOUNT_NOT_FOUND("accounting.account.not_found", HttpStatus.NOT_FOUND,
+            "Tài khoản kế toán không tồn tại: {0}"),
     ACCOUNT_CODE_EXISTS("accounting.account.code_exists", HttpStatus.CONFLICT, "Số hiệu tài khoản đã tồn tại"),
-    ACCOUNT_NOT_POSTABLE("accounting.account.not_postable", HttpStatus.BAD_REQUEST, "Tài khoản này không cho phép ghi trực tiếp"),
-    ACCOUNT_REQUIRES_PARTNER("accounting.account.requires_partner", HttpStatus.BAD_REQUEST, "Tài khoản này bắt buộc phải khai đối tượng chi tiết"),
+    ACCOUNT_NOT_POSTABLE("accounting.account.not_postable", HttpStatus.BAD_REQUEST,
+            "Tài khoản {0} không cho phép ghi trực tiếp (chỉ dùng TK lá / postable)"),
+    ACCOUNT_REQUIRES_PARTNER("accounting.account.requires_partner", HttpStatus.BAD_REQUEST,
+            "Tài khoản {0} bắt buộc phải khai đối tượng chi tiết"),
 
     PERIOD_NOT_FOUND("accounting.period.not_found", HttpStatus.NOT_FOUND, "Không tìm thấy kỳ kế toán"),
     PERIOD_CLOSED("accounting.period.closed", HttpStatus.CONFLICT, "Kỳ kế toán đã bị khóa, không thể ghi sổ"),

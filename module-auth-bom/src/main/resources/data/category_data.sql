@@ -1,10 +1,13 @@
 -- ============================================================
 -- SCRIPT: Category & CategoryGroup seed
--- Description: Danh mục dùng chung (Issuer, Signer, Chức danh, Location, Industry)
---              — được menu QLHT_CATEGORY (sub QLDM_*) tham chiếu.
+-- Description: Danh mục dùng chung (Issuer, Signer, Chức danh, Location,
+--              Industry, Đơn vị tính) — được menu QLHT_CATEGORY (sub QLDM_*)
+--              và combobox ĐVT (sản phẩm / HĐ) tham chiếu.
 -- Created: 2026-07-16 (Batch I5)
 -- Updated: 2026-07-21 — QA-QLNS-001: canonical groupCode Chức danh = ChucDanh
 --                       (legacy TITLE → migrate idempotent bên dưới)
+-- Updated: 2026-07-30 — Seed groupCode DonVi (Đơn vị tính) + UOM_* cho SME
+--                       rau củ / thương mại. Align FE category.schema.ts.
 -- IDEMPOTENT: NOT EXISTS trên (group_code, code)
 -- ============================================================
 
@@ -43,8 +46,42 @@ WHERE code = 'TITLE'
   AND NOT EXISTS (SELECT 1 FROM categories WHERE group_code = 'TITLE');
 
 -- ============================================================
--- 1) CATEGORY GROUP (5 nhóm danh mục)
---    catGroup: 1=Issuer, 2=Signer, 3=ChucDanh, 4=Location, 5=Industry
+-- 0b) MIGRATE legacy UNIT / ĐonVi → DonVi (idempotent)
+--     FE canonical: groupCode = 'DonVi' (category.schema.ts GROUP_CODE_OPTIONS).
+-- ============================================================
+INSERT INTO category_group (code, name, cat_group, is_deleted)
+SELECT 'DonVi', 'Đơn vị tính', 6, false
+WHERE NOT EXISTS (
+    SELECT 1 FROM category_group cg WHERE cg.code = 'DonVi'
+);
+
+UPDATE categories c
+SET group_code = 'DonVi',
+    updated_date = NOW(),
+    updated_by = 'system'
+WHERE c.group_code IN ('UNIT', 'ĐonVi', 'DON_VI')
+  AND NOT EXISTS (
+      SELECT 1 FROM categories x
+      WHERE x.group_code = 'DonVi' AND x.code = c.code
+  );
+
+DELETE FROM categories c
+WHERE c.group_code IN ('UNIT', 'ĐonVi', 'DON_VI')
+  AND EXISTS (
+      SELECT 1 FROM categories x
+      WHERE x.group_code = 'DonVi' AND x.code = c.code
+  );
+
+DELETE FROM category_group
+WHERE code IN ('UNIT', 'ĐonVi', 'DON_VI')
+  AND NOT EXISTS (
+      SELECT 1 FROM categories WHERE group_code = category_group.code
+  );
+
+-- ============================================================
+-- 1) CATEGORY GROUP (nhóm danh mục dùng chung)
+--    catGroup: 1=Issuer, 2=Signer, 3=ChucDanh, 4=Location, 5=Industry, 6=DonVi
+--    (LoaiTaiSan / DanhMucSP seed riêng bởi module initializer nếu có)
 -- ============================================================
 INSERT INTO category_group (code, name, cat_group, is_deleted)
 SELECT v.code, v.name, v.cat_group, false
@@ -53,7 +90,8 @@ FROM (VALUES
     ('SIGNER',   'Người ký',              2),
     ('ChucDanh', 'Chức danh',             3),
     ('LOCATION', 'Địa bàn',               4),
-    ('INDUSTRY', 'Ngành nghề',            5)
+    ('INDUSTRY', 'Ngành nghề',            5),
+    ('DonVi',    'Đơn vị tính',           6)
 ) AS v(code, name, cat_group)
 WHERE NOT EXISTS (
     SELECT 1 FROM category_group cg WHERE cg.code = v.code
@@ -102,7 +140,28 @@ FROM (VALUES
     ('IND_RETAIL',   'Bán lẻ - Thương mại',        'Retail',                 'RTL',   'INDUSTRY', 5, NULL),
     ('IND_MFG',      'Sản xuất - Chế tạo',         'Manufacturing',          'MFG',   'INDUSTRY', 6, NULL),
     ('IND_LOGISTICS','Logistics - Kho vận',        'Logistics',              'LOG',   'INDUSTRY', 7, NULL),
-    ('IND_REALESTATE','Bất động sản',              'Real Estate',            'RE',    'INDUSTRY', 8, NULL)
+    ('IND_REALESTATE','Bất động sản',              'Real Estate',            'RE',    'INDUSTRY', 8, NULL),
+    -- ---------- DonVi (Đơn vị tính) — SME rau củ / thương mại ----------
+    -- name = nhãn hiển thị VN (khớp unitName/product_units & default HĐ "cái")
+    -- code = UOM_* (unique toàn bảng categories)
+    ('UOM_CAI',   'cái',    'piece',      'cái',   'DonVi',  1,  'Đơn vị đếm'),
+    ('UOM_KG',    'kg',     'kilogram',   'kg',    'DonVi',  2,  'Kilogram'),
+    ('UOM_G',     'g',      'gram',       'g',     'DonVi',  3,  'Gram'),
+    ('UOM_THUNG', 'thùng',  'carton',     'thùng', 'DonVi',  4,  'Thùng carton'),
+    ('UOM_HOP',   'hộp',    'box',        'hộp',   'DonVi',  5,  'Hộp'),
+    ('UOM_CHAI',  'chai',   'bottle',     'chai',  'DonVi',  6,  'Chai'),
+    ('UOM_BO',    'bó',     'bunch',      'bó',    'DonVi',  7,  'Bó rau/lá'),
+    ('UOM_BAO',   'bao',    'sack',       'bao',   'DonVi',  8,  'Bao/bao tải'),
+    ('UOM_LIT',   'lít',    'liter',      'lít',   'DonVi',  9,  'Lít'),
+    ('UOM_ML',    'ml',     'milliliter', 'ml',    'DonVi', 10,  'Mililít'),
+    ('UOM_MET',   'mét',    'meter',      'mét',   'DonVi', 11,  'Mét'),
+    ('UOM_GOI',   'gói',    'pack',       'gói',   'DonVi', 12,  'Gói'),
+    ('UOM_RO',    'rổ',     'basket',     'rổ',    'DonVi', 13,  'Rổ (chợ/kho)'),
+    ('UOM_QUA',   'quả',    'fruit',      'quả',   'DonVi', 14,  'Quả'),
+    ('UOM_CAY',   'cây',    'stalk',      'cây',   'DonVi', 15,  'Cây'),
+    ('UOM_CHUC',  'chục',   'dozen10',    'chục',  'DonVi', 16,  'Chục (10 cái)'),
+    ('UOM_LON',   'lon',    'can',        'lon',   'DonVi', 17,  'Lon'),
+    ('UOM_TAN',   'tấn',    'ton',        'tấn',   'DonVi', 18,  'Tấn')
 ) AS v(code, name, name_en, short_name, group_code, order_index, description)
 WHERE NOT EXISTS (
     SELECT 1 FROM categories c

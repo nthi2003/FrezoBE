@@ -7,6 +7,7 @@ import com.frezo.warehouse.entity.StockBatch;
 import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.repository.StockBatchRepository;
 import com.frezo.warehouse.service.ExpiryAlertService;
+import com.frezo.warehouse.service.StockAlertNotifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -32,6 +33,7 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
     private final StockAlertRepository alertRepository;
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final StockAlertNotifier stockAlertNotifier;
 
     @Override
     @Transactional
@@ -70,6 +72,7 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
                     .build();
             alert.setId(UUID.randomUUID().toString());
             alertRepository.save(alert);
+            stockAlertNotifier.notifyAlert(alert);
             raised++;
         }
         log.info("[ExpiryAlert] scan done — raised {} expiry alerts from {} active batches", raised, batches.size());

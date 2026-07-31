@@ -189,9 +189,10 @@ public class InvoiceServiceImpl implements InvoiceService {
         dr.setPartnerName(inv.getCustomerName());
         lines.add(dr);
 
-        // Có 511 — subtotal (chưa thuế)
+        // Có 5113 (leaf postable) — subtotal chưa thuế.
+        // Không dùng 511: trên TT133 đây là TK cha (postable=false) → ACCOUNT_NOT_POSTABLE.
         JournalLineRequest cr = new JournalLineRequest();
-        cr.setAccountCode("511");
+        cr.setAccountCode("5113");
         cr.setDebit(BigDecimal.ZERO);
         cr.setCredit(safe(inv.getSubtotal()));
         cr.setDescription("Doanh thu bán hàng HĐ " + inv.getCode());

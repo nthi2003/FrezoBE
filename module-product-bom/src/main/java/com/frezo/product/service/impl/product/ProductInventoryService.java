@@ -12,6 +12,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Nhập kho nhanh theo chuyến xe — tạo batch + ghi inventory log.
@@ -52,5 +58,32 @@ public class ProductInventoryService {
                     .build();
             inventoryLogRepository.save(log);
         }
+    }
+
+    /**
+     * Lịch sử giá vốn theo lô nhập NCC (product_batches).
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getCostHistory(String productId) {
+        if (productId == null || productId.isBlank()) {
+            return List.of();
+        }
+        List<Batch> batches = batchRepository.findByProductIdAndIsDeletedFalseOrderByImportDateAsc(productId);
+        List<Map<String, Object>> points = new ArrayList<>();
+        for (Batch b : batches) {
+            if (b.getCostPrice() == null) continue;
+            LocalDateTime date = b.getImportDate() != null
+                    ? LocalDateTime.of(b.getImportDate(), LocalTime.MIDDAY)
+                    : b.getCreatedDate();
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("date", date);
+            point.put("unitCost", b.getCostPrice());
+            point.put("qty", b.getInitialQuantity());
+            point.put("batchCode", b.getBatchCode());
+            point.put("supplierId", b.getSupplierId());
+            point.put("source", "BATCH");
+            points.add(point);
+        }
+        return points;
     }
 }

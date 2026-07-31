@@ -7,16 +7,20 @@ import com.frezo.qlns.dto.request.OkrCheckInRequest;
 import com.frezo.qlns.dto.request.OkrKeyResultRequest;
 import com.frezo.qlns.dto.request.OkrRequest;
 import com.frezo.qlns.dto.response.OkrKeyResultResponse;
+import com.frezo.qlns.dto.response.OkrListResponse;
 import com.frezo.qlns.dto.response.OkrResponse;
+import com.frezo.qlns.dto.response.OkrViewerContext;
 import com.frezo.qlns.entity.Okr;
 import com.frezo.qlns.entity.OkrKeyResult;
 import com.frezo.qlns.repository.OkrKeyResultRepository;
 import com.frezo.qlns.repository.OkrRepository;
 import com.frezo.qlns.service.OkrService;
+import com.frezo.qlns.service.impl.OkrScopeResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,27 +30,85 @@ public class OkrServiceImpl implements OkrService {
 
     private final OkrRepository okrRepository;
     private final OkrKeyResultRepository keyResultRepository;
+    private final OkrScopeResolver scopeResolver;
 
     @Override
-    public List<OkrResponse> list(String ownerPersonId) {
-        List<Okr> list = ownerPersonId != null
-                ? okrRepository.findByOwnerPersonIdAndIsDeletedFalse(ownerPersonId)
-                : okrRepository.findByIsDeletedFalseOrderByCreatedDateDesc();
-        return list.stream().map(this::toResponse).toList();
+    public OkrListResponse list(String scope, String ownerPersonId) {
+        String me = scopeResolver.currentPersonId()
+                .orElseThrow(() -> new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự"));
+
+        String scopeNorm = OkrScopeResolver.normalizeScope(scope);
+        scopeResolver.assertScopeAllowed(scopeNorm, me);
+
+        boolean admin = scopeResolver.isAdmin();
+        boolean manager = scopeResolver.isManager(me);
+
+        List<Okr> list = switch (scopeNorm) {
+            case "all" -> listAll(ownerPersonId);
+            case "team" -> listTeam(me, admin, ownerPersonId);
+            default -> okrRepository.findByOwnerPersonIdAndIsDeletedFalse(me);
+        };
+
+        return OkrListResponse.builder()
+                .items(list.stream().map(this::toResponse).toList())
+                .viewer(buildViewer(me, admin, manager))
+                .build();
+    }
+
+    private List<Okr> listAll(String ownerPersonId) {
+        if (ownerPersonId != null && !ownerPersonId.isBlank()) {
+            return okrRepository.findByOwnerPersonIdAndIsDeletedFalse(ownerPersonId);
+        }
+        return okrRepository.findByIsDeletedFalseOrderByCreatedDateDesc();
+    }
+
+    private List<Okr> listTeam(String me, boolean admin, String ownerPersonId) {
+        List<String> subIds = scopeResolver.subordinatePersonIds(me);
+        if (ownerPersonId != null && !ownerPersonId.isBlank()) {
+            if (!admin && !subIds.contains(ownerPersonId)) {
+                throw new AppException(CommonErrorCode.FORBIDDEN, "Nhân viên không thuộc team của bạn");
+            }
+            return okrRepository.findByOwnerPersonIdAndIsDeletedFalse(ownerPersonId);
+        }
+        if (subIds.isEmpty()) return List.of();
+        return okrRepository.findByOwnerPersonIdInAndIsDeletedFalseOrderByCreatedDateDesc(subIds);
+    }
+
+    private OkrViewerContext buildViewer(String personId, boolean admin, boolean manager) {
+        List<String> scopes = new ArrayList<>();
+        scopes.add("mine");
+        if (manager || admin) scopes.add("team");
+        if (admin) scopes.add("all");
+        return OkrViewerContext.builder()
+                .personId(personId)
+                .admin(admin)
+                .manager(manager)
+                .allowedScopes(scopes)
+                .build();
     }
 
     @Override
     public OkrResponse get(String id) {
-        return toResponse(find(id));
+        Okr okr = find(id);
+        scopeResolver.assertCanView(okr.getOwnerPersonId());
+        return toResponse(okr);
     }
 
     @Override
     @Transactional
     public OkrResponse create(OkrRequest req) {
+        String me = scopeResolver.currentPersonId()
+                .orElseThrow(() -> new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự"));
+
+        String ownerId = (req.getOwnerPersonId() != null && !req.getOwnerPersonId().isBlank())
+                ? req.getOwnerPersonId()
+                : me;
+        scopeResolver.assertCanAssignOwner(ownerId);
+
         Okr okr = Okr.builder()
                 .title(req.getTitle())
                 .description(req.getDescription())
-                .ownerPersonId(req.getOwnerPersonId())
+                .ownerPersonId(ownerId)
                 .periodLabel(req.getPeriodLabel())
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
@@ -64,9 +126,13 @@ public class OkrServiceImpl implements OkrService {
     @Transactional
     public OkrResponse update(String id, OkrRequest req) {
         Okr okr = find(id);
+        scopeResolver.assertCanModify(okr.getOwnerPersonId());
         if (req.getTitle() != null) okr.setTitle(req.getTitle());
         if (req.getDescription() != null) okr.setDescription(req.getDescription());
-        if (req.getOwnerPersonId() != null) okr.setOwnerPersonId(req.getOwnerPersonId());
+        if (req.getOwnerPersonId() != null) {
+            scopeResolver.assertCanAssignOwner(req.getOwnerPersonId());
+            okr.setOwnerPersonId(req.getOwnerPersonId());
+        }
         if (req.getPeriodLabel() != null) okr.setPeriodLabel(req.getPeriodLabel());
         if (req.getStartDate() != null) okr.setStartDate(req.getStartDate());
         if (req.getEndDate() != null) okr.setEndDate(req.getEndDate());
@@ -85,6 +151,7 @@ public class OkrServiceImpl implements OkrService {
     @Transactional
     public void delete(String id) {
         Okr okr = find(id);
+        scopeResolver.assertCanModify(okr.getOwnerPersonId());
         okr.softDelete(SystemUtils.getCurrentUsername());
         okrRepository.save(okr);
     }
@@ -93,6 +160,7 @@ public class OkrServiceImpl implements OkrService {
     @Transactional
     public OkrResponse checkIn(String id, OkrCheckInRequest req) {
         Okr okr = find(id);
+        scopeResolver.assertCanModify(okr.getOwnerPersonId());
         if (req.getKeyResults() != null) {
             for (OkrKeyResultRequest krReq : req.getKeyResults()) {
                 if (krReq.getId() == null) continue;

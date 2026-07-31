@@ -89,6 +89,13 @@ public class ProductController {
         return ApiResponse.success(productService.calculatePrice(productCode, unitName, priceGroupCode));
     }
 
+    @Operation(summary = "Lịch sử giá vốn theo lô nhập", description = "Trả về cost_price theo importDate từ product_batches (nhập kho nhanh / lô NCC)")
+    @GetMapping("/{id}/cost-history")
+    @CheckPermission(api = "/product/{id}", action = "VIEW")
+    public ApiResponse<?> getCostHistory(@PathVariable String id) {
+        return ApiResponse.success(productService.getCostHistory(id));
+    }
+
     @Operation(summary = "Lấy dữ liệu biểu đồ lợi nhuận", description = "Lấy doanh thu và giá vốn N ngày gần nhất")
     @GetMapping("/dashboard/profit-chart")
     public ApiResponse<?> getProfitChart(@RequestParam(defaultValue = "7") int days) {

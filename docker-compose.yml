@@ -96,6 +96,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       APP_SECURITY_ENCRYPTION_KEY: ${APP_SECURITY_ENCRYPTION_KEY:-CHANGE_ME_PLEASE_32PLUS_CHARS_123456}
+      # Bắt buộc khi profile=docker (không load application-local.yml). ≥64 chars cho HS512.
+      APP_SECURITY_JWT_SECRET: ${APP_SECURITY_JWT_SECRET:-local-dev-only-jwt-secret-CHANGE-ME-in-prod-min-64-bytes-frezo!!}
 
   # # ─── AI Service (FastAPI) ─────────────────────────────────────────────────────
   # ai:

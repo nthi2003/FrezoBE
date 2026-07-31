@@ -3,6 +3,7 @@ package com.frezo.qlns.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.qlns.dto.request.OkrCheckInRequest;
 import com.frezo.qlns.dto.request.OkrRequest;
+import com.frezo.qlns.dto.response.OkrListResponse;
 import com.frezo.qlns.dto.response.OkrResponse;
 import com.frezo.qlns.service.OkrService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/qlns/okrs")
 @RequiredArgsConstructor
@@ -28,8 +27,10 @@ public class OkrController {
     private final OkrService okrService;
 
     @GetMapping
-    public ApiResponse<List<OkrResponse>> list(@RequestParam(required = false) String ownerPersonId) {
-        return ApiResponse.ok(okrService.list(ownerPersonId));
+    public ApiResponse<OkrListResponse> list(
+            @RequestParam(required = false, defaultValue = "mine") String scope,
+            @RequestParam(required = false) String ownerPersonId) {
+        return ApiResponse.ok(okrService.list(scope, ownerPersonId));
     }
 
     @GetMapping("/{id}")

@@ -109,8 +109,11 @@ public final class CoaTT99 {
         items.add(a("4211", "LNST năm trước", AccountType.EQUITY, 2, "421", true, false));
         items.add(a("4212", "LNST năm nay", AccountType.EQUITY, 2, "421", true, false));
 
-        // Loại 5 — Doanh thu
-        items.add(a("511", "Doanh thu bán hàng & cung cấp DV", AccountType.REVENUE, 1, null, true, false));
+        // Loại 5 — Doanh thu (511 = cha; ghi sổ vào leaf 511x — khớp Invoice postToGL)
+        items.add(a("511", "Doanh thu bán hàng & cung cấp DV", AccountType.REVENUE, 1, null, false, false));
+        items.add(a("5111", "Doanh thu bán hàng hóa", AccountType.REVENUE, 2, "511", true, false));
+        items.add(a("5112", "Doanh thu bán thành phẩm", AccountType.REVENUE, 2, "511", true, false));
+        items.add(a("5113", "Doanh thu cung cấp dịch vụ", AccountType.REVENUE, 2, "511", true, false));
         items.add(a("515", "Doanh thu hoạt động tài chính", AccountType.REVENUE, 1, null, true, false));
         items.add(a("521", "Các khoản giảm trừ doanh thu", AccountType.REVENUE, 1, null, true, false));
 

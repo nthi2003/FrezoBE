@@ -6,6 +6,7 @@ import com.frezo.warehouse.dto.request.ReorderRuleRequest;
 import com.frezo.warehouse.dto.response.ReorderRuleDto;
 import com.frezo.warehouse.dto.response.StockAlertDto;
 import com.frezo.warehouse.dto.response.WarehouseOptionDto;
+import com.frezo.warehouse.job.StockAlertJob;
 import com.frezo.warehouse.service.ReorderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,6 +33,7 @@ import java.util.Map;
 public class ReorderController {
 
     private final ReorderService reorderService;
+    private final StockAlertJob stockAlertJob;
 
     @GetMapping("/warehouses")
     @Operation(summary = "Danh sách kho (option combobox)")
@@ -74,6 +76,15 @@ public class ReorderController {
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String alertType) {
         return ApiResponse.ok(reorderService.listAlerts(status, alertType));
+    }
+
+    @PostMapping("/stock-alerts/scan")
+    @Operation(summary = "Chạy scan cảnh báo tồn/cận hạn ngay (DEV/QA — cùng logic cron 06:00)")
+    public ApiResponse<Map<String, String>> scanNow() {
+        stockAlertJob.runMorningScan();
+        return ApiResponse.ok(Map.of(
+                "status", "ok",
+                "note", "Đã scan LOW_STOCK + EXPIRY_SOON và gửi notification (idempotent trong ngày)"));
     }
 
     @PostMapping("/stock-alerts/{id}/dismiss")

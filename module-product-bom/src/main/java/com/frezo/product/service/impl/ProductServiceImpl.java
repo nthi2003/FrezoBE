@@ -107,6 +107,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<Map<String, Object>> getCostHistory(String productId) {
+        return inventoryService.getCostHistory(productId);
+    }
+
+    @Override
     public Map<String, Object> uploadImage(MultipartFile file) {
         return imageService.uploadImage(file);
     }

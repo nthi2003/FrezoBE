@@ -23,6 +23,8 @@ public interface ProductService {
     List<Map<String, Object>> getProfitChart(int days);
     List<Map<String, Object>> getPriceFluctuation();
     List<Map<String, Object>> getMarketComparison();
+    /** Lịch sử giá vốn theo lô nhập (product_batches.cost_price). */
+    List<Map<String, Object>> getCostHistory(String productId);
 
     Map<String, Object> uploadImage(MultipartFile file);
 }

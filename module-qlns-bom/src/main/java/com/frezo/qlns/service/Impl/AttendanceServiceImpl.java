@@ -494,7 +494,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             leaveApproved = leaveRequestRepository.sumApprovedLeavesByContractAndPeriod(
                     contractId, from, to);
             double usedYear = leaveRequestRepository.sumApprovedLeavesByTypeAndPeriod(
-                    contractId, "annual",
+                    contractId, "ANNUAL",
                     java.time.LocalDate.of(y, 1, 1),
                     java.time.LocalDate.of(y, 12, 31));
             leaveBalance = Math.max(DEFAULT_ANNUAL_LEAVE_DAYS - usedYear, 0.0);

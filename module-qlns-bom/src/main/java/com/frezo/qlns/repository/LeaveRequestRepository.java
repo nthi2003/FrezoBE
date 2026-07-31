@@ -26,7 +26,7 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Stri
     @Query("SELECT COALESCE(SUM(lr.durationDays), 0) FROM LeaveRequest lr " +
            "WHERE lr.contractId = :contractId " +
            "AND lr.status = 'APPROVED' " +
-           "AND lr.leaveType = :leaveType " +
+           "AND UPPER(lr.leaveType) = UPPER(:leaveType) " +
            "AND lr.startDate >= :from AND lr.endDate <= :to")
     double sumApprovedLeavesByTypeAndPeriod(
             @Param("contractId") String contractId,

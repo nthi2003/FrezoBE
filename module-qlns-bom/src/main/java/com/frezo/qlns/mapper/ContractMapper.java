@@ -18,5 +18,8 @@ public interface ContractMapper {
 
     void updateEntity(ContractEditRequest request, @MappingTarget Contract contract);
 
+    @Mapping(source = "Status", target = "status")
+    ContractComboboxResponse toComboboxResponse(Contract contract);
+
     List<ContractComboboxResponse> toListComboboxResponse(List<Contract> contracts);
 }

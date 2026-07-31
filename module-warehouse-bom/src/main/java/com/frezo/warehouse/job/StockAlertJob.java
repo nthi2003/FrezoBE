@@ -1,11 +1,10 @@
 package com.frezo.warehouse.job;
 
-import com.frezo.approval.service.ApproverResolver;
-import com.frezo.common.service.NotificationService;
 import com.frezo.warehouse.entity.StockAlert;
 import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.service.ExpiryAlertService;
 import com.frezo.warehouse.service.ReorderService;
+import com.frezo.warehouse.service.StockAlertNotifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,11 +22,13 @@ public class StockAlertJob {
 
     private final ReorderService reorderService;
     private final StockAlertRepository alertRepository;
-    private final NotificationService notificationService;
-    private final ApproverResolver approverResolver;
     private final ExpiryAlertService expiryAlertService;
+    private final StockAlertNotifier stockAlertNotifier;
 
-    /** 06:00 mỗi ngày — scan ReorderRule active → raise StockAlert OPEN + notify. */
+    /**
+     * 06:00 mỗi ngày — scan ReorderRule + lô cận hạn → StockAlert OPEN + notify từng alert.
+     * Có thể gọi {@link #runMorningScan()} thủ công qua POST /warehouse/stock-alerts/scan.
+     */
     @Scheduled(cron = "0 0 6 * * *")
     public void runMorningScan() {
         log.info("[StockAlertJob] start morning scan");
@@ -36,6 +37,7 @@ public class StockAlertJob {
         notifyTodaysAlerts();
     }
 
+    /** Safety-net: notify OPEN alerts raised hôm nay (idempotent nếu đã notify on-create). */
     private void notifyTodaysAlerts() {
         LocalDateTime start = LocalDate.now().atStartOfDay();
         LocalDateTime end = LocalDate.now().atTime(LocalTime.MAX);
@@ -45,26 +47,11 @@ public class StockAlertJob {
                         && !a.getTriggeredAt().isBefore(start)
                         && !a.getTriggeredAt().isAfter(end))
                 .toList();
-        if (today.isEmpty()) return;
-
-        List<String> recipients = approverResolver.resolveAll("ADMIN").stream()
-                .map(ApproverResolver.ApproverHint::username)
-                .toList();
-        if (recipients.isEmpty()) {
-            recipients = List.of("admin");
+        if (today.isEmpty()) {
+            log.info("[StockAlertJob] no new OPEN alerts today — skip notify");
+            return;
         }
-        String title = "Cảnh báo tồn kho thấp";
-        String msg = today.size() + " alert mới hôm nay — kiểm tra Reorder";
-        notificationService.notifyMany(
-                recipients,
-                title,
-                msg,
-                "STOCK_ALERT",
-                "STOCK_ALERT",
-                today.get(0).getId(),
-                "/warehouse/stock-alerts",
-                "system",
-                today.stream().anyMatch(a -> "CRITICAL".equals(a.getSeverity())));
-        log.info("[StockAlertJob] notified {} admins about {} alerts", recipients.size(), today.size());
+        stockAlertNotifier.notifyAlerts(today);
+        log.info("[StockAlertJob] notified recipients about {} alerts", today.size());
     }
 }

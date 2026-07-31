@@ -59,6 +59,14 @@ public class GoodsReceiptNoteController {
         return ApiResponse.success("Huỷ phiếu nhập kho thành công");
     }
 
+    @Operation(
+            summary = "Biến động giá nhập NCC theo sản phẩm",
+            description = "Trả về chuỗi unit_cost theo thời gian từ dòng phiếu nhập kho (bỏ phiếu CANCELLED)")
+    @GetMapping("/product/{productId}/price-history")
+    public ApiResponse<?> getProductPriceHistory(@PathVariable String productId) {
+        return ApiResponse.success(grnService.getProductPriceHistory(productId));
+    }
+
     @Operation(summary = "Chi tiết phiếu nhập kho")
     @GetMapping("/{id}")
     public ApiResponse<?> getById(@PathVariable String id) {

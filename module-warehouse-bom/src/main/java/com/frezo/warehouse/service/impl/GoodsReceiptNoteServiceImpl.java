@@ -9,6 +9,7 @@ import com.frezo.warehouse.dto.request.GrnConfirmRequest;
 import com.frezo.warehouse.dto.request.GrnCreateRequest;
 import com.frezo.warehouse.dto.request.GrnUpdateRequest;
 import com.frezo.warehouse.dto.response.GrnResponse;
+import com.frezo.warehouse.dto.response.ProductPriceHistoryPoint;
 import com.frezo.warehouse.entity.*;
 import com.frezo.warehouse.mapper.GoodsReceiptNoteMapper;
 import com.frezo.warehouse.repository.*;
@@ -294,6 +295,37 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         }
         grnItemRepository.findByGrnId(id).forEach(grnItemRepository::delete);
         grnRepository.delete(grn);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductPriceHistoryPoint> getProductPriceHistory(String productId) {
+        if (productId == null || productId.isBlank()) {
+            return List.of();
+        }
+        List<GoodsReceiptNoteItem> items = grnItemRepository.findPriceHistoryByProductId(productId);
+        List<ProductPriceHistoryPoint> points = new ArrayList<>();
+        for (GoodsReceiptNoteItem item : items) {
+            GoodsReceiptNote grn = item.getGoodsReceiptNote();
+            if (grn == null || item.getUnitCost() == null) continue;
+            LocalDateTime date = grn.getReceivedAt() != null
+                    ? grn.getReceivedAt()
+                    : (grn.getCreatedDate() != null ? grn.getCreatedDate() : item.getCreatedDate());
+            points.add(ProductPriceHistoryPoint.builder()
+                    .date(date)
+                    .unitCost(item.getUnitCost())
+                    .qty(item.getQtyReceived() != null && item.getQtyReceived() > 0
+                            ? item.getQtyReceived()
+                            : item.getQtyExpected())
+                    .grnId(grn.getId())
+                    .grnCode(grn.getGrnCode())
+                    .supplierId(grn.getSupplierId())
+                    .supplierName(resolveSupplierName(grn.getSupplierId()))
+                    .status(grn.getStatus())
+                    .source("GRN")
+                    .build());
+        }
+        return points;
     }
 
     private GrnResponse buildResponse(GoodsReceiptNote grn) {

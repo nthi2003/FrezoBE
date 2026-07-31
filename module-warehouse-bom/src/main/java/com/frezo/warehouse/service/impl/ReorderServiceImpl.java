@@ -20,6 +20,7 @@ import com.frezo.warehouse.repository.StockBatchRepository;
 import com.frezo.warehouse.repository.WarehouseRepository;
 import com.frezo.warehouse.service.ExpiryAlertService;
 import com.frezo.warehouse.service.ReorderService;
+import com.frezo.warehouse.service.StockAlertNotifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -28,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -55,6 +55,7 @@ public class ReorderServiceImpl implements ReorderService {
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
     private final ExpiryAlertService expiryAlertService;
+    private final StockAlertNotifier stockAlertNotifier;
 
     @Override
     public List<WarehouseOptionDto> listWarehouses() {
@@ -196,6 +197,7 @@ public class ReorderServiceImpl implements ReorderService {
                     .build();
             alert.setId(UUID.randomUUID().toString());
             alertRepository.save(alert);
+            stockAlertNotifier.notifyAlert(alert);
             raised++;
         }
         log.info("[Reorder] scan done — raised {} alerts from {} rules", raised, rules.size());

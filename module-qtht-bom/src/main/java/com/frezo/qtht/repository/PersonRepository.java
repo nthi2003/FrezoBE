@@ -35,4 +35,15 @@ public interface PersonRepository extends JpaRepository<Person, String>, JpaSpec
     List<Person> findActiveWithDepartment(
             @Param("departmentId") String departmentId,
             @Param("personId") String personId);
+
+    @Query("""
+            SELECT p.id FROM Person p
+            WHERE (p.isDeleted = false OR p.isDeleted IS NULL)
+              AND p.activated = true
+              AND p.departmentId IN :deptIds
+              AND p.id <> :excludePersonId
+            """)
+    List<String> findActivePersonIdsByDepartmentIds(
+            @Param("deptIds") java.util.Collection<String> deptIds,
+            @Param("excludePersonId") String excludePersonId);
 }

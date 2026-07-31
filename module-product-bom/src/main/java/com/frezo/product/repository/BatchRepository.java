@@ -8,6 +8,8 @@ import java.util.List;
 @Repository
 public interface BatchRepository extends JpaRepository<Batch, String> {
     List<Batch> findByProductIdAndCurrentQuantityGreaterThanOrderByExpiryDateAsc(String productId, Double quantity);
+
+    List<Batch> findByProductIdAndIsDeletedFalseOrderByImportDateAsc(String productId);
     
     List<Batch> findByBatchCode(String batchCode);
 

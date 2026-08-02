@@ -40,7 +40,7 @@ public class Contract extends BaseEntity {
     /** Persist as VARCHAR (not ORDINAL/smallint). See ContractStatusSchemaFixer for legacy repair. */
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "status", length = 32)
-    private StatusContarct Status;
+    private StatusContarct status;
 
     private Boolean activated;
 

@@ -28,7 +28,7 @@ public class ContractAddRequest {
 
     private Integer value;
 
-    private StatusContarct Status;
+    private StatusContarct status;
 
     private Boolean activated;
 

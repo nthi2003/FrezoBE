@@ -88,6 +88,8 @@ FROM (VALUES
     ('WH_PO',              'Đơn mua hàng',         'Purchase Orders',      '/warehouse/purchase-orders',       'src/modules/warehouse',  'MENU_WAREHOUSE',  5,  'FileSpreadsheet'),
     ('WH_GRN',             'Phiếu nhập kho',       'Goods Receipt Notes',  '/warehouse/grn',                  'src/modules/warehouse',  'MENU_WAREHOUSE',  6,  'PackagePlus'),
     ('WH_GIN',             'Phiếu xuất kho',       'Goods Issue Notes',    '/warehouse/gin',                  'src/modules/warehouse',  'MENU_WAREHOUSE',  7,  'PackageMinus'),
+    ('WH_BATCHES',         'Lô hàng (batch)',      'Stock Batches',        '/warehouse/batches',              'src/modules/warehouse',  'MENU_WAREHOUSE',  8,  'Layers'),
+    ('WH_SHRINKAGE',       'Hao hụt',              'Shrinkage',            '/warehouse/shrinkage',            'src/modules/warehouse',  'MENU_WAREHOUSE',  9,  'Trash2'),
     -- CRM
     ('CRM_LEADS',          'Leads',                'Leads',                '/crm/leads',                       'src/modules/crm',        'MENU_CRM',        2,  'UserPlus'),
     ('CRM_DEALS',          'Cơ hội bán',           'Deals',                '/crm/deals',                       'src/modules/crm',        'MENU_CRM',        3,  'Briefcase'),
@@ -150,6 +152,8 @@ UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 4, fe_url = '/ware
 UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 5, fe_url = '/warehouse/purchase-orders',   is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_PO';
 UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 6, fe_url = '/warehouse/grn',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_GRN';
 UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 7, fe_url = '/warehouse/gin',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_GIN';
+UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 8, fe_url = '/warehouse/batches',           is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_BATCHES';
+UPDATE menu SET parent_code = 'MENU_WAREHOUSE', order_index = 9, fe_url = '/warehouse/shrinkage',         is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'WH_SHRINKAGE';
 
 -- === Accounting (C3) ===
 UPDATE menu SET parent_code = 'MENU_ACCOUNTING', order_index = 1, fe_url = '/accounting/accounts',             is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'ACC_ACCOUNTS';

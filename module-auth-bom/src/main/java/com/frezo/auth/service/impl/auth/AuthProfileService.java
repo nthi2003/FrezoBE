@@ -1,7 +1,9 @@
 package com.frezo.auth.service.impl.auth;
 
 import com.frezo.auth.entity.User;
+import com.frezo.auth.entity.UserRole;
 import com.frezo.auth.repository.UserRepository;
+import com.frezo.auth.repository.UserRoleRepository;
 import com.frezo.common.exception.AuthException;
 import com.frezo.common.service.MinioService;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +14,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Cung cấp thông tin profile chi tiết cho user hiện tại (bao gồm Person / Contract active)
- * và xử lý upload avatar. Thao tác cross-module Person/Contract dùng reflection để
+ * và xử lý upload avatar. Thao tác cross-module Person/Contract/Permission dùng reflection để
  * tránh dep cycle module-auth → qtht/qlns.
+ * <p>
+ * Profile trả {@code roles} + {@code permissions} (permission.code) để FE button-level gating
+ * ({@code usePermission} / {@code <Can>}) — mirror VBPL viewAction nhưng dùng QTHT permission.code.
  */
 @Component
 @RequiredArgsConstructor
@@ -27,6 +36,7 @@ import java.util.Optional;
 public class AuthProfileService {
 
     private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
     private final ApplicationContext applicationContext;
     private final MinioService minioService;
 
@@ -52,7 +62,90 @@ public class AuthProfileService {
             enrichPerson(user.getPersonId(), profile);
             resolveActiveContract(user.getPersonId(), profile);
         }
+        if (!profile.containsKey("isAdmin")) {
+            profile.put("isAdmin", false);
+        }
+
+        enrichRolesAndPermissions(user, username, profile);
         return profile;
+    }
+
+    /**
+     * Gắn {@code roles} (role.code) + {@code permissions} (permission.code) vào profile.
+     * Role resolve qua UserRole (auth) + RoleRepository (qtht, reflection).
+     * Permission codes qua PermissionRepository.findCodesByUsername (qtht, reflection).
+     */
+    private void enrichRolesAndPermissions(User user, String username, Map<String, Object> profile) {
+        profile.put("roles", resolveRoleCodes(user.getId()));
+        profile.put("permissions", resolvePermissionCodes(username));
+    }
+
+    private List<String> resolveRoleCodes(String userId) {
+        try {
+            List<UserRole> userRoles = userRoleRepository.findByUserIdAndIsDeletedFalse(userId);
+            if (userRoles == null || userRoles.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<String> roleIds = userRoles.stream()
+                    .map(UserRole::getRoleId)
+                    .filter(id -> id != null && !id.isBlank())
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (roleIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Class<?> roleRepoClass = Class.forName("com.frezo.qtht.repository.RoleRepository");
+            Object roleRepo = applicationContext.getBean(roleRepoClass);
+            Method findAllById = roleRepoClass.getMethod("findAllById", Iterable.class);
+            @SuppressWarnings("unchecked")
+            List<Object> roles = (List<Object>) findAllById.invoke(roleRepo, roleIds);
+
+            List<String> codes = new ArrayList<>();
+            for (Object role : roles) {
+                Object deleted = null;
+                try {
+                    deleted = role.getClass().getMethod("getIsDeleted").invoke(role);
+                } catch (NoSuchMethodException ignore) {
+                    // BaseEntity may expose isDeleted differently — ignore
+                }
+                if (Boolean.TRUE.equals(deleted)) continue;
+                Object code = role.getClass().getMethod("getCode").invoke(role);
+                if (code != null && !code.toString().isBlank()) {
+                    codes.add(code.toString());
+                }
+            }
+            return codes;
+        } catch (ClassNotFoundException e) {
+            log.debug("[Auth] RoleRepository not on classpath — skip roles in profile.");
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("[Auth] Failed to resolve roles for profile: {}", e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> resolvePermissionCodes(String username) {
+        try {
+            Class<?> permRepoClass = Class.forName("com.frezo.qtht.repository.PermissionRepository");
+            Object permRepo = applicationContext.getBean(permRepoClass);
+            Method findCodes = permRepoClass.getMethod("findCodesByUsername", String.class);
+            Object result = findCodes.invoke(permRepo, username);
+            if (result instanceof List<?> list) {
+                return list.stream()
+                        .filter(c -> c != null && !c.toString().isBlank())
+                        .map(Object::toString)
+                        .collect(Collectors.toList());
+            }
+            return Collections.emptyList();
+        } catch (ClassNotFoundException e) {
+            log.debug("[Auth] PermissionRepository not on classpath — skip permissions in profile.");
+            return Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("[Auth] Failed to resolve permissions for profile: {}", e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /** Upload avatar từ file trên đĩa (dùng cho batch import). Trả về URL cuối cùng. */

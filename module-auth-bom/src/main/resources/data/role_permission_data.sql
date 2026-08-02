@@ -126,3 +126,96 @@ WHERE rp.role_id = r.id
   AND r.app_code = 'QTHT'
   AND p.api_path = 'qtht/dashboard'
   AND (rp.is_deleted IS DISTINCT FROM true);
+
+-- ============================================================
+-- 4) SME ops roles — API permission (menu đã scope; API vẫn cần code)
+-- ============================================================
+
+-- PURCHASING: warehouse + product + customer/ncc + approvals (no accounting)
+INSERT INTO role_permission (id, role_id, permission_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'PURCHASING' AND app_code = 'QTHT' LIMIT 1),
+       p.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM permission p
+WHERE p.is_deleted = false AND p.app_code = 'QTHT'
+  AND (
+        p.api_path LIKE 'warehouse/%'
+     OR p.api_path LIKE '/warehouse/%'
+     OR p.api_path LIKE 'product/%'
+     OR p.api_path LIKE 'customer/%'
+     OR p.api_path IN ('/approvals', '/approval-flows')
+     OR p.code LIKE 'APPROVALS_%'
+     OR p.code LIKE 'APPROVAL_FLOWS_%'
+     OR (p.api_path = 'qtht/notification' AND p.action IN ('VIEW','UPDATE'))
+  )
+  AND NOT (p.code LIKE 'ACCOUNTING_%')
+  AND NOT EXISTS (
+      SELECT 1 FROM role_permission rp
+      JOIN roles r ON rp.role_id = r.id
+      WHERE r.code = 'PURCHASING' AND rp.permission_id = p.id
+  );
+
+-- WAREHOUSE: full warehouse + product VIEW + approvals VIEW/APPROVE
+INSERT INTO role_permission (id, role_id, permission_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'WAREHOUSE' AND app_code = 'QTHT' LIMIT 1),
+       p.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM permission p
+WHERE p.is_deleted = false AND p.app_code = 'QTHT'
+  AND (
+        p.api_path LIKE 'warehouse/%'
+     OR p.api_path LIKE '/warehouse/%'
+     OR (p.api_path LIKE 'product/%' AND p.action = 'VIEW')
+     OR p.api_path IN ('/approvals')
+     OR p.code LIKE 'APPROVALS_%'
+     OR (p.api_path = 'qtht/notification' AND p.action IN ('VIEW','UPDATE'))
+  )
+  AND NOT (p.code LIKE 'ACCOUNTING_%')
+  AND NOT EXISTS (
+      SELECT 1 FROM role_permission rp
+      JOIN roles r ON rp.role_id = r.id
+      WHERE r.code = 'WAREHOUSE' AND rp.permission_id = p.id
+  );
+
+-- DELIVERY: GIN + customer VIEW + batch VIEW
+INSERT INTO role_permission (id, role_id, permission_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'DELIVERY' AND app_code = 'QTHT' LIMIT 1),
+       p.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM permission p
+WHERE p.is_deleted = false AND p.app_code = 'QTHT'
+  AND (
+        (p.api_path IN ('warehouse/gin', 'warehouse/batches', 'warehouse/stock-balance') AND p.action IN ('VIEW','CREATE','UPDATE','APPROVE'))
+     OR (p.api_path LIKE 'warehouse/%' AND p.action = 'VIEW')
+     OR (p.api_path = 'customer/customer' AND p.action = 'VIEW')
+     OR (p.api_path = 'product/product' AND p.action = 'VIEW')
+     OR (p.api_path = 'qtht/notification' AND p.action IN ('VIEW','UPDATE'))
+  )
+  AND NOT (p.code LIKE 'ACCOUNTING_%')
+  AND NOT EXISTS (
+      SELECT 1 FROM role_permission rp
+      JOIN roles r ON rp.role_id = r.id
+      WHERE r.code = 'DELIVERY' AND rp.permission_id = p.id
+  );
+
+-- CSKH: customer + ticket + CRM-ish VIEW
+INSERT INTO role_permission (id, role_id, permission_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'CSKH' AND app_code = 'QTHT' LIMIT 1),
+       p.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM permission p
+WHERE p.is_deleted = false AND p.app_code = 'QTHT'
+  AND (
+        (p.api_path LIKE 'customer/%' AND p.action IN ('VIEW','CREATE','UPDATE'))
+     OR (p.api_path IN ('task/ticket','task/task','task/ticket-category') AND p.action IN ('VIEW','CREATE','UPDATE'))
+     OR (p.api_path LIKE 'crm/%' AND p.action IN ('VIEW','CREATE','UPDATE'))
+     OR (p.api_path = 'product/product' AND p.action = 'VIEW')
+     OR (p.api_path = 'qtht/notification' AND p.action IN ('VIEW','UPDATE'))
+  )
+  AND NOT (p.code LIKE 'ACCOUNTING_%')
+  AND NOT (p.api_path LIKE 'warehouse/%')
+  AND NOT EXISTS (
+      SELECT 1 FROM role_permission rp
+      JOIN roles r ON rp.role_id = r.id
+      WHERE r.code = 'CSKH' AND rp.permission_id = p.id
+  );

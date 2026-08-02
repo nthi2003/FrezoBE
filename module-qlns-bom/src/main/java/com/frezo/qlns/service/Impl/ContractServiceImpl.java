@@ -71,9 +71,8 @@ public class ContractServiceImpl implements ContractService {
         if (SystemUtils.isNotNullOrEmpty(filter.getPersonId())) {
             specification = specification.and(GenericSpecification.equalField("personId", filter.getPersonId()));
         }
-        // Entity field is capital-S Status (legacy naming)
         if (filter.getStatus() != null) {
-            specification = specification.and(GenericSpecification.equalField("Status", filter.getStatus()));
+            specification = specification.and(GenericSpecification.equalField("status", filter.getStatus()));
         }
         return specification;
     }

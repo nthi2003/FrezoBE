@@ -73,7 +73,7 @@ public class ProductInventoryService {
         for (Batch b : batches) {
             if (b.getCostPrice() == null) continue;
             LocalDateTime date = b.getImportDate() != null
-                    ? LocalDateTime.of(b.getImportDate(), LocalTime.MIDDAY)
+                    ? LocalDateTime.of(b.getImportDate(), LocalTime.NOON)
                     : b.getCreatedDate();
             Map<String, Object> point = new LinkedHashMap<>();
             point.put("date", date);

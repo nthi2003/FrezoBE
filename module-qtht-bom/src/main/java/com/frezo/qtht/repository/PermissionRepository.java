@@ -49,4 +49,27 @@ public interface PermissionRepository extends JpaRepository<Permission, String> 
     boolean checkPermission(@Param("username") String username,
                             @Param("apiPath") String apiPath,
                             @Param("action") String action);
+
+    /**
+     * Danh sách {@code permission.code} của user (qua role_permission).
+     * Dùng cho {@code GET /auth/profile} → FE button-level gating ({@code usePermission} / {@code <Can>}).
+     */
+    @Query(value = """
+            SELECT DISTINCT p.code
+            FROM permission p
+            JOIN role_permission rp ON p.id = rp.permission_id
+            JOIN roles r            ON rp.role_id = r.id
+            JOIN user_role ur       ON r.id = ur.role_id
+            JOIN users u            ON ur.user_id = u.id
+            WHERE u.user_name = :username
+              AND p.is_deleted = false
+              AND (rp.is_deleted = false OR rp.is_deleted IS NULL)
+              AND (r.is_deleted = false OR r.is_deleted IS NULL)
+              AND (r.status = 'A' OR r.status IS NULL)
+              AND (ur.is_deleted = false OR ur.is_deleted IS NULL)
+              AND (u.is_deleted = false OR u.is_deleted IS NULL)
+              AND (u.status = 1 OR u.status IS NULL)
+            ORDER BY p.code
+        """, nativeQuery = true)
+    List<String> findCodesByUsername(@Param("username") String username);
 }

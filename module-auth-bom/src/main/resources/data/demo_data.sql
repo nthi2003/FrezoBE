@@ -27,6 +27,11 @@
 --   loanbt (EMP008)     → Finance Mgr   — MANAGER role, dept FIN   → duyệt Payroll
 --   khangnx(EMP009)     → QA Engineer   — STAFF role,   dept IT
 --   trangdt(EMP010)     → Admin Office  — STAFF role,   dept OPS
+--   thumua (EMP011)     → Thu mua       — PURCHASING  (SME rau củ)
+--   thukho (EMP012)     → Thủ kho       — WAREHOUSE
+--   giaohang(EMP013)    → Giao hàng     — DELIVERY (proxy GIN; chưa logistics)
+--   cskh   (EMP014)     → CSKH          — CSKH
+--   ketoan (EMP015)     → Kế toán       — CHIEF_ACC + MANAGER
 --   Password mặc định:   123456 (BCrypt encode qua PasswordEncoder Bean, không hardcode SQL).
 -- ============================================================
 
@@ -50,7 +55,12 @@ FROM (VALUES
     ('EMP007', 'Đặng Quốc Bảo',      'Bảo',    'MALE',   '1991-06-05', 'emp007@frezo.com', '0901000007', 'Kỹ sư phần mềm',         'Số 7 Cầu Giấy, Hà Nội',    'Backend engineer, hệ thống thanh toán.',            'https://i.pravatar.cc/150?img=17'),
     ('EMP008', 'Bùi Thanh Loan',     'Loan',   'FEMALE', '1996-12-01', 'emp008@frezo.com', '0901000008', 'Kế toán trưởng',         'Số 8 Cầu Giấy, Hà Nội',    'Chief accountant, tài chính doanh nghiệp.',         'https://i.pravatar.cc/150?img=38'),
     ('EMP009', 'Ngô Xuân Khang',     'Khang',  'MALE',   '1989-08-22', 'emp009@frezo.com', '0901000009', 'Kỹ sư QA',               'Số 9 Cầu Giấy, Hà Nội',    'Quality assurance engineer, automation testing.',   'https://i.pravatar.cc/150?img=19'),
-    ('EMP010', 'Đỗ Thu Trang',       'Trang',  'FEMALE', '1997-04-10', 'emp010@frezo.com', '0901000010', 'Chuyên viên hành chính', 'Số 10 Cầu Giấy, Hà Nội',   'Administrative officer, phụ trách văn phòng.',      'https://i.pravatar.cc/150?img=40')
+    ('EMP010', 'Đỗ Thu Trang',       'Trang',  'FEMALE', '1997-04-10', 'emp010@frezo.com', '0901000010', 'Chuyên viên hành chính', 'Số 10 Cầu Giấy, Hà Nội',   'Administrative officer, phụ trách văn phòng.',      'https://i.pravatar.cc/150?img=40'),
+    ('EMP011', 'Lê Thị Thu Mua',     'Thu Mua','FEMALE', '1991-01-20', 'emp011@frezo.com', '0901000011', 'Nhân viên thu mua',      'Số 11 Cầu Giấy, Hà Nội',   'Thu mua rau củ SME — PR/PO từ cảnh báo tồn.',       'https://i.pravatar.cc/150?img=26'),
+    ('EMP012', 'Phạm Văn Kho',       'Kho',    'MALE',   '1987-06-15', 'emp012@frezo.com', '0901000012', 'Thủ kho',                'Số 12 Cầu Giấy, Hà Nội',   'Thủ kho HN — GRN/GIN/lô/kiểm kê/hao hụt.',          'https://i.pravatar.cc/150?img=12'),
+    ('EMP013', 'Nguyễn Văn Giao',    'Giao',   'MALE',   '1993-03-08', 'emp013@frezo.com', '0901000013', 'Nhân viên giao hàng',    'Số 13 Cầu Giấy, Hà Nội',   'Giao hàng — xuất GIN (chưa có module tuyến/TX).',   'https://i.pravatar.cc/150?img=14'),
+    ('EMP014', 'Trần Thị CSKH',      'CSKH',   'FEMALE', '1995-09-12', 'emp014@frezo.com', '0901000014', 'Chăm sóc khách hàng',    'Số 14 Cầu Giấy, Hà Nội',   'CSKH — ticket khiếu nại chất lượng rau củ.',        'https://i.pravatar.cc/150?img=45'),
+    ('EMP015', 'Hoàng Thị Kế Toán',  'Kế Toán','FEMALE', '1990-11-03', 'emp015@frezo.com', '0901000015', 'Kế toán viên',           'Số 15 Cầu Giấy, Hà Nội',   'Kế toán — sổ cái, đối soát, duyệt kỳ lương.',       'https://i.pravatar.cc/150?img=47')
 ) AS v(code, name, short_name, gender, dob, email, phone, job_title, address, description, avatar)
 WHERE NOT EXISTS (SELECT 1 FROM person p WHERE p.code = v.code);
 
@@ -103,6 +113,19 @@ WHERE code = 'EMP008' AND (department_id IS NULL OR org_id IS NULL);
 UPDATE person SET department_id = (SELECT id FROM department WHERE code = 'OPS'   LIMIT 1),
                   org_id = (SELECT id FROM organization WHERE code = 'FTECH_HN' LIMIT 1)
 WHERE code = 'EMP010' AND (department_id IS NULL OR org_id IS NULL);
+
+-- SME ops persons → dept (Thu mua/CSKH → SALES; Kho/Giao → OPS; Kế toán → FIN)
+UPDATE person SET department_id = (SELECT id FROM department WHERE code = 'SALES' LIMIT 1),
+                  org_id = (SELECT id FROM organization WHERE code = 'FTECH_HN' LIMIT 1)
+WHERE code IN ('EMP011','EMP014') AND (department_id IS NULL OR org_id IS NULL);
+
+UPDATE person SET department_id = (SELECT id FROM department WHERE code = 'OPS' LIMIT 1),
+                  org_id = (SELECT id FROM organization WHERE code = 'FTECH_HN' LIMIT 1)
+WHERE code IN ('EMP012','EMP013') AND (department_id IS NULL OR org_id IS NULL);
+
+UPDATE person SET department_id = (SELECT id FROM department WHERE code = 'FIN' LIMIT 1),
+                  org_id = (SELECT id FROM organization WHERE code = 'FTECH_HN' LIMIT 1)
+WHERE code = 'EMP015' AND (department_id IS NULL OR org_id IS NULL);
 
 -- ============================================================
 -- 4) DEMO USERS — xem DataInitializer.seedDemoLoginUsers()
@@ -1524,4 +1547,79 @@ FROM (VALUES
 ) AS v(id, request_code, person_code, expected_days, reason, status)
 WHERE (SELECT id FROM person WHERE code = v.person_code LIMIT 1) IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM resignation_request r WHERE r.id = v.id);
+
+-- ============================================================
+-- 36) SME CSKH — danh mục + ticket khiếu nại chất lượng rau củ
+--     (dùng category SUPPORT/OTHER sẵn có; title rõ QC → Kho/Thu mua)
+-- ============================================================
+INSERT INTO tickets (id, code, title, description, status, priority, category,
+                     reporter_id, assignee_id, due_date, resolved_at, resolution_note,
+                     is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), v.code, v.title, v.description, v.status, v.priority, v.category,
+       (SELECT id FROM person WHERE code = v.reporter_code LIMIT 1),
+       (SELECT id FROM person WHERE code = v.assignee_code LIMIT 1),
+       (CURRENT_DATE + (v.due_offset || ' days')::interval)::timestamp,
+       (CASE WHEN v.status IN ('RESOLVED','CLOSED') THEN NOW() - (v.resolved_ago || ' days')::interval ELSE NULL END),
+       v.resolution_note,
+       false, NOW() - ((ABS(v.due_offset) + 2) || ' days')::interval, 'system', NOW(), 'system'
+FROM (VALUES
+    ('TICKET-QC-001', 'Khiếu nại: Rau cải héo khi giao Nhà hàng Phố Cổ',
+     'KH003 báo SP001 lô LOT-SP001-NCC001-20260725-001 héo ~30% khi nhận. Cần Kho kiểm FEFO + Thu mua flag NCC001.',
+     'OPEN', 'HIGH', 'SUPPORT', 'EMP014', 'EMP012', 1, 0, NULL),
+    ('TICKET-QC-002', 'Khiếu nại: Dâu tây dập — Siêu thị BigC',
+     'KH008 phản ánh SP002 dập nhiều. Gắn GRN-DEMO-003 / NCC001. Đề xuất QC cửa kho.',
+     'IN_PROGRESS', 'URGENT', 'SUPPORT', 'EMP014', 'EMP011', 0, 0, NULL),
+    ('TICKET-QC-003', 'Ghi nhận: Tôm sú cận hạn WH_HCM — đẩy bán gấp',
+     'Alert EXPIRY sb-demo-007 đã quá HSD. CSKH báo khách sỉ sẵn sàng lấy giảm giá.',
+     'RESOLVED', 'HIGH', 'OTHER', 'EMP014', 'EMP012', -1, 0,
+     'Đã xuất hao hụt SHR-DEMO-003 phần quá hạn; phần còn lại đẩy GIN giảm giá.')
+) AS v(code, title, description, status, priority, category, reporter_code, assignee_code, due_offset, resolved_ago, resolution_note)
+WHERE (SELECT id FROM person WHERE code = v.reporter_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM tickets t WHERE t.code = v.code);
+
+-- ============================================================
+-- 37) SME batches bổ sung — rau lá cận hạn + lô còn hạn để demo FEFO
+-- ============================================================
+INSERT INTO stock_batch (id, batch_code, product_id, warehouse_id, supplier_id,
+                         warehouse_location_id, received_date, expiry_date, qty_on_hand, status,
+                         is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id, v.batch_code,
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM nccs WHERE code = v.ncc_code LIMIT 1),
+       v.loc_id,
+       (CURRENT_DATE - v.received_days)::date,
+       (CURRENT_DATE + v.expiry_days)::date,
+       v.qty, v.status,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    -- Rau cải: lô cũ sắp hết hạn (FEFO ưu tiên) + lô mới còn hạn
+    ('sb-demo-008', 'LOT-SP001-NCC001-FEFO-OLD', 'SP001', 'WH_HN', 'NCC001', 'wl-hn-a-01', 3,  0, 18.0, 'ACTIVE'),
+    ('sb-demo-009', 'LOT-SP001-NCC001-FEFO-NEW', 'SP001', 'WH_HN', 'NCC001', 'wl-hn-a-02', 0,  4, 40.0, 'ACTIVE'),
+    ('sb-demo-010', 'LOT-SP003-NCC002-NEAR',     'SP003', 'WH_HN', 'NCC002', 'wl-hn-b-01', 5,  1, 12.0, 'ACTIVE'),
+    ('sb-demo-011', 'LOT-SP002-NCC001-EXPIRED',  'SP002', 'WH_DL', 'NCC001', 'wl-dl-a-01', 6, -2,  2.0, 'EXPIRED')
+) AS v(id, batch_code, product_code, wh_code, ncc_code, loc_id, received_days, expiry_days, qty, status)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_batch sb WHERE sb.id = v.id);
+
+INSERT INTO stock_alert (id, warehouse_id, product_id, current_qty, min_qty, severity, status,
+                         alert_type, batch_id, expiry_date, days_to_expiry,
+                         triggered_at, idempotency_key,
+                         is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT v.id,
+       (SELECT id FROM warehouses WHERE code = v.wh_code LIMIT 1),
+       (SELECT id FROM products WHERE code = v.product_code LIMIT 1),
+       v.qty, 0, v.severity, 'OPEN',
+       'EXPIRY_SOON', v.batch_id,
+       (CURRENT_DATE + v.expiry_days)::date, v.expiry_days,
+       NOW() - INTERVAL '1 hour', v.idem_key,
+       false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    ('alert-expiry-003', 'SP001', 'WH_HN', 'sb-demo-008', 18.0, 0,  'CRITICAL', 'demo|expiry|sb-demo-008'),
+    ('alert-expiry-004', 'SP003', 'WH_HN', 'sb-demo-010', 12.0, 1,  'WARNING',  'demo|expiry|sb-demo-010'),
+    ('alert-expiry-005', 'SP002', 'WH_DL', 'sb-demo-011',  2.0, -2, 'CRITICAL', 'demo|expiry|sb-demo-011')
+) AS v(id, product_code, wh_code, batch_id, qty, expiry_days, severity, idem_key)
+WHERE (SELECT id FROM products WHERE code = v.product_code LIMIT 1) IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM stock_alert sa WHERE sa.id = v.id OR sa.idempotency_key = v.idem_key);
 

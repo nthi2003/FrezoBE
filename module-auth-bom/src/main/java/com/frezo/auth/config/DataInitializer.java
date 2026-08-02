@@ -383,6 +383,11 @@ public class DataInitializer implements CommandLineRunner {
      *   <tr><td>loanbt</td>  <td>EMP008</td><td>MANAGER</td><td>Finance Manager — duyệt Payroll</td></tr>
      *   <tr><td>khangnx</td> <td>EMP009</td><td>STAFF</td>  <td>QA Engineer</td></tr>
      *   <tr><td>trangdt</td> <td>EMP010</td><td>STAFF</td>  <td>Admin Office</td></tr>
+     *   <tr><td>thumua</td>  <td>EMP011</td><td>PURCHASING</td><td>Thu mua — alert → PR/PO</td></tr>
+     *   <tr><td>thukho</td>  <td>EMP012</td><td>WAREHOUSE</td><td>Thủ kho — GRN/GIN/lô</td></tr>
+     *   <tr><td>giaohang</td><td>EMP013</td><td>DELIVERY</td><td>Giao hàng — GIN (proxy)</td></tr>
+     *   <tr><td>cskh</td>    <td>EMP014</td><td>CSKH</td>  <td>CSKH — ticket QC</td></tr>
+     *   <tr><td>ketoan</td>  <td>EMP015</td><td>CHIEF_ACC+MANAGER</td><td>Kế toán</td></tr>
      * </table>
      * <p>
      * Tất cả KHÔNG phải admin (Person.is_admin=false) — chỉ có admin/superadmin là admin thực sự.
@@ -402,7 +407,13 @@ public class DataInitializer implements CommandLineRunner {
                 new DemoUser("baodq",   "Đặng Quốc Bảo",    "emp007@frezo.com", "STAFF"),
                 new DemoUser("loanbt",  "Bùi Thanh Loan",   "emp008@frezo.com", "MANAGER"),
                 new DemoUser("khangnx", "Ngô Xuân Khang",   "emp009@frezo.com", "STAFF"),
-                new DemoUser("trangdt", "Đỗ Thu Trang",     "emp010@frezo.com", "STAFF")
+                new DemoUser("trangdt", "Đỗ Thu Trang",     "emp010@frezo.com", "STAFF"),
+                // SME rau củ ops roles (vision checklist)
+                new DemoUser("thumua",  "Lê Thị Thu Mua",   "emp011@frezo.com", "PURCHASING"),
+                new DemoUser("thukho",  "Phạm Văn Kho",     "emp012@frezo.com", "WAREHOUSE"),
+                new DemoUser("giaohang","Nguyễn Văn Giao",  "emp013@frezo.com", "DELIVERY"),
+                new DemoUser("cskh",    "Trần Thị CSKH",    "emp014@frezo.com", "CSKH"),
+                new DemoUser("ketoan",  "Hoàng Thị Kế Toán","emp015@frezo.com", "CHIEF_ACC")
         );
         for (DemoUser d : demos) {
             ensureUserWithPerson(d.username(), "123456", d.displayName(), d.email(), false);
@@ -411,6 +422,8 @@ public class DataInitializer implements CommandLineRunner {
         // LNK-05: ApprovalFlowSeed steps HR / CHIEF_ACC need resolvable users
         linkUserToRole("maitt", "HR", "QTHT");
         linkUserToRole("loanbt", "CHIEF_ACC", "QTHT");
+        // Kế toán ops: cần MANAGER menu kế toán (CHIEF_ACC alone chỉ HOME nếu chưa gán menu)
+        linkUserToRole("ketoan", "MANAGER", "QTHT");
         log.info(">>> Demo login users ready: {} accounts, password '123456'.", demos.size());
     }
 

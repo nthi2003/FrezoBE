@@ -8,15 +8,15 @@
 
 ![Đầu trang Cấu hình luồng duyệt — **Tạo luồng mới**](/docs-assets/eu/cta-wf-flows-header.png)
 
-![Menu — Quy Trình Duyệt vs Cấu hình luồng duyệt](/docs-assets/eu/wf-sidebar-approval.png)
+![Menu — Cấu hình luồng duyệt](/docs-assets/eu/wf-sidebar-approval.png)
 
 | Việc | Menu |
 |------|------|
-| Vẽ draft | **Quy Trình Duyệt** → Designer |
-| **Áp runtime** | **Cấu hình luồng duyệt** |
+| **Áp runtime** | **Cấu hình luồng duyệt** → tab **Luồng đang chạy** |
+| Vẽ draft | Cùng hub → tab **Mẫu / Designer** |
 | Duyệt | **Hộp thư duyệt** |
 
-Vì sao hai trang tách nhau + duyệt xong đổi gì: [Cấu hình luồng duyệt](/docs/guide-approval-flows).  
+Hai tab cùng một hub + duyệt xong đổi gì: [Cấu hình luồng duyệt](/docs/guide-approval-flows).  
 Vẽ & kéo nối: [Phân quy trình duyệt](/docs/guide-workflows).
 
 ---

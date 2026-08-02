@@ -123,3 +123,90 @@ WHERE r.app_code = 'QTHT'
       SELECT 1 FROM role_menu rm
       WHERE rm.role_id = r.id AND rm.menu_id = m.id AND rm.app_code = 'QTHT'
   );
+
+-- ============================================================
+-- SME rau củ ops roles — menu scoped (vision checklist QA)
+-- ============================================================
+
+-- PURCHASING (Thu mua): cảnh báo → PR/PO + NCC + SP + duyệt; KHÔNG kế toán / QTHT admin
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'PURCHASING' AND app_code = 'QTHT' LIMIT 1),
+       m.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM menu m
+WHERE m.app_code = 'QTHT'
+  AND COALESCE(m.is_deleted, false) = false
+  AND m.code IN (
+      'HOME',
+      'MENU_WAREHOUSE', 'WH_REORDER', 'WH_ALERTS', 'WH_PR', 'WH_PO',
+      'MENU_PRODUCT', 'QLHT_PRODUCT', 'QLHT_PRODUCT_CATE',
+      'MENU_CRM', 'QLHT_CUSTOMER',
+      'MENU_APPROVAL', 'APPR_INBOX',
+      'MENU_TASK', 'MENU_DOCS'
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM role_menu rm
+      JOIN roles r ON rm.role_id = r.id
+      WHERE r.code = 'PURCHASING' AND rm.menu_id = m.id AND rm.app_code = 'QTHT'
+  );
+
+-- WAREHOUSE (Thủ kho): full kho ops, không kế toán / thu mua PO (vẫn xem alert + PR đọc)
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'WAREHOUSE' AND app_code = 'QTHT' LIMIT 1),
+       m.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM menu m
+WHERE m.app_code = 'QTHT'
+  AND COALESCE(m.is_deleted, false) = false
+  AND m.code IN (
+      'HOME',
+      'MENU_WAREHOUSE', 'WH_REORDER', 'WH_ALERTS', 'WH_STOCKTAKE',
+      'WH_PR', 'WH_PO', 'WH_GRN', 'WH_GIN', 'WH_BATCHES', 'WH_SHRINKAGE',
+      'MENU_PRODUCT', 'QLHT_PRODUCT',
+      'MENU_APPROVAL', 'APPR_INBOX',
+      'MENU_TASK', 'MENU_DOCS'
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM role_menu rm
+      JOIN roles r ON rm.role_id = r.id
+      WHERE r.code = 'WAREHOUSE' AND rm.menu_id = m.id AND rm.app_code = 'QTHT'
+  );
+
+-- DELIVERY (Giao hàng): GIN xuất bán + KH (proxy — chưa có logistics)
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'DELIVERY' AND app_code = 'QTHT' LIMIT 1),
+       m.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM menu m
+WHERE m.app_code = 'QTHT'
+  AND COALESCE(m.is_deleted, false) = false
+  AND m.code IN (
+      'HOME',
+      'MENU_WAREHOUSE', 'WH_GIN', 'WH_BATCHES',
+      'MENU_CRM', 'QLHT_CUSTOMER',
+      'MENU_TASK', 'MENU_DOCS'
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM role_menu rm
+      JOIN roles r ON rm.role_id = r.id
+      WHERE r.code = 'DELIVERY' AND rm.menu_id = m.id AND rm.app_code = 'QTHT'
+  );
+
+-- CSKH: KH + ticket khiếu nại; không kho mua / kế toán
+INSERT INTO role_menu (id, role_id, menu_id, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(),
+       (SELECT id FROM roles WHERE code = 'CSKH' AND app_code = 'QTHT' LIMIT 1),
+       m.id, 'QTHT', false, NOW(), 'system', NOW(), 'system'
+FROM menu m
+WHERE m.app_code = 'QTHT'
+  AND COALESCE(m.is_deleted, false) = false
+  AND m.code IN (
+      'HOME',
+      'MENU_CRM', 'QLHT_CUSTOMER', 'CRM_LEADS', 'CRM_DEALS', 'CRM_MEETINGS',
+      'MENU_TASK', 'QLHT_CV', 'QLHT_TICKET', 'MENU_DOCS'
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM role_menu rm
+      JOIN roles r ON rm.role_id = r.id
+      WHERE r.code = 'CSKH' AND rm.menu_id = m.id AND rm.app_code = 'QTHT'
+  );

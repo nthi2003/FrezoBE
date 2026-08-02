@@ -2,6 +2,11 @@
 
 Trang này **bật** chuỗi người duyệt cho từng loại đơn (nghỉ phép, mua hàng, lương…). Chỉ Admin / người được cấp quyền cấu hình.
 
+Hub **một chỗ duy nhất** (`/approval/flows`):
+
+- Tab **Luồng đang chạy** — gắn & kích hoạt (đơn thật chạy theo đây)
+- Tab **Mẫu / Designer** — vẽ mẫu sơ đồ nâng cao (không tự gắn Leave)
+
 **Ảnh minh hoạ:** `/docs-assets/eu/` (FTECH demo)
 
 ![Đầu trang Cấu hình luồng duyệt — **Tạo luồng mới**](/docs-assets/eu/cta-wf-flows-header.png)
@@ -10,7 +15,7 @@ Trang này **bật** chuỗi người duyệt cho từng loại đơn (nghỉ ph
 
 ## Làm việc chính
 
-1. Menu **Quản trị hệ thống** → **Cấu hình luồng duyệt** (`/approval/flows`).
+1. Menu **Quản trị hệ thống** → **Cấu hình luồng duyệt** (`/approval/flows`) → tab **Luồng đang chạy**.
 2. Bấm **Tạo luồng mới** (hoặc **Sửa** thẻ sẵn có).
 3. Chọn **Loại đối tượng** (Nghỉ phép / Yêu cầu mua / Bảng lương…) → thêm bước → chọn vai trò duyệt.
 4. Tick **Đang kích hoạt** → **Tạo mới** / lưu.
@@ -18,19 +23,19 @@ Trang này **bật** chuỗi người duyệt cho từng loại đơn (nghỉ ph
 
 **Kết quả:** Đơn mới đúng loại đi theo đúng chuỗi người trên thẻ đang kích hoạt.
 
-![Menu — Cấu hình luồng duyệt vs Quy Trình Duyệt](/docs-assets/eu/wf-sidebar-approval.png)
+![Menu — Cấu hình luồng duyệt](/docs-assets/eu/wf-sidebar-approval.png)
 
 ---
 
-## Tại sao tách trang này — không gộp vào Quy Trình Duyệt?
+## Hai tab trong cùng một hub
 
-| Trang | Việc | Đơn thật chạy? |
-|-------|------|----------------|
-| **Cấu hình luồng duyệt** (`/approval/flows`) | Gắn & bật chuỗi duyệt theo loại đơn | **Có** |
-| **Quy Trình Duyệt** (`/qtht/workflows`) | Vẽ / lưu **mẫu** sơ đồ (Designer) | **Không** |
+| Tab | Việc | Đơn thật chạy? |
+|-----|------|----------------|
+| **Luồng đang chạy** (`/approval/flows`) | Gắn & bật chuỗi duyệt theo loại đơn | **Có** |
+| **Mẫu / Designer** (`/approval/flows?tab=templates`) | Vẽ / lưu **mẫu** sơ đồ (Designer) | **Không** (với nghỉ / mua / lương) |
 | **Hộp thư duyệt** (`/approval/inbox`) | Duyệt / từ chối đơn đang chờ bạn | — |
 
-Hai việc khác nhau: **vẽ mẫu** ≠ **bật cho đơn chạy**. Gộp một trang dễ khiến Admin tưởng “đã Lưu graph” là đơn nghỉ đã đổi người duyệt — thực tế **chưa**.
+Hai việc khác nhau: **vẽ mẫu** ≠ **bật cho đơn chạy**. Cùng một menu nên không còn hai mục sidebar giống nhau.
 
 > Chỉ thẻ có badge **Áp dụng: …** mới điều khiển đơn mới. Designer chỉ là bản vẽ.
 
@@ -76,7 +81,7 @@ Khóa kỳ **07/2026** → *Loan* rồi Admin duyệt hết → kỳ **Đã đó
 
 | Thấy | Xử lý |
 |------|--------|
-| Lưu ở Designer, đơn vẫn người cũ | Phải **kích hoạt** ở trang này |
+| Lưu ở Designer, đơn vẫn người cũ | Phải **kích hoạt** ở tab Luồng đang chạy |
 | Hai thẻ cùng loại | Chỉ thẻ **Áp dụng: …** chạy |
 | Inbox trống sau khi gửi | Chưa tick kích hoạt / sai loại đối tượng / chưa gửi hoặc chưa khóa kỳ lương |
 | “Không có người duyệt” | Gán đúng vai trò (QL, HR…) cho user thật |

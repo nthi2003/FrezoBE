@@ -40,9 +40,16 @@ public class ProductCommandService {
         return PageResponse.of(pageNum, pageSize, page, responses);
     }
 
+    @Transactional
     public ProductResponse getById(String id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("product.not.found"));
+        try {
+            productRepository.incrementViewCount(id);
+            product.setViewCount(product.getViewCount() == null ? 1L : product.getViewCount() + 1);
+        } catch (Exception ignored) {
+            // không chặn xem SP nếu tăng counter lỗi
+        }
         return productMapper.toResponse(product);
     }
 

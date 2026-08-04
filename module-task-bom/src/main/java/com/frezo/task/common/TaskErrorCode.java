@@ -21,6 +21,14 @@ public enum TaskErrorCode implements ErrorCode {
     TICKET_NOT_FOUND("Ticket not found", HttpStatus.NOT_FOUND, "Không tìm thấy ticket"),
     TICKET_STATUS_INVALID("Invalid ticket status", HttpStatus.BAD_REQUEST, "Trạng thái ticket không hợp lệ"),
     TICKET_CATEGORY_INVALID("TICKET_CATEGORY_INVALID", HttpStatus.BAD_REQUEST, "Danh mục không hợp lệ: {0}"),
+    TICKET_ACCESS_DENIED("TICKET_ACCESS_DENIED", HttpStatus.FORBIDDEN, "Bạn không có quyền xem ticket này"),
+    TICKET_COMPLETE_FORBIDDEN("TICKET_COMPLETE_FORBIDDEN", HttpStatus.FORBIDDEN, "Chỉ người được giao hoặc admin mới đánh dấu hoàn thành"),
+    TICKET_REVIEW_FORBIDDEN("TICKET_REVIEW_FORBIDDEN", HttpStatus.FORBIDDEN, "Chỉ người giao việc hoặc admin mới duyệt hoàn thành"),
+    TICKET_REVIEW_INVALID("TICKET_REVIEW_INVALID", HttpStatus.BAD_REQUEST, "Ticket phải ở trạng thái Đã giải quyết mới được duyệt"),
+    TASK_ACCESS_DENIED("TASK_ACCESS_DENIED", HttpStatus.FORBIDDEN, "Bạn không có quyền xem công việc này"),
+    TASK_COMPLETE_FORBIDDEN("TASK_COMPLETE_FORBIDDEN", HttpStatus.FORBIDDEN, "Chỉ người được giao hoặc admin mới đánh dấu hoàn thành"),
+    TASK_REVIEW_FORBIDDEN("TASK_REVIEW_FORBIDDEN", HttpStatus.FORBIDDEN, "Chỉ người giao việc hoặc admin mới duyệt hoàn thành"),
+    TASK_REVIEW_INVALID("TASK_REVIEW_INVALID", HttpStatus.BAD_REQUEST, "Công việc phải ở trạng thái Hoàn thành mới được duyệt"),
 
     // -------------------- TICKET CATEGORY --------------------
     TICKET_CATEGORY_CODE_EXISTS("TICKET_CATEGORY_CODE_EXISTS", HttpStatus.CONFLICT, "Mã danh mục đã tồn tại: {0}"),

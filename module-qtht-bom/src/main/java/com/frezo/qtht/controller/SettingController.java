@@ -35,7 +35,7 @@ public class SettingController {
 
     @Operation(summary = "Cập nhật cấu hình", description = "Cập nhật các flag tính năng cho tổ chức")
     @PutMapping("/{id}")
-    @CheckPermission(api = "/qtht/setting", action = "UPDATE")
+    @CheckPermission(api = "/qtht/setting/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody SettingEditRequest request) {
         request.setId(id);
         return settingService.edit(request);
@@ -43,7 +43,7 @@ public class SettingController {
 
     @Operation(summary = "Lấy cấu hình theo orgId", description = "Lấy thông tin cấu hình tính năng của một tổ chức cụ thể")
     @GetMapping("/org/{orgId}")
-    @CheckPermission(api = "/qtht/setting", action = "VIEW")
+    @CheckPermission(api = "/qtht/setting/org/{orgId}", action = "VIEW")
     public ApiResponse<?> getByOrgId(@PathVariable String orgId) {
         return ApiResponse.success(settingService.getByOrgId(orgId));
     }

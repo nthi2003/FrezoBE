@@ -43,6 +43,6 @@ public class PublicServiceImpl implements PublicService {
 
     @Override
     public Object getArticleDetail(String id) {
-        return articleService.findById(id);
+        return articleService.getPublicArticleById(id);
     }
 }

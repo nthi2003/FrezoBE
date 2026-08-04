@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.service.StockBatchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ public class StockBatchController {
 
     @Operation(summary = "Danh sách lô theo kho/SP")
     @GetMapping
+    @CheckPermission(api = "/warehouse/batches", action = "VIEW")
     public ApiResponse<?> list(
             @RequestParam(required = false) String warehouseId,
             @RequestParam(required = false) String productId) {
@@ -25,6 +27,7 @@ public class StockBatchController {
 
     @Operation(summary = "Chi tiết lô")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/batches/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(batchService.getById(id));
     }

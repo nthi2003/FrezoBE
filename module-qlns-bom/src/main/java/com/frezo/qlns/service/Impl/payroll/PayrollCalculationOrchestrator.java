@@ -7,6 +7,7 @@ import com.frezo.qlns.engine.PayrollEngine;
 import com.frezo.qlns.entity.Contract;
 import com.frezo.qlns.entity.Payroll;
 import com.frezo.qlns.repository.PayrollRepository;
+import com.frezo.qlns.service.RecognitionService;
 import com.frezo.qtht.entity.Person;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,6 +41,7 @@ public class PayrollCalculationOrchestrator {
     private final PayrollConfigLoader configLoader;
     private final PayrollDetailWriter detailWriter;
     private final PayrollLifecycleService lifecycleService;
+    private final RecognitionService recognitionService;
     private final PlatformTransactionManager transactionManager;
 
     /**
@@ -167,8 +170,6 @@ public class PayrollCalculationOrchestrator {
         PayrollConfigLoader.ConfigBundle cfg = configLoader.load(person.getOrgId(), year);
         PayrollDataCollector.CollectedInput input = dataCollector.collect(person, month, year, cfg);
 
-        PayrollEngine.PayrollResult result = payrollEngine.calculate(input.engineInput());
-
         Payroll payroll = payrollRepository
                 .findByPersonIdAndMonthAndYear(personId, month, year)
                 .orElse(Payroll.builder()
@@ -180,10 +181,29 @@ public class PayrollCalculationOrchestrator {
         // Phiếu đã confirm/pay hoặc kỳ khoá → lỗi nghiệp vụ (batch bắt vào errors[], không 500)
         lifecycleService.assertNotLocked(payroll);
 
+        // Ghi nhận: cộng tiền đổi thưởng APPROVED vào bonus kỳ này → đánh dấu PAID
+        BigDecimal tokenBonus = recognitionService.consumeApprovedForPayroll(personId, month, year);
+        if (tokenBonus == null) tokenBonus = BigDecimal.ZERO;
+        BigDecimal priorBonus = payroll.getBonus() != null ? payroll.getBonus() : BigDecimal.ZERO;
+        BigDecimal combinedBonus = priorBonus.add(tokenBonus);
+        input.engineInput().setBonus(combinedBonus);
+
+        PayrollEngine.PayrollResult result = payrollEngine.calculate(input.engineInput());
+
+        // Force applyResult lấy bonus từ engine (đã gồm manual + token)
+        payroll.setBonus(null);
         PayrollCalculationHelper.applyResultToEntity(
                 payroll, result,
                 input.contract() != null ? input.contract().getId() : null);
         if (payroll.getStatus() == null) payroll.setStatus(0);
+
+        if (tokenBonus.compareTo(BigDecimal.ZERO) > 0) {
+            String note = payroll.getNote() == null ? "" : payroll.getNote();
+            String tag = "Token redeem +" + tokenBonus.toPlainString() + " VND";
+            if (!note.contains("Token redeem +")) {
+                payroll.setNote(note.isBlank() ? tag : note + " | " + tag);
+            }
+        }
 
         Payroll saved = payrollRepository.save(payroll);
         detailWriter.saveAll(saved, result);

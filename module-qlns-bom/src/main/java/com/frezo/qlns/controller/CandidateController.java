@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.CandidateRequest;
 import com.frezo.qlns.dto.response.CandidateResponse;
 import com.frezo.qlns.service.CandidateService;
@@ -27,12 +28,14 @@ public class CandidateController {
 
     @Operation(summary = "Tạo mới ứng viên")
     @PostMapping
+    @CheckPermission(api = "/qlns/recruitment/candidates", action = "CREATE")
     public ApiResponse<CandidateResponse> create(@RequestBody CandidateRequest req) {
         return ApiResponse.ok(candidateService.create(req));
     }
 
     @Operation(summary = "Tìm ứng viên theo keyword (name/email/phone)")
     @GetMapping
+    @CheckPermission(api = "/qlns/recruitment/candidates", action = "VIEW")
     public ApiResponse<List<CandidateResponse>> search(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String stage) {
@@ -42,6 +45,7 @@ public class CandidateController {
 
     @Operation(summary = "Chi tiết ứng viên")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/recruitment/candidates/{id}", action = "VIEW")
     public ApiResponse<CandidateResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(candidateService.getById(id));
     }

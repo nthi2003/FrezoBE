@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.FePage;
 import com.frezo.warehouse.dto.request.ReorderRuleRequest;
 import com.frezo.warehouse.dto.response.ReorderRuleDto;
@@ -36,12 +37,14 @@ public class ReorderController {
     private final StockAlertJob stockAlertJob;
 
     @GetMapping("/warehouses")
+    @CheckPermission(api = "/warehouse/warehouses", action = "VIEW")
     @Operation(summary = "Danh sách kho (option combobox)")
     public ApiResponse<List<WarehouseOptionDto>> listWarehouses() {
         return ApiResponse.ok(reorderService.listWarehouses());
     }
 
     @GetMapping("/reorder-rules")
+    @CheckPermission(api = "/warehouse/reorder-rules", action = "VIEW")
     public ApiResponse<FePage<ReorderRuleDto>> listRules(
             @RequestParam(required = false) String warehouseId,
             @RequestParam(required = false) String productId) {
@@ -49,29 +52,34 @@ public class ReorderController {
     }
 
     @PostMapping("/reorder-rules")
+    @CheckPermission(api = "/warehouse/reorder-rules", action = "CREATE")
     public ApiResponse<ReorderRuleDto> create(@RequestBody ReorderRuleRequest req) {
         return ApiResponse.ok(reorderService.create(req));
     }
 
     @PutMapping("/reorder-rules/{id}")
+    @CheckPermission(api = "/warehouse/reorder-rules/{id}", action = "UPDATE")
     public ApiResponse<ReorderRuleDto> update(@PathVariable String id,
                                               @RequestBody ReorderRuleRequest req) {
         return ApiResponse.ok(reorderService.update(id, req));
     }
 
     @DeleteMapping("/reorder-rules/{id}")
+    @CheckPermission(api = "/warehouse/reorder-rules/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         reorderService.delete(id);
         return ApiResponse.ok();
     }
 
     @PostMapping("/reorder-rules/import-excel")
+    @CheckPermission(api = "/warehouse/reorder-rules/import-excel", action = "UPDATE")
     public ApiResponse<Map<String, Integer>> importExcel(
             @RequestPart(value = "file", required = false) MultipartFile file) {
         return ApiResponse.ok(reorderService.importExcel(file));
     }
 
     @GetMapping("/stock-alerts")
+    @CheckPermission(api = "/warehouse/stock-alerts", action = "VIEW")
     public ApiResponse<FePage<StockAlertDto>> listAlerts(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String alertType) {
@@ -79,6 +87,7 @@ public class ReorderController {
     }
 
     @PostMapping("/stock-alerts/scan")
+    @CheckPermission(api = "/warehouse/stock-alerts/scan", action = "CREATE")
     @Operation(summary = "Chạy scan cảnh báo tồn/cận hạn ngay (DEV/QA — cùng logic cron 06:00)")
     public ApiResponse<Map<String, String>> scanNow() {
         stockAlertJob.runMorningScan();
@@ -88,6 +97,7 @@ public class ReorderController {
     }
 
     @PostMapping("/stock-alerts/{id}/dismiss")
+    @CheckPermission(api = "/warehouse/stock-alerts/{id}/dismiss", action = "CREATE")
     public ApiResponse<StockAlertDto> dismiss(@PathVariable String id) {
         return ApiResponse.ok(reorderService.dismiss(id));
     }

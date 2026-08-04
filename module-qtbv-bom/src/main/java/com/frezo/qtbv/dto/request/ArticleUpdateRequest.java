@@ -22,4 +22,7 @@ public class ArticleUpdateRequest {
 
     private PublishScope publishScope = PublishScope.INTERNAL;
     private Boolean isPublic;
+
+    /** Người duyệt — có thể đổi khi bài còn DRAFT / REJECTED. */
+    private String managerId;
 }

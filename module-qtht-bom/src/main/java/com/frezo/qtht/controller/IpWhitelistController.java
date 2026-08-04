@@ -40,7 +40,7 @@ public class IpWhitelistController {
 
     @Operation(summary = "Xóa IP khỏi whitelist", description = "Vô hiệu hóa một IP trong danh sách whitelist")
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/qtht/ip-whitelist", action = "DELETE")
+    @CheckPermission(api = "/qtht/ip-whitelist/{id}", action = "DELETE")
     public ResponseEntity<ApiResponse<String>> removeFromWhitelist(@PathVariable String id) {
         ipWhitelistService.removeFromWhitelist(id);
         return ResponseEntity.ok(ApiResponse.success("Đã xóa IP khỏi whitelist"));
@@ -48,6 +48,7 @@ public class IpWhitelistController {
 
     @Operation(summary = "Kiểm tra IP có trong whitelist", description = "Kiểm tra xem một IP có được cho phép không")
     @GetMapping("/check")
+    @CheckPermission(api = "/qtht/ip-whitelist/check", action = "VIEW")
     public ResponseEntity<ApiResponse<Boolean>> isWhitelisted(@RequestParam String ipAddress) {
         return ResponseEntity.ok(ApiResponse.success(ipWhitelistService.isWhitelisted(ipAddress)));
     }

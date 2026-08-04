@@ -38,18 +38,18 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authService.verifyOtp(username, code)));
     }
 
-    @Operation(summary = "Quên mật khẩu", description = "Yêu cầu khôi phục mật khẩu qua email")
+    @Operation(summary = "Quên mật khẩu", description = "Gửi mã OTP 6 số về email đăng ký (hiệu lực 10 phút)")
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestParam String email) {
         authService.forgotPassword(email);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(null, "Nếu email tồn tại, mã OTP đã được gửi. Kiểm tra hộp thư."));
     }
 
-    @Operation(summary = "Đặt lại mật khẩu", description = "Đặt lại mật khẩu mới bằng mã khôi phục")
+    @Operation(summary = "Đặt lại mật khẩu", description = "Đặt mật khẩu mới bằng mã OTP nhận từ email (param key = OTP)")
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String key, @RequestParam String newPassword) {
         authService.resetPassword(key, newPassword);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập."));
     }
 
     @Operation(summary = "Lấy lịch sử đăng nhập", description = "Xem lịch sử các lần đăng nhập của người dùng")

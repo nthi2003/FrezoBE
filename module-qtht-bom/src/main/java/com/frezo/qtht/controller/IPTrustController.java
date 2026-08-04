@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.IpTrustAddRequest;
 import com.frezo.qtht.dto.request.IpTrustEditRequest;
@@ -24,18 +25,21 @@ public class IPTrustController {
 
     @Operation(summary = "Lấy danh sách white list ip", description = "Lấy tất cả các ip trong danh sách trắng với phân trang và tìm kiếm theo keyword")
     @GetMapping
+    @CheckPermission(api = "/qtht/ip-trust", action = "VIEW")
     public ResponseEntity<ApiResponse<PageResponse<IpTrustResponse>>> all(IpTrustFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(ipTrustService.all(filter)));
     }
 
     @Operation(summary = "Thêm mới ip vào white list", description = "Thêm mới một địa chỉ IP cùng tên mô tả vào hệ thống")
     @PostMapping
+    @CheckPermission(api = "/qtht/ip-trust", action = "CREATE")
     public ResponseEntity<ApiResponse<IpTrustResponse>> add(@Valid @RequestBody IpTrustAddRequest request) {
         return ResponseEntity.ok(ipTrustService.add(request));
     }
 
     @Operation(summary = "Chỉnh sửa thông tin ip", description = "Cập nhật tên hoặc số IP hiện có trong danh sách")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/qtht/ip-trust/{id}", action = "UPDATE")
     public ResponseEntity<ApiResponse<IpTrustResponse>> edit(
             @PathVariable String id,
             @Valid @RequestBody IpTrustEditRequest request) {
@@ -44,12 +48,14 @@ public class IPTrustController {
 
     @Operation(summary = "Chi tiết white list ip", description = "Lấy thông tin chi tiết một IP dựa trên ID")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qtht/ip-trust/{id}", action = "VIEW")
     public ResponseEntity<ApiResponse<IpTrustResponse>> view(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(ipTrustService.view(id)));
     }
 
     @Operation(summary = "Xóa ip khỏi white list", description = "Thực hiện xóa (soft delete) địa chỉ IP khỏi danh sách trắng")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qtht/ip-trust/{id}", action = "DELETE")
     public ResponseEntity<ApiResponse<?>> delete(@PathVariable String id) {
         return ResponseEntity.ok(ipTrustService.delete(id));
     }

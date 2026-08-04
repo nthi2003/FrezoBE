@@ -20,7 +20,7 @@ public class JournalController {
     private final JournalService svc;
 
     @GetMapping("/{id}")
-    @CheckPermission(api = "/accounting/journals", action = "VIEW")
+    @CheckPermission(api = "/accounting/journals/{id}", action = "VIEW")
     public ApiResponse<?> get(@PathVariable String id) {
         return ApiResponse.ok(svc.getById(id));
     }
@@ -40,28 +40,28 @@ public class JournalController {
     }
 
     @PostMapping("/draft")
-    @CheckPermission(api = "/accounting/journals", action = "CREATE")
+    @CheckPermission(api = "/accounting/journals/draft", action = "CREATE")
     @Operation(summary = "Tạo chứng từ DRAFT (chưa vào GL)")
     public ApiResponse<?> draft(@RequestBody @Valid JournalEntryRequest req) {
         return ApiResponse.created(svc.createDraft(req));
     }
 
     @PostMapping("/post")
-    @CheckPermission(api = "/accounting/journals", action = "CREATE")
+    @CheckPermission(api = "/accounting/journals/post", action = "CREATE")
     @Operation(summary = "Tạo và POST luôn (idempotent theo idempotencyKey)")
     public ApiResponse<?> createAndPost(@RequestBody @Valid JournalEntryRequest req) {
         return ApiResponse.created(svc.createAndPost(req));
     }
 
     @PostMapping("/{id}/post")
-    @CheckPermission(api = "/accounting/journals", action = "UPDATE")
+    @CheckPermission(api = "/accounting/journals/{id}/post", action = "UPDATE")
     @Operation(summary = "Post DRAFT vào GL")
     public ApiResponse<?> post(@PathVariable String id) {
         return ApiResponse.ok(svc.post(id));
     }
 
     @PostMapping("/{id}/reverse")
-    @CheckPermission(api = "/accounting/journals", action = "UPDATE")
+    @CheckPermission(api = "/accounting/journals/{id}/reverse", action = "UPDATE")
     @Operation(summary = "Đảo chứng từ đã POSTED (tạo entry ngược)")
     public ApiResponse<?> reverse(@PathVariable String id,
                                   @RequestParam(required = false) String reason) {

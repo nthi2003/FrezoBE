@@ -26,20 +26,20 @@ public class FiscalPeriodController {
     }
 
     @PostMapping("/ensure")
-    @CheckPermission(api = "/accounting/periods", action = "CREATE")
+    @CheckPermission(api = "/accounting/periods/ensure", action = "CREATE")
     @Operation(summary = "Tạo năm tài chính + 12 kỳ nếu chưa có (idempotent)")
     public ApiResponse<?> ensure(@RequestParam int year) {
         return ApiResponse.ok(svc.ensureYear(year));
     }
 
     @PostMapping("/{id}/close")
-    @CheckPermission(api = "/accounting/periods", action = "UPDATE")
+    @CheckPermission(api = "/accounting/periods/{id}/close", action = "UPDATE")
     public ApiResponse<?> close(@PathVariable String id) {
         return ApiResponse.ok(svc.closePeriod(id));
     }
 
     @PostMapping("/{id}/reopen")
-    @CheckPermission(api = "/accounting/periods", action = "UPDATE")
+    @CheckPermission(api = "/accounting/periods/{id}/reopen", action = "UPDATE")
     public ApiResponse<?> reopen(@PathVariable String id) {
         return ApiResponse.ok(svc.reopenPeriod(id));
     }

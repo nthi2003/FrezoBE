@@ -17,4 +17,10 @@ public interface UserRepository extends JpaRepository<User, String>, JpaSpecific
      * (nơi entity chỉ giữ personId nhưng notification cần username).
      */
     Optional<User> findByPersonId(String personId);
+
+    /** Forgot-password: tìm user theo email (không phân biệt hoa thường). */
+    Optional<User> findByEmailIgnoreCase(String email);
+
+    /** Reset password: tìm user đang giữ OTP trong {@code resetKey}. */
+    Optional<User> findByResetKey(String resetKey);
 }

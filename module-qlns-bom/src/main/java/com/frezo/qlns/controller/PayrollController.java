@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.PayrollFilter;
 import com.frezo.qlns.dto.response.PayrollCalculateAllResponse;
 import com.frezo.qlns.dto.response.PayrollDetailResponse;
@@ -28,6 +29,7 @@ public class PayrollController {
 
     @Operation(summary = "Tính lương hàng tháng cho 1 nhân viên")
     @PostMapping("/calculate/{personId}")
+    @CheckPermission(api = "/qlns/payroll/calculate/{personId}", action = "CREATE")
     public ApiResponse<PayrollResponse> calculate(@PathVariable String personId,
                                                   @RequestParam Integer month,
                                                   @RequestParam Integer year) {
@@ -42,6 +44,7 @@ public class PayrollController {
                     + "NV thiếu HĐ activated/ACTIVE → skip reason=NO_ACTIVE_CONTRACT (không silent, không 500 cả batch). "
                     + "1 NV lỗi kỹ thuật → vẫn HTTP 200 + errorCount/errors[].")
     @PostMapping("/calculate-all")
+    @CheckPermission(api = "/qlns/payroll/calculate-all", action = "CREATE")
     public ApiResponse<PayrollCalculateAllResponse> calculateAll(
             @RequestParam Integer month, @RequestParam Integer year) {
         PayrollCalculateAllResponse summary = payrollService.calculateAllPayroll(month, year);
@@ -65,6 +68,7 @@ public class PayrollController {
 
     @Operation(summary = "Cập nhật thưởng/khấu trừ")
     @PutMapping("/{id}/bonus")
+    @CheckPermission(api = "/qlns/payroll/{id}/bonus", action = "UPDATE")
     public ApiResponse<PayrollResponse> updateBonus(@PathVariable String id,
                                                     @RequestParam Double bonus,
                                                     @RequestParam Double deduction,
@@ -74,18 +78,21 @@ public class PayrollController {
 
     @Operation(summary = "Xác nhận bảng lương")
     @PutMapping("/{id}/confirm")
+    @CheckPermission(api = "/qlns/payroll/{id}/confirm", action = "UPDATE")
     public ApiResponse<PayrollResponse> confirm(@PathVariable String id) {
         return ApiResponse.success(payrollService.confirm(id));
     }
 
     @Operation(summary = "Thanh toán bảng lương")
     @PutMapping("/{id}/pay")
+    @CheckPermission(api = "/qlns/payroll/{id}/pay", action = "UPDATE")
     public ApiResponse<PayrollResponse> pay(@PathVariable String id) {
         return ApiResponse.success(payrollService.pay(id));
     }
 
     @Operation(summary = "Xóa bảng lương (soft delete)")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qlns/payroll/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         payrollService.deletePayroll(id);
         return ApiResponse.success(null, "Xóa thành công");
@@ -93,6 +100,7 @@ public class PayrollController {
 
     @Operation(summary = "Chi tiết bảng lương (các khoản thu nhập/khấu trừ)")
     @GetMapping("/{id}/details")
+    @CheckPermission(api = "/qlns/payroll/{id}/details", action = "VIEW")
     public ApiResponse<List<PayrollDetailResponse>> getDetails(@PathVariable String id) {
         return ApiResponse.success(payrollService.getPayrollDetails(id));
     }
@@ -102,18 +110,21 @@ public class PayrollController {
             description = "Filter month/year/personId/status. pageNumber omit → default 1 (1-based); "
                     + "pageSize mặc định 10, màn kỳ có thể truyền tới 500. Trả PageResponse (items array, có thể rỗng).")
     @GetMapping
+    @CheckPermission(api = "/qlns/payroll", action = "VIEW")
     public ApiResponse<?> getAll(@ModelAttribute PayrollFilter filter) {
         return ApiResponse.success(payrollService.getAll(filter));
     }
 
     @Operation(summary = "Chi tiết bảng lương theo ID")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/payroll/{id}", action = "VIEW")
     public ApiResponse<PayrollResponse> getById(@PathVariable String id) {
         return ApiResponse.success(payrollService.getById(id));
     }
 
     @Operation(summary = "Xuất phiếu lương (text)")
     @GetMapping("/{id}/export/payslip")
+    @CheckPermission(api = "/qlns/payroll/{id}/export/payslip", action = "VIEW")
     public ResponseEntity<byte[]> exportPayslip(@PathVariable String id) {
         byte[] data = payslipExportService.exportPayslip(id);
         return ResponseEntity.ok()
@@ -124,6 +135,7 @@ public class PayrollController {
 
     @Operation(summary = "Xuất file chi lương ngân hàng (text)")
     @PostMapping("/export/bank-payment")
+    @CheckPermission(api = "/qlns/payroll/export/bank-payment", action = "UPDATE")
     public ResponseEntity<byte[]> exportBankPayment(@RequestBody List<String> payrollIds) {
         byte[] data = payslipExportService.exportBankPayment(payrollIds);
         return ResponseEntity.ok()

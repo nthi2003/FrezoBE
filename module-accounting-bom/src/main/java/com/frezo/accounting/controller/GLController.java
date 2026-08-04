@@ -20,7 +20,7 @@ public class GLController {
     private final GLService svc;
 
     @GetMapping("/ledger")
-    @CheckPermission(api = "/accounting/gl", action = "VIEW")
+    @CheckPermission(api = "/accounting/gl/ledger", action = "VIEW")
     @Operation(summary = "Sổ cái theo tài khoản trong khoảng thời gian")
     public ApiResponse<?> ledger(@RequestParam String accountCode,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -29,7 +29,7 @@ public class GLController {
     }
 
     @GetMapping("/trial-balance")
-    @CheckPermission(api = "/accounting/gl", action = "VIEW")
+    @CheckPermission(api = "/accounting/gl/trial-balance", action = "VIEW")
     @Operation(summary = "Bảng cân đối phát sinh")
     public ApiResponse<?> trialBalance(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {

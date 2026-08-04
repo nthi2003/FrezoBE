@@ -68,6 +68,7 @@ FROM (VALUES
     -- HR
     ('QLNS_OKR',           'OKR',                  'OKRs',                 '/qlns/okrs',                       'src/modules/qlns',       'MENU_HRM',        7,  'Target'),
     ('QLNS_PERF',          'Đánh giá hiệu suất',   'Performance Reviews',  '/qlns/performance-reviews',        'src/modules/qlns',       'MENU_HRM',        8,  'BarChart3'),
+    ('QLNS_RECOGNITION',   'Ghi nhận',             'Recognition',          '/qlns/recognition',                'src/modules/qlns',       'MENU_HRM',        8,  'Gift'),
     ('QLNS_ONBOARD',       'Onboarding',           'Onboarding',           '/qlns/onboarding',                 'src/modules/qlns',       'MENU_HRM',        9,  'UserPlus'),
     ('QLNS_RECRUIT',       'Yêu cầu tuyển dụng',   'Requisitions',         '/qlns/recruitment/requisitions',   'src/modules/qlns',       'MENU_HRM',        10, 'Briefcase'),
     ('QLNS_RECRUIT_BOARD', 'Kanban tuyển dụng',    'Recruitment Board',    '/qlns/recruitment/board',          'src/modules/qlns',       'MENU_HRM',        11, 'LayoutGrid'),
@@ -107,7 +108,8 @@ FROM (VALUES
     -- Ticket category master (FR-TASK-CAT)
     ('QLHT_TICKET_CAT',    'Danh mục Ticket',      'Ticket Categories',    '/task/categories',                 'src/modules/tasks',      'MENU_TASK',       4,  'FolderTree'),
     -- Guide CMS (FR-DOC-03/04)
-    ('QLHT_GUIDE',         'Quản lý hướng dẫn',    'Guide CMS',            '/admin/guides',                    'src/modules/docs',       'MENU_QTHT',       18, 'BookOpen')
+    ('QLHT_GUIDE',         'Quản lý hướng dẫn',    'Guide CMS',            '/admin/guides',                    'src/modules/docs',       'MENU_QTHT',       18, 'BookOpen'),
+    ('QLHT_USAGE',         'Sử dụng hệ thống',     'Usage Analytics',      '/qtht/usage',                      'src/modules/qtht',       'MENU_QTHT',       12, 'Activity')
 ) AS v(code, name, name_en, fe_url, folder_path, parent_code, order_index, icon)
 WHERE NOT EXISTS (
     SELECT 1 FROM menu m WHERE m.app_code = 'QTHT' AND m.code = v.code
@@ -126,6 +128,7 @@ UPDATE menu SET parent_code = 'MENU_HRM', order_index = 5,  fe_url = '/qlns/leav
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 6,  fe_url = '/admin/attendance',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ATTENDANCE';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 7,  fe_url = '/qlns/okrs',                     is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_OKR';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 8,  fe_url = '/qlns/performance-reviews',      is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_PERF';
+UPDATE menu SET parent_code = 'MENU_HRM', order_index = 8,  fe_url = '/qlns/recognition',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECOGNITION';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 9,  fe_url = '/qlns/onboarding',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_ONBOARD';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 10, fe_url = '/qlns/recruitment/requisitions', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECRUIT';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 11, fe_url = '/qlns/recruitment/board',        is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECRUIT_BOARD';
@@ -216,11 +219,14 @@ UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 9,  fe_url = '/assets/d
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 10, fe_url = '/qtht/workflows',            is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_WORKFLOW';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 11, fe_url = '/approval/flows',            is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'APPR_FLOWS';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 12, fe_url = '/qtht/security',             is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_SECURITY';
+UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 12, fe_url = '/qtht/usage',                is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system',
+  name = 'Sử dụng hệ thống', name_en = 'Usage Analytics', icon = 'Activity'
+  WHERE app_code = 'QTHT' AND code = 'QLHT_USAGE';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 13, fe_url = '/qtht/apilogs',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_APILOG';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 14, fe_url = '/qtht/website',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_WEBSITE';
-UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 15, fe_url = '/qtht/tin-tuc',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_NEWS';
+UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 15, fe_url = '/admin/article-management', is_deleted = true,  status = false, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_NEWS';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 16, fe_url = '/qtht/settings',             is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_SETTING';
-UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 17, fe_url = '/admin/article-management',  is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ARTICLE';
+UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 17, fe_url = '/admin/article-management',  is_deleted = false, status = true, name = 'Quản Lý Bài Viết', name_en = 'Articles', updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ARTICLE';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 18, fe_url = '/admin/guides',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_GUIDE';
 
 -- ------------------------------------------------------------

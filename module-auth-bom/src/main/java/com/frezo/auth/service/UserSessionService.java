@@ -17,5 +17,15 @@ public interface UserSessionService {
     void revokeAllOtherSessions(String username, String currentSessionId, String revokedBy);
 
     long countActiveSessions(String username);
-}
 
+    /** Cập nhật lastActiveTime theo JWT token hiện tại. */
+    boolean heartbeat(String token);
+
+    /** Số phiên active toàn hệ thống. */
+    long countAllActiveSessions();
+
+    /** Số user distinct còn heartbeat trong cửa sổ onlineMinutes. */
+    long countOnlineUsers(int onlineMinutes);
+
+    Page<UserSession> getAllActiveSessions(Pageable pageable);
+}

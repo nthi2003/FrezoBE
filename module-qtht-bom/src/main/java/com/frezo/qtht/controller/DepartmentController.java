@@ -3,6 +3,7 @@ package com.frezo.qtht.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.request.DepartmentFilterRequest;
 import com.frezo.qtht.dto.request.DepartmentSaveRequest;
 import com.frezo.qtht.dto.response.DepartmentResponse;
@@ -26,15 +27,8 @@ import java.util.List;
 /**
  * Department controller — <b>reference implementation cho Batch F</b> (chuẩn v1.1).
  * <p>
- * <b>Đã áp dụng:</b>
- * <ul>
- *   <li>Batch A: {@code ApiResponse.ok() / .created()} thay {@code success()} (deprecated)</li>
- *   <li>Batch A: {@code PageResponse<DepartmentResponse>} thay {@code Map<String,Object>}</li>
- *   <li>Batch C: {@code @CheckPermission} bỏ comment (SUPER_ADMIN vẫn bypass qua {@code Person.isAdmin=true})</li>
- * </ul>
- * <p>
- * <b>Migration note cho controllers khác:</b> muốn bật {@code @CheckPermission}, phải đảm bảo bảng {@code permission}
- * đã seed đủ record cho api + action tương ứng, ngược lại mọi request non-admin sẽ 403.
+ * Combobox/tree: vẫn yêu cầu VIEW (dùng chung form khác module; role cần seed VIEW).
+ * SUPER_ADMIN bypass qua {@code Person.isAdmin=true}.
  */
 @RestController
 @RequestMapping("/qtht/department")
@@ -46,7 +40,7 @@ public class DepartmentController {
 
     @GetMapping
     @Operation(summary = "Lấy danh sách phòng ban (có tìm kiếm & lọc + phân trang)")
-    // @CheckPermission(api = "/qtht/department", action = "VIEW")   // bật khi permission table đã seed
+    @CheckPermission(api = "/qtht/department", action = "VIEW")
     public ApiResponse<PageResponse<DepartmentResponse>> getAllDepartments(
             @ModelAttribute @Valid DepartmentFilterRequest request) {
         return ApiResponse.ok(departmentService.all(request));
@@ -54,29 +48,20 @@ public class DepartmentController {
 
     @GetMapping("/tree")
     @Operation(summary = "Lấy cây phòng ban (phân cấp cha con)")
+    @CheckPermission(api = "/qtht/department/tree", action = "VIEW")
     public ApiResponse<List<DepartmentResponse>> getTree() {
         return ApiResponse.ok(departmentService.getTree());
     }
 
     @GetMapping("/combobox")
-    @Operation(summary = "Danh sách phòng ban dạng combobox")
+    @Operation(summary = "Danh sách phòng ban dạng combobox — lookup dùng chung, JWT only")
     public ApiResponse<List<ComboboxResponse>> getCombobox() {
-        DepartmentFilterRequest filter = new DepartmentFilterRequest();
-        filter.setPageNumber(0);
-        filter.setPageSize(100);   // combobox tối đa 100 — nếu cần nhiều hơn thì cân nhắc dùng async search
-        PageResponse<DepartmentResponse> page = departmentService.all(filter);
-        List<ComboboxResponse> result = page.getItems().stream()
-                .map(d -> ComboboxResponse.builder()
-                        .value(d.getId())
-                        .label(d.getName() + " (" + d.getCode() + ")")
-                        .build())
-                .toList();
-        return ApiResponse.ok(result);
+        return ApiResponse.ok(departmentService.getCombobox());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa phòng ban (soft-delete)")
-    // @CheckPermission(api = "/qtht/department", action = "DELETE")
+    @CheckPermission(api = "/qtht/department/{id}", action = "DELETE")
     public ApiResponse<Void> deleteDepartment(@PathVariable String id) {
         departmentService.delete(id);
         return ApiResponse.noContent();
@@ -84,7 +69,7 @@ public class DepartmentController {
 
     @PostMapping
     @Operation(summary = "Thêm mới phòng ban")
-    // @CheckPermission(api = "/qtht/department", action = "CREATE")
+    @CheckPermission(api = "/qtht/department", action = "CREATE")
     public ApiResponse<DepartmentResponse> createDepartment(
             @RequestBody @Valid DepartmentSaveRequest request) {
         return ApiResponse.created(departmentService.create(request));
@@ -92,7 +77,7 @@ public class DepartmentController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Cập nhật phòng ban")
-    // @CheckPermission(api = "/qtht/department", action = "UPDATE")
+    @CheckPermission(api = "/qtht/department/{id}", action = "UPDATE")
     public ApiResponse<DepartmentResponse> updateDepartment(
             @PathVariable String id,
             @RequestBody @Valid DepartmentSaveRequest request) {
@@ -101,6 +86,7 @@ public class DepartmentController {
 
     @PutMapping("/{id}/activate")
     @Operation(summary = "Kích hoạt phòng ban")
+    @CheckPermission(api = "/qtht/department/{id}/activate", action = "UPDATE")
     public ApiResponse<Void> activateDepartment(@PathVariable String id) {
         departmentService.activate(id);
         return ApiResponse.ok();
@@ -108,6 +94,7 @@ public class DepartmentController {
 
     @PutMapping("/{id}/deactivate")
     @Operation(summary = "Vô hiệu hóa phòng ban")
+    @CheckPermission(api = "/qtht/department/{id}/deactivate", action = "UPDATE")
     public ApiResponse<Void> deactivateDepartment(@PathVariable String id) {
         departmentService.deactivate(id);
         return ApiResponse.ok();

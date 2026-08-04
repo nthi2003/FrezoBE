@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.ResignationApproveRequest;
 import com.frezo.qlns.dto.request.ResignationCreateRequest;
 import com.frezo.qlns.dto.request.ResignationHandoverRequest;
@@ -29,12 +30,14 @@ public class ResignationRequestController {
 
     @Operation(summary = "Tạo đề xuất nghỉ việc")
     @PostMapping
+    @CheckPermission(api = "/qlns/resignation", action = "CREATE")
     public ApiResponse<ResignationResponse> create(@RequestBody ResignationCreateRequest request) {
         return ApiResponse.ok(resignationService.create(request));
     }
 
     @Operation(summary = "Danh sách đơn nghỉ việc")
     @GetMapping
+    @CheckPermission(api = "/qlns/resignation", action = "VIEW")
     public ApiResponse<List<ResignationResponse>> list(
             @RequestParam(required = false) String personId,
             @RequestParam(required = false) String status) {
@@ -43,12 +46,14 @@ public class ResignationRequestController {
 
     @Operation(summary = "Chi tiết đơn nghỉ việc")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/resignation/{id}", action = "VIEW")
     public ApiResponse<ResignationResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(resignationService.getById(id));
     }
 
     @Operation(summary = "Bước 2 — Duyệt timeline & ngày làm việc cuối")
     @PostMapping("/{id}/approve")
+    @CheckPermission(api = "/qlns/resignation/{id}/approve", action = "UPDATE")
     public ApiResponse<ResignationResponse> approve(
             @PathVariable String id,
             @RequestBody(required = false) ResignationApproveRequest request) {
@@ -57,6 +62,7 @@ public class ResignationRequestController {
 
     @Operation(summary = "Bước 3 — Xác nhận bàn giao tài sản")
     @PostMapping("/{id}/handover")
+    @CheckPermission(api = "/qlns/resignation/{id}/handover", action = "CREATE")
     public ApiResponse<ResignationResponse> handover(
             @PathVariable String id,
             @RequestBody ResignationHandoverRequest request) {
@@ -65,18 +71,21 @@ public class ResignationRequestController {
 
     @Operation(summary = "Bước 4 — Chốt lương tháng cuối")
     @PostMapping("/{id}/settle-payroll")
+    @CheckPermission(api = "/qlns/resignation/{id}/settle-payroll", action = "CREATE")
     public ApiResponse<ResignationResponse> settlePayroll(@PathVariable String id) {
         return ApiResponse.ok(resignationService.settlePayroll(id));
     }
 
     @Operation(summary = "Bước 5 — Thu hồi TK & hoàn tất offboarding")
     @PostMapping("/{id}/complete")
+    @CheckPermission(api = "/qlns/resignation/{id}/complete", action = "UPDATE")
     public ApiResponse<ResignationResponse> complete(@PathVariable String id) {
         return ApiResponse.ok(resignationService.complete(id));
     }
 
     @Operation(summary = "Huỷ đơn nghỉ việc")
     @PostMapping("/{id}/cancel")
+    @CheckPermission(api = "/qlns/resignation/{id}/cancel", action = "UPDATE")
     public ApiResponse<ResignationResponse> cancel(@PathVariable String id) {
         return ApiResponse.ok(resignationService.cancel(id));
     }

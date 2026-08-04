@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.service.MinioService;
 import com.frezo.qlns.dto.request.*;
 import com.frezo.qlns.dto.response.*;
@@ -33,66 +34,77 @@ public class ContractController {
 
     @Operation(summary = "Tạo hợp đồng mới" , description = "Tạo hợp đồng mới")
     @PostMapping
+    @CheckPermission(api = "/qlns/contract", action = "CREATE")
     public ApiResponse<?> createContract(@RequestBody ContractAddRequest request) {
         return contractService.add(request);
     }
 
     @Operation(summary = "Cập nhật hợp đồng mới" , description = "Cập nhật hợp đồng ")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/qlns/contract/{id}", action = "UPDATE")
     public ApiResponse<?> updateContract(@PathVariable("id") String id , @RequestBody ContractEditRequest request) {
         return contractService.edit(id , request);
     }
 
     @Operation(summary = "Xóa hợp đồng", description = "Xóa hợp đồng")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qlns/contract/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable("id") String id) {
         return contractService.delete(id);
     }
 
     @Operation(summary = "Lấy danh sách hợp đồng" , description = "Lấy danh sách hợp đồng")
     @GetMapping
+    @CheckPermission(api = "/qlns/contract", action = "VIEW")
     public ApiResponse<?> all (@ModelAttribute ContractFilter filter) {
           return ApiResponse.success(contractService.all(filter));
     }
 
     @Operation(summary = "Combobox hợp đồng" , description = "Combobox hợp đồng")
     @GetMapping("/combobox")
+    @CheckPermission(api = "/qlns/contract/combobox", action = "VIEW")
     public ApiResponse<List<ContractComboboxResponse>> combobox (@ModelAttribute ContractFilter filter) {
         return contractService.combobox(filter);
     }
 
     @Operation(summary = "Xem chi tiết hợp đồng" , description = "Xem chi tiết hợp đồng")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/contract/{id}", action = "VIEW")
     public ApiResponse<ContractResponse> view (@PathVariable("id") String id) {
         return ApiResponse.success(contractService.view(id));
     }
 
     @Operation(summary = "Giao việc" , description = "Giao việc")
     @PostMapping("/{contractId}/assign")
+    @CheckPermission(api = "/qlns/contract/{contractId}/assign", action = "UPDATE")
     public ApiResponse<ContractAsginWorkResponse> assginWork (@PathVariable("contractId") String contractId , @RequestBody ContractAssginWorkAddRequest request) {
         return ApiResponse.success(contractService.assginWork(contractId, request));
     }
 
     @Operation(summary = "Lấy thông tin giao việc" , description = "Lấy thông tin giao việc của hợp đồng")
     @GetMapping("/{contractId}/assign")
+    @CheckPermission(api = "/qlns/contract/{contractId}/assign", action = "VIEW")
     public ApiResponse<ContractAsginWorkResponse> getAssignWork (@PathVariable("contractId") String contractId) {
         return ApiResponse.success(contractService.getAssignWork(contractId));
     }
 
     @Operation(summary = "Cập nhât trạng thái hồ sơ" , description = "Cập nhât trạng thái hồ sơ")
     @PutMapping("/{id}/update-status")
+    @CheckPermission(api = "/qlns/contract/{id}/update-status", action = "UPDATE")
     public ApiResponse<ContractResponse> updateStatus (@PathVariable("id") String id , @RequestBody ContractAddRequest request) {
         return ApiResponse.success(contractService.updateStatus(id, request));
     }
 
     @Operation(summary = "Từ chối hợp đồng", description = "Từ chối hợp đồng")
     @PutMapping("/{id}/reject")
+    @CheckPermission(api = "/qlns/contract/{id}/reject", action = "UPDATE")
     public ApiResponse<ContractResponse> reject (@PathVariable("id") String id) {
         return ApiResponse.success(contractService.reject(id));
     }
 
     @Operation(summary = "Upload file hợp đồng", description = "Upload file .doc/.docx/.pdf lên MinIO bucket frezo-contact")
     @PostMapping("/upload")
+    @CheckPermission(api = "/qlns/contract/upload", action = "CREATE")
     public ApiResponse<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
         String originalName = file.getOriginalFilename();
         String objectName = "contracts/" + UUID.randomUUID() + "_" + (originalName != null ? originalName : "document");
@@ -107,6 +119,7 @@ public class ContractController {
     @Operation(summary = "Upload + trích xuất nội dung file hợp đồng",
                description = "Upload file .doc/.docx/.pdf, trích xuất nội dung và các trường dữ liệu tự động")
     @PostMapping("/upload-and-extract")
+    @CheckPermission(api = "/qlns/contract/upload-and-extract", action = "CREATE")
     public ApiResponse<Map<String, Object>> uploadAndExtract(@RequestParam("file") MultipartFile file) {
         String originalName = file.getOriginalFilename();
         String objectName = "contracts/" + UUID.randomUUID() + "_" + (originalName != null ? originalName : "document");
@@ -122,6 +135,7 @@ public class ContractController {
 
     @Operation(summary = "Lưu nội dung hợp đồng", description = "Lưu nội dung hợp đồng vào MinIO với tên là ID hợp đồng")
     @PostMapping("/{id}/save-content")
+    @CheckPermission(api = "/qlns/contract/{id}/save-content", action = "CREATE")
     public ApiResponse<Map<String, Object>> saveContent(
             @PathVariable("id") String id,
             @RequestBody Map<String, String> body
@@ -138,6 +152,7 @@ public class ContractController {
 
     @Operation(summary = "AI chỉnh sửa nội dung", description = "Gửi nội dung hợp đồng sang AI để chỉnh sửa văn bản")
     @PostMapping("/{id}/ai-edit")
+    @CheckPermission(api = "/qlns/contract/{id}/ai-edit", action = "CREATE")
     public ApiResponse<Map<String, Object>> aiEdit(
             @PathVariable("id") String id,
             @RequestBody Map<String, String> body
@@ -161,6 +176,7 @@ public class ContractController {
     @Operation(summary = "AI chỉnh sửa text thuần (trước khi tạo contract)",
                description = "Chỉnh sửa text trực tiếp qua AI, không cần contractId — dùng trên màn hình tạo hợp đồng")
     @PostMapping("/ai-edit")
+    @CheckPermission(api = "/qlns/contract/ai-edit", action = "CREATE")
     public ApiResponse<Map<String, Object>> aiEditText(@RequestBody Map<String, String> body) {
         String text = body.getOrDefault("text", "");
         String instruction = body.getOrDefault("instruction", "chỉnh sửa văn bản cho chuyên nghiệp, sửa lỗi chính tả và ngữ pháp");
@@ -173,6 +189,7 @@ public class ContractController {
 
     @Operation(summary = "Kiểm tra trạng thái AI", description = "Kiểm tra trạng thái xử lý AI của hợp đồng")
     @GetMapping("/{id}/ai-status")
+    @CheckPermission(api = "/qlns/contract/{id}/ai-status", action = "VIEW")
     public ApiResponse<Map<String, Object>> checkAiStatus(@PathVariable("id") String id) {
         ContractResponse contract = contractService.view(id);
         Map<String, Object> result = new HashMap<>();
@@ -186,6 +203,7 @@ public class ContractController {
     @Operation(summary = "Lấy lịch sử phiên bản hợp đồng",
                description = "Danh sách tất cả versions của hợp đồng, sắp xếp mới nhất lên đầu")
     @GetMapping("/{contractId}/versions")
+    @CheckPermission(api = "/qlns/contract/{contractId}/versions", action = "VIEW")
     public ApiResponse<List<ContractVersionListResponse>> getVersions (@PathVariable("contractId") String contractId) {
         return ApiResponse.success(contractVersionService.getVersionsByContractId(contractId));
     }
@@ -193,6 +211,7 @@ public class ContractController {
     @Operation(summary = "So sánh 2 phiên bản hợp đồng",
                description = "Trả về danh sách các field đã thay đổi giữa 2 version để highlight trên UI")
     @GetMapping("/{contractId}/versions/diff")
+    @CheckPermission(api = "/qlns/contract/{contractId}/versions/diff", action = "VIEW")
     public ApiResponse<ContractDiffResponse> diffVersions (
             @PathVariable("contractId") String contractId,
             @RequestParam("from") Integer fromVersion,

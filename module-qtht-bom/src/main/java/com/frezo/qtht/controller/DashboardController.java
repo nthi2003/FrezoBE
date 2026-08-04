@@ -24,14 +24,14 @@ public class DashboardController {
     private final ReportService reportService;
 
     @GetMapping("/summary")
-    @CheckPermission(api = "qtht/dashboard", action = "VIEW")
+    @CheckPermission(api = "/qtht/dashboard/summary", action = "VIEW")
     @Operation(summary = "Get summary data for the main dashboard")
     public ApiResponse<DashboardSummaryResponse> getSummary() {
         return ApiResponse.success(dashboardService.getSummary());
     }
 
     @GetMapping("/export/attendance")
-    @CheckPermission(api = "qtht/dashboard", action = "EXPORT")
+    @CheckPermission(api = "/qtht/dashboard/export/attendance", action = "EXPORT")
     @Operation(summary = "Export monthly attendance report to Excel")
     public void exportAttendance(jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         byte[] excelData = reportService.exportMonthlyAttendance(LocalDate.now().getMonthValue(), LocalDate.now().getYear());

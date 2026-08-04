@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.recruitment.RecruitmentConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +23,7 @@ public class RecruitmentMetaController {
 
     @Operation(summary = "Danh sách stage ATS mặc định + transition hợp lệ")
     @GetMapping("/stages")
+    @CheckPermission(api = "/qlns/recruitment/stages", action = "VIEW")
     public ApiResponse<Map<String, Object>> stages() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("stages", RecruitmentConstants.STAGES);

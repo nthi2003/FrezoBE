@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.OkrCheckInRequest;
 import com.frezo.qlns.dto.request.OkrRequest;
 import com.frezo.qlns.dto.response.OkrListResponse;
@@ -27,6 +28,7 @@ public class OkrController {
     private final OkrService okrService;
 
     @GetMapping
+    @CheckPermission(api = "/qlns/okrs", action = "VIEW")
     public ApiResponse<OkrListResponse> list(
             @RequestParam(required = false, defaultValue = "mine") String scope,
             @RequestParam(required = false) String ownerPersonId) {
@@ -34,27 +36,32 @@ public class OkrController {
     }
 
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/okrs/{id}", action = "VIEW")
     public ApiResponse<OkrResponse> get(@PathVariable String id) {
         return ApiResponse.ok(okrService.get(id));
     }
 
     @PostMapping
+    @CheckPermission(api = "/qlns/okrs", action = "CREATE")
     public ApiResponse<OkrResponse> create(@RequestBody OkrRequest req) {
         return ApiResponse.ok(okrService.create(req));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/qlns/okrs/{id}", action = "UPDATE")
     public ApiResponse<OkrResponse> update(@PathVariable String id, @RequestBody OkrRequest req) {
         return ApiResponse.ok(okrService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qlns/okrs/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         okrService.delete(id);
         return ApiResponse.ok();
     }
 
     @PostMapping("/{id}/check-in")
+    @CheckPermission(api = "/qlns/okrs/{id}/check-in", action = "CREATE")
     public ApiResponse<OkrResponse> checkIn(@PathVariable String id, @RequestBody OkrCheckInRequest req) {
         return ApiResponse.ok(okrService.checkIn(id, req));
     }

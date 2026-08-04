@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.service.MinioService;
 import com.frezo.qlns.dto.response.ContractTemplateResponse;
 import com.frezo.qlns.service.ContractTemplateService;
@@ -26,6 +27,7 @@ public class ContractTemplateController {
 
     @Operation(summary = "Lấy danh sách mẫu hợp đồng", description = "Trả về danh sách mẫu đã lưu (chưa bị xoá), sắp xếp mới nhất lên đầu")
     @GetMapping
+    @CheckPermission(api = "/qlns/contract-template", action = "VIEW")
     public ApiResponse<List<ContractTemplateResponse>> getAll() {
         return ApiResponse.success(contractTemplateService.getAll());
     }
@@ -43,6 +45,7 @@ public class ContractTemplateController {
     @Operation(summary = "Tạo mẫu hợp đồng mới",
                description = "Upload file HTML nội dung mẫu lên MinIO, lưu metadata vào database")
     @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/qlns/contract-template", action = "CREATE")
     public ApiResponse<ContractTemplateResponse> create(
             @RequestParam("file") MultipartFile file,
             @RequestParam("name") String name,
@@ -56,6 +59,7 @@ public class ContractTemplateController {
     @Operation(summary = "Xoá mẫu hợp đồng",
                description = "Xoá mềm metadata và xoá file trên MinIO")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qlns/contract-template/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable("id") String id) {
         contractTemplateService.delete(id);
         return ApiResponse.success(null);

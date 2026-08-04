@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.service.TimesheetReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ public class TimesheetReportController {
 
     @Operation(summary = "Bảng chấm công tháng", description = "Lọc theo tháng, năm, nhân viên")
     @GetMapping("/timesheet")
+    @CheckPermission(api = "/qlns/report/timesheet", action = "VIEW")
     public ApiResponse<?> getTimesheet(
             @RequestParam int month,
             @RequestParam int year,
@@ -29,6 +31,7 @@ public class TimesheetReportController {
 
     @Operation(summary = "Xuất Excel bảng chấm công")
     @GetMapping("/timesheet/export")
+    @CheckPermission(api = "/qlns/report/timesheet/export", action = "VIEW")
     public void exportTimesheet(
             @RequestParam int month,
             @RequestParam int year,

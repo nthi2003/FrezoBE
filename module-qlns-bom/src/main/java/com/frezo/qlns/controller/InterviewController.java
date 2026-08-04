@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.InterviewCompleteRequest;
 import com.frezo.qlns.dto.request.InterviewRequest;
 import com.frezo.qlns.dto.response.InterviewResponse;
@@ -28,18 +29,21 @@ public class InterviewController {
 
     @Operation(summary = "Đặt buổi phỏng vấn")
     @PostMapping
+    @CheckPermission(api = "/qlns/recruitment/interviews", action = "CREATE")
     public ApiResponse<InterviewResponse> create(@RequestBody InterviewRequest req) {
         return ApiResponse.ok(interviewService.create(req));
     }
 
     @Operation(summary = "Danh sách buổi phỏng vấn của 1 application")
     @GetMapping
+    @CheckPermission(api = "/qlns/recruitment/interviews", action = "VIEW")
     public ApiResponse<List<InterviewResponse>> list(@RequestParam String applicationId) {
         return ApiResponse.ok(interviewService.list(applicationId));
     }
 
     @Operation(summary = "Hoàn tất phỏng vấn — kèm điểm & feedback")
     @PostMapping("/{id}/complete")
+    @CheckPermission(api = "/qlns/recruitment/interviews/{id}/complete", action = "UPDATE")
     public ApiResponse<InterviewResponse> complete(@PathVariable String id,
                                                    @RequestBody(required = false) InterviewCompleteRequest req) {
         return ApiResponse.ok(interviewService.complete(id, req));

@@ -54,8 +54,12 @@ public class DashboardServiceImpl implements DashboardService {
         long lowStockProducts = productRepository.countLowStockProducts();
         long totalProductsInStock = stockBalanceRepository.countDistinctProductId();
 
-        // Org-wide, same filter as FE DashboardPage: status !== 'DONE'
-        long pendingTasks = taskRepository.countByStatusNotAndIsDeletedFalse(TaskStatusEnum.DONE);
+        // Org-wide pending: OPEN + IN_PROGRESS + DONE (chờ duyệt); exclude CLOSED/CANCELLED
+        long pendingTasks = taskRepository.countByStatusInAndIsDeletedFalse(
+                java.util.List.of(
+                        TaskStatusEnum.OPEN,
+                        TaskStatusEnum.IN_PROGRESS,
+                        TaskStatusEnum.DONE));
 
         return DashboardSummaryResponse.builder()
                 .pendingTasks(pendingTasks)

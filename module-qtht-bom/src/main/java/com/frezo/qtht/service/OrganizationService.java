@@ -6,6 +6,7 @@ import com.frezo.qtht.dto.request.OrganizationFilterRequest;
 import com.frezo.qtht.dto.response.OrganizationResponse;
 import com.frezo.qtht.dto.response.OrganizationDetailResponse;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
 
 import java.util.List;
@@ -20,4 +21,6 @@ public interface OrganizationService {
     void delete(String id);
     ApiResponse<OrganizationDetailResponse> getById(String id);
     List<OrganizationResponse> getChildren(String parentId);
+
+    List<ComboboxResponse> getCombobox(OrganizationFilterRequest filter);
 }

@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.dto.request.GinConfirmRequest;
 import com.frezo.warehouse.dto.request.GinCreateRequest;
 import com.frezo.warehouse.service.DocumentPrintService;
@@ -29,6 +30,7 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Gợi ý lô FEFO cho dòng xuất", description = "Sort expiryDate ASC, phân bổ SL")
     @GetMapping("/fefo-suggest")
+    @CheckPermission(api = "/warehouse/gin/fefo-suggest", action = "VIEW")
     public ApiResponse<?> fefoSuggest(
             @RequestParam String warehouseId,
             @RequestParam String productId,
@@ -38,30 +40,35 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Tạo phiếu xuất kho")
     @PostMapping
+    @CheckPermission(api = "/warehouse/gin", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody GinCreateRequest request) {
         return ApiResponse.success(ginService.create(request));
     }
 
     @Operation(summary = "Gửi duyệt phiếu xuất kho", description = "DRAFT → PENDING_APPROVAL")
     @PostMapping("/{id}/submit")
+    @CheckPermission(api = "/warehouse/gin/{id}/submit", action = "UPDATE")
     public ApiResponse<?> submit(@PathVariable String id) {
         return ApiResponse.success(ginService.submit(id));
     }
 
     @Operation(summary = "Duyệt phiếu xuất kho", description = "PENDING_APPROVAL/DRAFT → APPROVED")
     @PostMapping("/{id}/approve")
+    @CheckPermission(api = "/warehouse/gin/{id}/approve", action = "UPDATE")
     public ApiResponse<?> approve(@PathVariable String id) {
         return ApiResponse.success(ginService.approve(id));
     }
 
     @Operation(summary = "Xác nhận xuất kho", description = "APPROVED/DRAFT → CONFIRMED — cập nhật stock")
     @PostMapping("/{id}/confirm")
+    @CheckPermission(api = "/warehouse/gin/{id}/confirm", action = "UPDATE")
     public ApiResponse<?> confirm(@PathVariable String id, @RequestBody GinConfirmRequest request) {
         return ApiResponse.success(ginService.confirm(id, request));
     }
 
     @Operation(summary = "Xác nhận hàng loạt")
     @PostMapping("/batch-confirm")
+    @CheckPermission(api = "/warehouse/gin/batch-confirm", action = "UPDATE")
     public ApiResponse<?> batchConfirm(@RequestBody List<String> ids) {
         ginService.batchConfirm(ids);
         return ApiResponse.success("Xác nhận " + ids.size() + " phiếu xuất kho thành công");
@@ -69,6 +76,7 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Huỷ phiếu xuất kho")
     @PostMapping("/{id}/cancel")
+    @CheckPermission(api = "/warehouse/gin/{id}/cancel", action = "UPDATE")
     public ApiResponse<?> cancel(@PathVariable String id, @RequestParam(required = false) String reason) {
         ginService.cancel(id, reason);
         return ApiResponse.success("Huỷ phiếu xuất kho thành công");
@@ -76,6 +84,7 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Huỷ hàng loạt")
     @PostMapping("/batch-cancel")
+    @CheckPermission(api = "/warehouse/gin/batch-cancel", action = "UPDATE")
     public ApiResponse<?> batchCancel(@RequestBody List<String> ids, @RequestParam(required = false) String reason) {
         ginService.batchCancel(ids, reason);
         return ApiResponse.success("Huỷ " + ids.size() + " phiếu xuất kho thành công");
@@ -83,18 +92,21 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Chi tiết phiếu xuất kho")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/gin/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(ginService.getById(id));
     }
 
     @Operation(summary = "Tra cứu theo mã GIN")
     @GetMapping("/code/{ginCode}")
+    @CheckPermission(api = "/warehouse/gin/code/{ginCode}", action = "VIEW")
     public ApiResponse<?> getByCode(@PathVariable String ginCode) {
         return ApiResponse.success(ginService.getByCode(ginCode));
     }
 
     @Operation(summary = "Danh sách phiếu xuất kho")
     @GetMapping
+    @CheckPermission(api = "/warehouse/gin", action = "VIEW")
     public ApiResponse<?> filter(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
@@ -105,6 +117,7 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "Xoá phiếu xuất kho (chỉ DRAFT)")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/warehouse/gin/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         ginService.delete(id);
         return ApiResponse.success("Xoá phiếu xuất kho thành công");
@@ -112,12 +125,14 @@ public class GoodsIssueNoteController {
 
     @Operation(summary = "In phiếu xuất kho", description = "Trả về HTML để in/kết xuất PDF")
     @GetMapping(value = "/{id}/print", produces = MediaType.TEXT_HTML_VALUE)
+    @CheckPermission(api = "/warehouse/gin/{id}/print", action = "VIEW")
     public String print(@PathVariable String id) {
         return documentPrintService.printGin(id);
     }
 
     @Operation(summary = "Xuất Excel phiếu xuất kho")
     @GetMapping("/{id}/export")
+    @CheckPermission(api = "/warehouse/gin/{id}/export", action = "VIEW")
     public void exportExcel(@PathVariable String id, HttpServletResponse response) throws IOException {
         byte[] data = documentPrintService.exportGinExcel(id);
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

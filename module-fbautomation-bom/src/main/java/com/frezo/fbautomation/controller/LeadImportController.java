@@ -3,6 +3,7 @@ package com.frezo.fbautomation.controller;
 import com.frezo.fbautomation.dto.response.LeadImportBatchResponse;
 import com.frezo.fbautomation.service.LeadImportService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class LeadImportController {
 
     @Operation(summary = "Upload file CSV/Excel để tạo lead hàng loạt")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/mkt/leads/import", action = "UPDATE")
     public ApiResponse<LeadImportBatchResponse> importFile(
             @RequestPart("file") MultipartFile file,
             @RequestParam(required = false) String source,
@@ -47,18 +49,21 @@ public class LeadImportController {
 
     @Operation(summary = "Preview 20 dòng đầu để check format")
     @PostMapping(value = "/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/mkt/leads/import/preview", action = "CREATE")
     public ApiResponse<List<List<String>>> preview(@RequestPart("file") MultipartFile file) {
         return ApiResponse.ok(importService.preview(file));
     }
 
     @Operation(summary = "Lịch sử các batch đã upload")
     @GetMapping("/history")
+    @CheckPermission(api = "/mkt/leads/import/history", action = "VIEW")
     public ApiResponse<List<LeadImportBatchResponse>> history() {
         return ApiResponse.ok(importService.history());
     }
 
     @Operation(summary = "Rollback batch — soft-delete tất cả lead con")
     @DeleteMapping("/{batchId}")
+    @CheckPermission(api = "/mkt/leads/import/{batchId}", action = "DELETE")
     public ApiResponse<Void> rollback(@PathVariable String batchId) {
         importService.rollback(batchId);
         return ApiResponse.ok();

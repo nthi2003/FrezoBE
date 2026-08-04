@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.EmployeeDependentRequest;
 import com.frezo.qlns.dto.response.EmployeeDependentResponse;
 import com.frezo.qlns.service.EmployeeDependentService;
@@ -21,18 +22,21 @@ public class EmployeeDependentController {
 
     @Operation(summary = "Thêm người phụ thuộc")
     @PostMapping
+    @CheckPermission(api = "/qlns/employee-dependent", action = "CREATE")
     public ApiResponse<EmployeeDependentResponse> create(@RequestBody EmployeeDependentRequest request) {
         return ApiResponse.success(employeeDependentService.create(request));
     }
 
     @Operation(summary = "Cập nhật người phụ thuộc")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/qlns/employee-dependent/{id}", action = "UPDATE")
     public ApiResponse<EmployeeDependentResponse> update(@PathVariable String id, @RequestBody EmployeeDependentRequest request) {
         return ApiResponse.success(employeeDependentService.update(id, request));
     }
 
     @Operation(summary = "Xóa người phụ thuộc")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qlns/employee-dependent/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         employeeDependentService.delete(id);
         return ApiResponse.success(null, "Xóa thành công");
@@ -40,6 +44,7 @@ public class EmployeeDependentController {
 
     @Operation(summary = "Danh sách người phụ thuộc của nhân viên")
     @GetMapping("/by-person/{personId}")
+    @CheckPermission(api = "/qlns/employee-dependent/by-person/{personId}", action = "VIEW")
     public ApiResponse<List<EmployeeDependentResponse>> getByPersonId(@PathVariable String personId) {
         return ApiResponse.success(employeeDependentService.getByPersonId(personId));
     }

@@ -81,6 +81,15 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendSimple(String to, String subject, String htmlBody) {
+        EmailConfig config = emailConfigRepository.findByActivatedTrue()
+                .stream().findFirst()
+                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
+        sendEmail(config, to, subject, htmlBody);
+        logSendEmail(null, subject, List.of(to), "sendSimple");
+    }
+
+    @Override
     public BulkEmailResponse sendBulk(BulkEmailRequest request) {
         EmailConfig config = emailConfigRepository.findByActivatedTrue()
                 .stream().findFirst()

@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.dto.request.StockAdjustmentCreateRequest;
 import com.frezo.warehouse.service.StockAdjustmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,18 +22,21 @@ public class StockAdjustmentController {
 
     @Operation(summary = "Tạo phiếu kiểm kê / điều chỉnh tồn")
     @PostMapping
+    @CheckPermission(api = "/warehouse/adjustment", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody StockAdjustmentCreateRequest request) {
         return ApiResponse.success(adjustmentService.create(request));
     }
 
     @Operation(summary = "Xác nhận điều chỉnh", description = "CONFIRM → cập nhật stock_balance + stock_ledger")
     @PostMapping("/{id}/confirm")
+    @CheckPermission(api = "/warehouse/adjustment/{id}/confirm", action = "UPDATE")
     public ApiResponse<?> confirm(@PathVariable String id) {
         return ApiResponse.success(adjustmentService.confirm(id));
     }
 
     @Operation(summary = "Huỷ phiếu điều chỉnh")
     @PostMapping("/{id}/cancel")
+    @CheckPermission(api = "/warehouse/adjustment/{id}/cancel", action = "UPDATE")
     public ApiResponse<?> cancel(@PathVariable String id, @RequestParam(required = false) String reason) {
         adjustmentService.cancel(id, reason);
         return ApiResponse.success("Huỷ phiếu điều chỉnh thành công");
@@ -40,18 +44,21 @@ public class StockAdjustmentController {
 
     @Operation(summary = "Chi tiết phiếu điều chỉnh")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/adjustment/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(adjustmentService.getById(id));
     }
 
     @Operation(summary = "Tra cứu theo mã")
     @GetMapping("/code/{code}")
+    @CheckPermission(api = "/warehouse/adjustment/code/{code}", action = "VIEW")
     public ApiResponse<?> getByCode(@PathVariable String code) {
         return ApiResponse.success(adjustmentService.getByCode(code));
     }
 
     @Operation(summary = "Danh sách phiếu điều chỉnh")
     @GetMapping
+    @CheckPermission(api = "/warehouse/adjustment", action = "VIEW")
     public ApiResponse<?> filter(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String warehouseId,
@@ -62,6 +69,7 @@ public class StockAdjustmentController {
 
     @Operation(summary = "Xoá phiếu điều chỉnh (chỉ DRAFT)")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/warehouse/adjustment/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         adjustmentService.delete(id);
         return ApiResponse.success("Xoá phiếu điều chỉnh thành công");

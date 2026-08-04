@@ -52,6 +52,7 @@ public class ArticleServiceImpl implements ArticleService {
     private static final String ERR_STATUS_INVALID_PUBLISH = "article.status.invalid.publish";
     private static final String ERR_STATUS_INVALID_REVIEW = "article.status.invalid.review";
     private static final String ERR_ARTICLE_NOT_FOUND = "article.not.found";
+    private static final String ERR_MANAGER_REQUIRED = "article.manager.required";
 
     private static final DateTimeFormatter ARTICLE_DAY = DateTimeFormatter.BASIC_ISO_DATE;
 
@@ -75,6 +76,10 @@ public class ArticleServiceImpl implements ArticleService {
         article.setStatus(ArticleStatus.DRAFT);
         article.setIsActive(false);
         article.setIsDeleted(false);
+        if (article.getPublishScope() == null) {
+            article.setPublishScope(PublishScope.INTERNAL);
+        }
+        syncPublicFlag(article);
 
         if (request.getOrganizationId() != null) {
             article.setOrganizationId(request.getOrganizationId());
@@ -125,6 +130,13 @@ public class ArticleServiceImpl implements ArticleService {
         }
 
         articleMapper.updateEntityFromRequest(request, article);
+        if (request.getManagerId() != null) {
+            article.setManagerId(request.getManagerId().isBlank() ? null : request.getManagerId());
+        }
+        if (article.getPublishScope() == null) {
+            article.setPublishScope(PublishScope.INTERNAL);
+        }
+        syncPublicFlag(article);
         articleRepository.save(article);
 
         ArticleResponse response = articleMapper.toDto(article);
@@ -142,8 +154,12 @@ public class ArticleServiceImpl implements ArticleService {
         if (article.getStatus() != ArticleStatus.DRAFT && article.getStatus() != ArticleStatus.REJECTED) {
             throw new AppException(ERR_STATUS_INVALID_SUBMIT, HttpStatus.BAD_REQUEST);
         }
+        if (article.getManagerId() == null || article.getManagerId().isBlank()) {
+            throw new AppException(ERR_MANAGER_REQUIRED, HttpStatus.BAD_REQUEST);
+        }
 
         article.setStatus(ArticleStatus.WAITING_APPROVAL);
+        article.setRejectNote(null);
         articleRepository.save(article);
     }
 
@@ -168,9 +184,7 @@ public class ArticleServiceImpl implements ArticleService {
         if (!ArticleStatus.APPROVED.equals(article.getStatus())) {
             throw new AppException(ERR_STATUS_INVALID_PUBLISH, HttpStatus.BAD_REQUEST);
         }
-        if (!article.getManagerId().equals(managerId)) {
-            throw new AppException(ERR_PERMISSION_PUBLISH, HttpStatus.FORBIDDEN);
-        }
+        assertIsDesignatedManager(article, managerId, ERR_PERMISSION_PUBLISH);
 
         List<ArticleRevision> revisions = articleRevisionRepository.findLastByArticleId(id);
         if (!revisions.isEmpty()) {
@@ -182,6 +196,7 @@ public class ArticleServiceImpl implements ArticleService {
         article.setStatus(ArticleStatus.PUBLISHED);
         article.setIsActive(true);
         article.setPublishedAt(LocalDateTime.now());
+        syncPublicFlag(article);
 
         articleRepository.save(article);
 
@@ -231,13 +246,34 @@ public class ArticleServiceImpl implements ArticleService {
             throw new AppException(ERR_STATUS_INVALID_REVIEW, HttpStatus.BAD_REQUEST);
         }
 
-        if (!article.getManagerId().equals(managerId)) {
-            throw new AppException(ERR_PERMISSION_REVIEW, HttpStatus.FORBIDDEN);
-        }
+        assertIsDesignatedManager(article, managerId, ERR_PERMISSION_REVIEW);
 
-        article.setStatus(Boolean.TRUE.equals(request.getApproved()) ? ArticleStatus.APPROVED : ArticleStatus.REJECTED);
+        boolean approved = Boolean.TRUE.equals(request.getApproved());
+        if (approved) {
+            article.setStatus(ArticleStatus.APPROVED);
+            article.setRejectNote(null);
+        } else {
+            article.setStatus(ArticleStatus.REJECTED);
+            String note = request.getNote();
+            article.setRejectNote(note == null || note.isBlank() ? null : note.trim());
+        }
         articleRepository.save(article);
 
+        ArticleResponse response = articleMapper.toDto(article);
+        enrichArticlesWithHeartCount(Collections.singletonList(response));
+        return response;
+    }
+
+    @Override
+    public ArticleResponse getPublicArticleById(String id) {
+        Article article = getArticleByIdOrThrow(id);
+        boolean visible = ArticleStatus.PUBLISHED.equals(article.getStatus())
+                && Boolean.TRUE.equals(article.getIsActive())
+                && Boolean.TRUE.equals(article.getIsPublic())
+                && article.getPublishScope() == PublishScope.PUBLIC;
+        if (!visible) {
+            throw new AppException(ERR_ARTICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
         ArticleResponse response = articleMapper.toDto(article);
         enrichArticlesWithHeartCount(Collections.singletonList(response));
         return response;
@@ -326,6 +362,19 @@ public class ArticleServiceImpl implements ArticleService {
 
     private void validateAuthorPermission(Article article, String authorId, String errorMsg) {
         if (!article.getAuthorId().equals(authorId)) {
+            throw new AppException(errorMsg, HttpStatus.FORBIDDEN);
+        }
+    }
+
+    /** isPublic luôn đồng bộ từ publishScope — tránh landing lộ bài INTERNAL. */
+    private void syncPublicFlag(Article article) {
+        boolean isPublic = article.getPublishScope() == PublishScope.PUBLIC;
+        article.setIsPublic(isPublic);
+    }
+
+    private void assertIsDesignatedManager(Article article, String managerId, String errorMsg) {
+        String designated = article.getManagerId();
+        if (designated == null || designated.isBlank() || managerId == null || !designated.equals(managerId)) {
             throw new AppException(errorMsg, HttpStatus.FORBIDDEN);
         }
     }

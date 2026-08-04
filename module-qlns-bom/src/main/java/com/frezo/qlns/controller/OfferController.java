@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.OfferRequest;
 import com.frezo.qlns.dto.response.OfferResponse;
@@ -24,18 +25,21 @@ public class OfferController {
 
     @Operation(summary = "Tạo mới Offer (DRAFT)")
     @PostMapping
+    @CheckPermission(api = "/qlns/recruitment/offers", action = "CREATE")
     public ApiResponse<OfferResponse> create(@RequestBody OfferRequest req) {
         return ApiResponse.ok(offerService.create(req));
     }
 
     @Operation(summary = "Gửi Offer tới ứng viên")
     @PostMapping("/{id}/send")
+    @CheckPermission(api = "/qlns/recruitment/offers/{id}/send", action = "UPDATE")
     public ApiResponse<OfferResponse> send(@PathVariable String id) {
         return ApiResponse.ok(offerService.send(id));
     }
 
     @Operation(summary = "Ứng viên chấp nhận Offer — auto HIRED (policy A: body User+Role)")
     @PostMapping("/{id}/accept")
+    @CheckPermission(api = "/qlns/recruitment/offers/{id}/accept", action = "CREATE")
     public ApiResponse<OfferResponse> accept(@PathVariable String id,
                                              @RequestBody(required = false) HireRequest hireRequest) {
         return ApiResponse.ok(offerService.accept(id, hireRequest));
@@ -43,6 +47,7 @@ public class OfferController {
 
     @Operation(summary = "Ứng viên từ chối Offer")
     @PostMapping("/{id}/reject")
+    @CheckPermission(api = "/qlns/recruitment/offers/{id}/reject", action = "UPDATE")
     public ApiResponse<OfferResponse> reject(@PathVariable String id) {
         return ApiResponse.ok(offerService.reject(id));
     }

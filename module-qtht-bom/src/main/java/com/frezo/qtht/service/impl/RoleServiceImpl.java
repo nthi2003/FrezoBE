@@ -1,6 +1,7 @@
 package com.frezo.qtht.service.impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.qtht.dto.request.RoleCreateRequest;
 import com.frezo.qtht.dto.request.RoleUpdateRequest;
 import com.frezo.qtht.dto.response.RoleResponse;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -54,6 +56,21 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public List<RoleResponse> getAll() {
         return roleMapper.toResponseList(roleRepository.findByIsDeletedFalse());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComboboxResponse> getCombobox(String appCode) {
+        List<RoleResponse> roles = StringUtils.hasText(appCode)
+                ? getRoleByAppCode(appCode)
+                : getAll();
+        return roles.stream()
+                .map(r -> ComboboxResponse.builder()
+                        .value(r.getCode())
+                        .label(r.getName())
+                        .description(r.getCode())
+                        .build())
+                .toList();
     }
 
     @Override

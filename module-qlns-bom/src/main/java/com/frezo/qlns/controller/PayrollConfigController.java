@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.InsuranceConfigRequest;
 import com.frezo.qlns.dto.request.PayrollConfigRequest;
 import com.frezo.qlns.dto.request.TaxConfigRequest;
@@ -29,12 +30,14 @@ public class PayrollConfigController {
 
     @Operation(summary = "Tạo/cập nhật cấu hình lương")
     @PostMapping("/payroll")
+    @CheckPermission(api = "/qlns/payroll-config/payroll", action = "CREATE")
     public ApiResponse<PayrollConfigResponse> savePayrollConfig(@RequestBody PayrollConfigRequest request) {
         return ApiResponse.success(payrollConfigService.save(request));
     }
 
     @Operation(summary = "Cấu hình lương theo tổ chức và năm")
     @GetMapping("/payroll")
+    @CheckPermission(api = "/qlns/payroll-config/payroll", action = "VIEW")
     public ApiResponse<PayrollConfigResponse> getPayrollConfig(
             @RequestParam String orgId, @RequestParam Integer year) {
         var result = payrollConfigService.getByOrgAndYear(orgId, year);
@@ -46,24 +49,28 @@ public class PayrollConfigController {
 
     @Operation(summary = "Tạo/cập nhật cấu hình bảo hiểm")
     @PostMapping("/insurance")
+    @CheckPermission(api = "/qlns/payroll-config/insurance", action = "CREATE")
     public ApiResponse<InsuranceConfigResponse> saveInsuranceConfig(@RequestBody InsuranceConfigRequest request) {
         return ApiResponse.success(insuranceConfigService.save(request));
     }
 
     @Operation(summary = "Cấu hình bảo hiểm theo năm")
     @GetMapping("/insurance")
+    @CheckPermission(api = "/qlns/payroll-config/insurance", action = "VIEW")
     public ApiResponse<InsuranceConfigResponse> getInsuranceConfig(@RequestParam Integer year) {
         return ApiResponse.success(insuranceConfigService.getByYear(year));
     }
 
     @Operation(summary = "Tạo bậc thuế TNCN mới")
     @PostMapping("/tax")
+    @CheckPermission(api = "/qlns/payroll-config/tax", action = "CREATE")
     public ApiResponse<TaxConfigResponse> saveTaxConfig(@RequestBody TaxConfigRequest request) {
         return ApiResponse.success(taxConfigService.save(request));
     }
 
     @Operation(summary = "Danh sách bậc thuế theo năm")
     @GetMapping("/tax")
+    @CheckPermission(api = "/qlns/payroll-config/tax", action = "VIEW")
     public ApiResponse<List<TaxConfigResponse>> getTaxConfigs(@RequestParam Integer year) {
         return ApiResponse.success(taxConfigService.getByYear(year));
     }

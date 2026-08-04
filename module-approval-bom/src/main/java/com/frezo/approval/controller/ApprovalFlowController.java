@@ -41,7 +41,7 @@ public class ApprovalFlowController {
     }
 
     @PutMapping("/{id}")
-    @CheckPermission(api = "/approval-flows", action = "UPDATE")
+    @CheckPermission(api = "/approval-flows/{id}", action = "UPDATE")
     @Operation(summary = "Cập nhật flow")
     public ApiResponse<ApprovalFlowDto> update(@PathVariable String id,
                                                @RequestBody ApprovalFlowRequest req) {

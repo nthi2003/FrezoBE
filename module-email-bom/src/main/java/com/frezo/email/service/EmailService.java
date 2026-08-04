@@ -13,6 +13,8 @@ public interface EmailService {
 
     void sendByTemplate(String templateCode, Map<String, Object> params, List<String> recipients);
 
+    void sendSimple(String to, String subject, String htmlBody);
+
     BulkEmailResponse sendBulk(BulkEmailRequest request);
 
     BulkEmailResponse sendBulkByCategoryCodes(String templateCode, String subject, String body, List<String> categoryCodes, String description);

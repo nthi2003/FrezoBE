@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.FePage;
 import com.frezo.qtht.dto.comment.CommentAttachmentDto;
 import com.frezo.qtht.dto.comment.CommentCreatePayload;
@@ -31,6 +32,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping
+    @CheckPermission(api = "/comments", action = "VIEW")
     @Operation(summary = "List comments theo subject")
     public ApiResponse<FePage<CommentDto>> list(
             @RequestParam String subjectType,
@@ -41,18 +43,21 @@ public class CommentController {
     }
 
     @PostMapping
+    @CheckPermission(api = "/comments", action = "CREATE")
     @Operation(summary = "Tạo comment")
     public ApiResponse<CommentDto> create(@RequestBody CommentCreatePayload payload) {
         return ApiResponse.ok(commentService.create(payload));
     }
 
     @PostMapping(value = "/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/comments/attachments", action = "CREATE")
     @Operation(summary = "Upload file đính kèm comment (MinIO) — image/pdf/doc ≤10MB")
     public ApiResponse<CommentAttachmentDto> uploadAttachment(@RequestParam("file") MultipartFile file) {
         return ApiResponse.ok(commentService.uploadAttachment(file));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/comments/{id}", action = "UPDATE")
     @Operation(summary = "Sửa comment (author only)")
     public ApiResponse<CommentDto> update(@PathVariable String id,
                                           @RequestBody CommentUpdatePayload payload) {
@@ -60,6 +65,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/comments/{id}", action = "DELETE")
     @Operation(summary = "Soft-delete comment (author only)")
     public ApiResponse<Void> delete(@PathVariable String id) {
         commentService.delete(id);

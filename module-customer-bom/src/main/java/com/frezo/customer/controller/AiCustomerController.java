@@ -2,6 +2,7 @@ package com.frezo.customer.controller;
 
 import com.frezo.customer.service.CustomerService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class AiCustomerController {
     @Operation(summary = "Quét và đồng bộ khách hàng từ Google Maps", 
                description = "Gọi hệ thống AI để tìm kiếm quán/văn phòng theo từ khóa và lưu vào danh mục khách hàng tiềm năng.")
     @PostMapping("/sync")
+    @CheckPermission(api = "/customer/ai/sync", action = "UPDATE")
     public ApiResponse<String> syncFromAi(
             @RequestParam String keyword,
             @RequestParam String city,

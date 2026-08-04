@@ -4,6 +4,7 @@ import com.frezo.fbautomation.dto.request.FacebookAccountRequest;
 import com.frezo.fbautomation.dto.response.FacebookAccountResponse;
 import com.frezo.fbautomation.service.FacebookAccountService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,24 +23,28 @@ public class FacebookAccountController {
 
     @Operation(summary = "Danh sách tài khoản Facebook")
     @GetMapping
+    @CheckPermission(api = "/fb/accounts", action = "VIEW")
     public ApiResponse<List<FacebookAccountResponse>> getAll() {
         return ApiResponse.ok(accountService.getAll());
     }
 
     @Operation(summary = "Chi tiết tài khoản")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/fb/accounts/{id}", action = "VIEW")
     public ApiResponse<FacebookAccountResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(accountService.getById(id));
     }
 
     @Operation(summary = "Thêm tài khoản mới")
     @PostMapping
+    @CheckPermission(api = "/fb/accounts", action = "CREATE")
     public ApiResponse<FacebookAccountResponse> create(@Valid @RequestBody FacebookAccountRequest request) {
         return ApiResponse.ok(accountService.create(request));
     }
 
     @Operation(summary = "Cập nhật tài khoản")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/fb/accounts/{id}", action = "UPDATE")
     public ApiResponse<FacebookAccountResponse> update(@PathVariable String id,
                                                      @Valid @RequestBody FacebookAccountRequest request) {
         return ApiResponse.ok(accountService.update(id, request));
@@ -47,6 +52,7 @@ public class FacebookAccountController {
 
     @Operation(summary = "Xóa tài khoản")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/fb/accounts/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         accountService.delete(id);
         return ApiResponse.ok();
@@ -54,6 +60,7 @@ public class FacebookAccountController {
 
     @Operation(summary = "Cập nhật cookie")
     @PutMapping("/{id}/cookie")
+    @CheckPermission(api = "/fb/accounts/{id}/cookie", action = "UPDATE")
     public ApiResponse<Void> updateCookie(@PathVariable String id, @RequestBody String cookie) {
         accountService.updateCookie(id, cookie);
         return ApiResponse.ok();

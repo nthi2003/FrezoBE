@@ -20,5 +20,6 @@ public class ProductResponse {
     private Boolean isNew;
     private String description;
     private Boolean isActive;
+    private Long viewCount;
     private LocalDateTime createdDate;
 }

@@ -6,6 +6,7 @@ import com.frezo.fbautomation.dto.response.AutomationSummaryResponse;
 import com.frezo.fbautomation.dto.response.FacebookGroupResponse;
 import com.frezo.fbautomation.service.FacebookAutomationService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class FacebookAutomationController {
 
     @Operation(summary = "Quét và scrape groups từ keyword")
     @PostMapping("/scan-groups")
+    @CheckPermission(api = "/fb/automation/scan-groups", action = "CREATE")
     public ApiResponse<String> scanGroups(@RequestBody ScanGroupRequest request) {
         CompletableFuture<List<FacebookGroupResponse>> future =
                 automationService.searchAndScrapeGroups(
@@ -35,6 +37,7 @@ public class FacebookAutomationController {
 
     @Operation(summary = "Tự động tham gia group")
     @PostMapping("/join-group")
+    @CheckPermission(api = "/fb/automation/join-group", action = "CREATE")
     public ApiResponse<String> joinGroup(@RequestBody JoinGroupRequest request) {
         CompletableFuture<String> future =
                 automationService.autoJoinGroup(request.getAccountId(), request.getGroupId());
@@ -43,6 +46,7 @@ public class FacebookAutomationController {
 
     @Operation(summary = "Đăng nhập tài khoản để refresh cookie")
     @PostMapping("/login/{accountId}")
+    @CheckPermission(api = "/fb/automation/login/{accountId}", action = "CREATE")
     public ApiResponse<String> login(@PathVariable String accountId) {
         automationService.loginWithCookie(accountId);
         return ApiResponse.ok("Đã đăng nhập thành công");
@@ -50,6 +54,7 @@ public class FacebookAutomationController {
 
     @Operation(summary = "Tổng quan hệ thống")
     @GetMapping("/summary")
+    @CheckPermission(api = "/fb/automation/summary", action = "VIEW")
     public ApiResponse<AutomationSummaryResponse> summary() {
         return ApiResponse.ok(automationService.getSummary());
     }

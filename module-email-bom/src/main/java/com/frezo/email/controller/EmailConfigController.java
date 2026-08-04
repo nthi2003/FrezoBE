@@ -1,6 +1,7 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.PageResponse;
 import com.frezo.email.dto.request.EmailConfigAddRequest;
 import com.frezo.email.dto.request.EmailConfigEditRequest;
@@ -23,18 +24,21 @@ public class EmailConfigController {
 
     @Operation(summary = "Get all email configurations", description = "Returns a paginated list of email configurations")
     @GetMapping("")
+    @CheckPermission(api = "/email/config", action = "VIEW")
     public ResponseEntity<ApiResponse<PageResponse<EmailConfigResponse>>> getAll(EmailConfigFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(emailConfigService.all(filter)));
     }
 
     @Operation(summary = "Add new email configuration")
     @PostMapping("")
+    @CheckPermission(api = "/email/config", action = "CREATE")
     public ResponseEntity<ApiResponse<?>> add(@Valid @RequestBody EmailConfigAddRequest request) {
         return ResponseEntity.ok(emailConfigService.add(request));
     }
 
     @Operation(summary = "Edit existing email configuration")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/email/config/{id}", action = "UPDATE")
     public ResponseEntity<ApiResponse<?>> edit(@PathVariable("id") String id,
             @Valid @RequestBody EmailConfigEditRequest request) {
         return ResponseEntity.ok(emailConfigService.edit(id, request));
@@ -42,6 +46,7 @@ public class EmailConfigController {
 
     @Operation(summary = "Deactivate email configuration")
     @PutMapping("/{id}/deactivate")
+    @CheckPermission(api = "/email/config/{id}/deactivate", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> deactivate(@PathVariable("id") String id) {
         emailConfigService.deactivate(id);
         return ResponseEntity.ok(ApiResponse.success("Deactivated successfully"));
@@ -49,6 +54,7 @@ public class EmailConfigController {
 
     @Operation(summary = "Activate email configuration")
     @PutMapping("/{id}/activate")
+    @CheckPermission(api = "/email/config/{id}/activate", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> activate(@PathVariable("id") String id) {
         emailConfigService.activate(id);
         return ResponseEntity.ok(ApiResponse.success("Activated successfully"));
@@ -56,12 +62,14 @@ public class EmailConfigController {
 
     @Operation(summary = "Delete email Config")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/email/config/{id}", action = "DELETE")
     public void delete(@PathVariable("id") String id) {
         emailConfigService.delete(id);
     }
 
     @Operation(summary = "Test email configuration connection")
     @PostMapping("/{id}/test-connection")
+    @CheckPermission(api = "/email/config/{id}/test-connection", action = "CREATE")
     public ResponseEntity<ApiResponse<String>> testConnection(@PathVariable("id") String id) {
         emailConfigService.testConnection(id);
         return ResponseEntity.ok(ApiResponse.success("Connection successful"));

@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.entity.PersonDocument;
 import com.frezo.qtht.service.PersonDocumentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +24,7 @@ public class PersonDocumentController {
 
     @Operation(summary = "Lấy danh sách tài liệu", description = "Lấy tài liệu của nhân viên theo personId, có thể lọc theo type (CV, CERTIFICATE, ACHIEVEMENT)")
     @GetMapping("/{personId}")
+    @CheckPermission(api = "/qtht/person-document/{personId}", action = "VIEW")
     public ResponseEntity<ApiResponse<List<PersonDocument>>> getDocuments(
             @PathVariable String personId,
             @RequestParam(required = false) String type) {
@@ -31,6 +33,7 @@ public class PersonDocumentController {
 
     @Operation(summary = "Upload tài liệu", description = "Upload CV/chứng chỉ/thành tích cho nhân viên")
     @PostMapping(value = "/{personId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/qtht/person-document/{personId}/upload", action = "CREATE")
     public ResponseEntity<ApiResponse<PersonDocument>> uploadDocument(
             @PathVariable String personId,
             @RequestParam String type,
@@ -43,6 +46,7 @@ public class PersonDocumentController {
 
     @Operation(summary = "Xoá tài liệu", description = "Xoá một tài liệu của nhân viên")
     @DeleteMapping("/{personId}/{documentId}")
+    @CheckPermission(api = "/qtht/person-document/{personId}/{documentId}", action = "DELETE")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(
             @PathVariable String personId,
             @PathVariable String documentId) {

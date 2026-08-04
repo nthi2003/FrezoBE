@@ -63,21 +63,7 @@ public class RoleController {
     @GetMapping("/combobox")
     public ResponseEntity<ApiResponse<List<ComboboxResponse>>> getCombobox(
             @RequestParam(name = "appCode", required = false) String appCode) {
-        List<RoleResponse> roles;
-        if (appCode != null) {
-            roles = roleService.getRoleByAppCode(appCode);
-        } else {
-            roles = roleService.getAll();
-        }
-
-        List<ComboboxResponse> response = roles.stream()
-                .map(r -> ComboboxResponse.builder()
-                        .value(r.getCode())
-                        .label(r.getName())
-                        .description(r.getCode())
-                        .build())
-                .toList();
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(roleService.getCombobox(appCode)));
     }
 
 }

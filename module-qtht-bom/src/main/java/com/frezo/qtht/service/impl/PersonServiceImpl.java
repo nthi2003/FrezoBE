@@ -17,6 +17,7 @@ import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.PersonService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 import com.frezo.qtht.entity.Department;
 
@@ -103,6 +105,20 @@ public class PersonServiceImpl implements PersonService {
     public PersonResponse getById(String id) {
         Person person = findPersonById(id);
         return personMapper.toResponse(person);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComboboxResponse> getCombobox(PersonFilterRequest filter) {
+        PageResponse<PersonResponse> data = all(filter);
+        List<PersonResponse> items = data.getItems() != null ? data.getItems() : List.of();
+        return items.stream()
+                .map(p -> ComboboxResponse.builder()
+                        .value(p.getId())
+                        .label(p.getName() + " (" + p.getCode() + ")")
+                        .description(p.getJobTitle() + " - " + p.getEmail())
+                        .build())
+                .toList();
     }
 
     @Override

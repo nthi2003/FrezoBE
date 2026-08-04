@@ -4,7 +4,7 @@ package com.frezo.qtht.service;
 import com.frezo.qtht.dto.request.RoleCreateRequest;
 import com.frezo.qtht.dto.request.RoleUpdateRequest;
 import com.frezo.qtht.dto.response.RoleResponse;
-import com.frezo.qtht.entity.Role;
+import com.frezo.common.response.ComboboxResponse;
 
 import java.util.List;
 
@@ -18,7 +18,8 @@ public interface RoleService {
 
     void delete(String code, String appCode);
 
-
     List<RoleResponse> getAll();
+
+    List<ComboboxResponse> getCombobox(String appCode);
 }
 

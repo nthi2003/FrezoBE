@@ -1,6 +1,7 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.email.dto.request.EmailGroupRequest;
 import com.frezo.email.dto.response.EmailGroupResponse;
 import com.frezo.email.service.EmailGroupService;
@@ -23,30 +24,35 @@ public class EmailGroupController {
 
     @Operation(summary = "Get all email groups")
     @GetMapping
+    @CheckPermission(api = "/email/group", action = "VIEW")
     public ResponseEntity<ApiResponse<List<EmailGroupResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(emailGroupService.getAll()));
     }
 
     @Operation(summary = "Get email group by ID")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/email/group/{id}", action = "VIEW")
     public ResponseEntity<ApiResponse<EmailGroupResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(emailGroupService.getById(id)));
     }
 
     @Operation(summary = "Create new email group")
     @PostMapping
+    @CheckPermission(api = "/email/group", action = "CREATE")
     public ResponseEntity<ApiResponse<?>> create(@Valid @RequestBody EmailGroupRequest request) {
         return ResponseEntity.ok(emailGroupService.create(request));
     }
 
     @Operation(summary = "Update email group")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/email/group/{id}", action = "UPDATE")
     public ResponseEntity<ApiResponse<?>> update(@PathVariable String id, @Valid @RequestBody EmailGroupRequest request) {
         return ResponseEntity.ok(emailGroupService.update(id, request));
     }
 
     @Operation(summary = "Delete email group")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/email/group/{id}", action = "DELETE")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         emailGroupService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null));

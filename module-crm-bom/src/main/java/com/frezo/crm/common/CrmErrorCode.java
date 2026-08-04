@@ -20,7 +20,9 @@ public enum CrmErrorCode implements ErrorCode {
 
     QUOTE_NOT_FOUND("crm.quote.not_found", HttpStatus.NOT_FOUND, "Báo giá không tồn tại"),
     INVOICE_NOT_FOUND("crm.invoice.not_found", HttpStatus.NOT_FOUND, "Hóa đơn không tồn tại"),
-    INVOICE_ALREADY_POSTED("crm.invoice.already_posted", HttpStatus.CONFLICT, "Hóa đơn đã hạch toán");
+    INVOICE_ALREADY_POSTED("crm.invoice.already_posted", HttpStatus.CONFLICT, "Hóa đơn đã hạch toán"),
+    COMMISSION_NOT_FOUND("crm.commission.not_found", HttpStatus.NOT_FOUND, "Bản ghi hoa hồng không tồn tại"),
+    COMMISSION_INVALID("crm.commission.invalid", HttpStatus.BAD_REQUEST, "Cấu hình hoa hồng không hợp lệ");
 
     private final String key;
     private final HttpStatus status;

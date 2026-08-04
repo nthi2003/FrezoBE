@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,5 +65,28 @@ public class UserSessionServiceImpl implements UserSessionService {
     public long countActiveSessions(String username) {
         return userSessionRepository.countByUsernameAndIsActiveTrue(username);
     }
-}
 
+    @Override
+    @Transactional
+    public boolean heartbeat(String token) {
+        if (!StringUtils.hasText(token)) return false;
+        int updated = userSessionRepository.touchByToken(token.trim(), LocalDateTime.now());
+        return updated > 0;
+    }
+
+    @Override
+    public long countAllActiveSessions() {
+        return userSessionRepository.countByIsActiveTrue();
+    }
+
+    @Override
+    public long countOnlineUsers(int onlineMinutes) {
+        int minutes = onlineMinutes <= 0 ? 5 : onlineMinutes;
+        return userSessionRepository.countDistinctOnlineUsers(LocalDateTime.now().minusMinutes(minutes));
+    }
+
+    @Override
+    public Page<UserSession> getAllActiveSessions(Pageable pageable) {
+        return userSessionRepository.findByIsActiveTrue(pageable);
+    }
+}

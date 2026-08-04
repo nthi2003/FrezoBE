@@ -1,6 +1,7 @@
 package com.frezo.qtht.service;
 
 import com.frezo.common.response.PageResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.qtht.dto.request.DepartmentFilterRequest;
 import com.frezo.qtht.dto.request.DepartmentSaveRequest;
 import com.frezo.qtht.dto.response.DepartmentResponse;
@@ -15,6 +16,8 @@ public interface DepartmentService {
     PageResponse<DepartmentResponse> all(DepartmentFilterRequest filter);
 
     List<DepartmentResponse> getTree();
+
+    List<ComboboxResponse> getCombobox();
 
     DepartmentResponse create(DepartmentSaveRequest request);
 

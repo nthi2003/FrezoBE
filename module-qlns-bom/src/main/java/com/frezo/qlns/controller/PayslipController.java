@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.service.PayrollGLPostingService;
 import com.frezo.qlns.service.PayslipService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,12 +25,14 @@ public class PayslipController {
 
     @Operation(summary = "Payslip đầy đủ (Earnings/Deductions/Attendance breakdown) cho Mobile")
     @GetMapping("/{payrollId}")
+    @CheckPermission(api = "/qlns/payslip/{payrollId}", action = "VIEW")
     public ApiResponse<?> getPayslip(@PathVariable String payrollId) {
         return ApiResponse.ok(payslipService.getPayslip(payrollId));
     }
 
     @Operation(summary = "YTD summary + 12 tháng để vẽ chart")
     @GetMapping("/ytd")
+    @CheckPermission(api = "/qlns/payslip/ytd", action = "VIEW")
     public ApiResponse<?> ytd(@RequestParam String personId,
                               @RequestParam Integer year) {
         return ApiResponse.ok(payslipService.getYtd(personId, year));
@@ -37,12 +40,14 @@ public class PayslipController {
 
     @Operation(summary = "Static formulas — nút 'Giải thích công thức' trên Mobile")
     @GetMapping("/formulas")
+    @CheckPermission(api = "/qlns/payslip/formulas", action = "VIEW")
     public ApiResponse<?> formulas() {
         return ApiResponse.ok(payslipService.getFormulas());
     }
 
     @Operation(summary = "Nhân viên confirm đã nhận payslip (chữ ký điện tử nhẹ)")
     @PostMapping("/{payrollId}/confirm")
+    @CheckPermission(api = "/qlns/payslip/{payrollId}/confirm", action = "UPDATE")
     public ApiResponse<?> confirm(@PathVariable String payrollId,
                                   @RequestParam(required = false) String note,
                                   @RequestHeader(value = "User-Agent", required = false) String userAgent,
@@ -55,6 +60,7 @@ public class PayslipController {
 
     @Operation(summary = "Hạch toán bảng lương kỳ (tạo bút toán aggregate trong GL)")
     @PostMapping("/period/{year}/{month}/post-to-gl")
+    @CheckPermission(api = "/qlns/payslip/period/{year}/{month}/post-to-gl", action = "CREATE")
     public ApiResponse<?> postToGl(@PathVariable Integer year,
                                    @PathVariable Integer month) {
         String journalId = glPostingService.postPeriod(month, year);
@@ -63,6 +69,7 @@ public class PayslipController {
 
     @Operation(summary = "Đảo bút toán payroll của kỳ (Reversal)")
     @PostMapping("/period/{year}/{month}/reverse-gl")
+    @CheckPermission(api = "/qlns/payslip/period/{year}/{month}/reverse-gl", action = "CREATE")
     public ApiResponse<?> reverseGl(@PathVariable Integer year,
                                     @PathVariable Integer month,
                                     @RequestParam(required = false) String reason) {

@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.dto.request.WarehouseCreateRequest;
 import com.frezo.warehouse.dto.request.WarehouseUpdateRequest;
 import com.frezo.warehouse.service.WarehouseService;
@@ -20,12 +21,14 @@ public class WarehouseController {
 
     @Operation(summary = "Danh sách kho")
     @GetMapping
+    @CheckPermission(api = "/warehouse", action = "VIEW")
     public ApiResponse<?> getAll() {
         return ApiResponse.success(warehouseService.getAll());
     }
 
     @Operation(summary = "Tìm kiếm kho")
     @GetMapping("/search")
+    @CheckPermission(api = "/warehouse/search", action = "VIEW")
     public ApiResponse<?> filter(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
@@ -36,30 +39,35 @@ public class WarehouseController {
 
     @Operation(summary = "Chi tiết kho")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(warehouseService.getById(id));
     }
 
     @Operation(summary = "Tra cứu theo mã kho")
     @GetMapping("/code/{code}")
+    @CheckPermission(api = "/warehouse/code/{code}", action = "VIEW")
     public ApiResponse<?> getByCode(@PathVariable String code) {
         return ApiResponse.success(warehouseService.getByCode(code));
     }
 
     @Operation(summary = "Thêm kho mới")
     @PostMapping
+    @CheckPermission(api = "/warehouse", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody WarehouseCreateRequest request) {
         return ApiResponse.success(warehouseService.create(request));
     }
 
     @Operation(summary = "Cập nhật kho")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/warehouse/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @RequestBody WarehouseUpdateRequest request) {
         return ApiResponse.success(warehouseService.update(id, request));
     }
 
     @Operation(summary = "Xoá kho")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/warehouse/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         warehouseService.delete(id);
         return ApiResponse.success("Xoá kho thành công");

@@ -27,4 +27,10 @@ public class TaskResponse {
     private String fileName;
     private String createdBy;
     private LocalDateTime createdDate;
+    /** DONE = chờ người giao / admin duyệt. */
+    private Boolean pendingReview;
+    /** Current user được duyệt (createdBy / admin). */
+    private Boolean canReview;
+    /** Current user là assignee (hoặc admin). */
+    private Boolean canComplete;
 }

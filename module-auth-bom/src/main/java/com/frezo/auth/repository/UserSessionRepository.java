@@ -4,6 +4,9 @@ import com.frezo.auth.entity.UserSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -25,7 +28,18 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
 
     long countByUsernameAndIsActiveTrue(String username);
 
+    long countByIsActiveTrue();
+
+    Page<UserSession> findByIsActiveTrue(Pageable pageable);
+
+    List<UserSession> findByIsActiveTrueAndLastActiveTimeAfter(LocalDateTime since);
+
+    @Query("SELECT COUNT(DISTINCT s.username) FROM UserSession s WHERE s.isActive = true AND s.lastActiveTime >= :since")
+    long countDistinctOnlineUsers(@Param("since") LocalDateTime since);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserSession s SET s.lastActiveTime = :now WHERE s.token = :token AND s.isActive = true")
+    int touchByToken(@Param("token") String token, @Param("now") LocalDateTime now);
+
     void deleteByExpiresAtBefore(LocalDateTime dateTime);
 }
-
-

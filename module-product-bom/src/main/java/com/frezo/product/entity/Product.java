@@ -53,4 +53,9 @@ public class Product extends BaseEntity {
 
     @Column(name = "is_new")
     private Boolean isNew;
+
+    /** Lượt xem chi tiết sản phẩm (tăng khi GET /product/{id}). */
+    @Column(name = "view_count")
+    @Builder.Default
+    private Long viewCount = 0L;
 }

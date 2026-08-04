@@ -4,8 +4,10 @@ import com.frezo.auth.entity.UserSession;
 import com.frezo.auth.service.UserSessionService;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth/session")
@@ -62,5 +65,41 @@ public class SessionController {
         String username = SystemUtils.getCurrentUsername();
         return ResponseEntity.ok(ApiResponse.success(userSessionService.countActiveSessions(username)));
     }
-}
 
+    @Operation(summary = "Heartbeat phiên", description = "Cập nhật lastActiveTime cho session JWT hiện tại (FE ping mỗi 1–2 phút)")
+    @PostMapping("/heartbeat")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> heartbeat(HttpServletRequest request) {
+        String token = extractBearer(request);
+        boolean ok = userSessionService.heartbeat(token);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("ok", ok)));
+    }
+
+    @Operation(summary = "Số user đang online", description = "Distinct username có lastActive trong N phút (mặc định 5)")
+    @GetMapping("/online-count")
+    @CheckPermission(api = "/auth/session/online-count", action = "VIEW")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> onlineCount(
+            @RequestParam(defaultValue = "5") int minutes) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+                "onlineUsers", userSessionService.countOnlineUsers(minutes),
+                "activeSessions", userSessionService.countAllActiveSessions()
+        )));
+    }
+
+    @Operation(summary = "Danh sách phiên toàn hệ thống (admin)", description = "Phân trang mọi session đang active")
+    @GetMapping("/admin/active")
+    @CheckPermission(api = "/auth/session/admin/active", action = "VIEW")
+    public ResponseEntity<ApiResponse<Page<UserSession>>> adminActiveSessions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("lastActiveTime").descending());
+        return ResponseEntity.ok(ApiResponse.success(userSessionService.getAllActiveSessions(pageRequest)));
+    }
+
+    private static String extractBearer(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
+    }
+}

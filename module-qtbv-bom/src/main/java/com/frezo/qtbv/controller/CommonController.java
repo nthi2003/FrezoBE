@@ -22,14 +22,14 @@ public class CommonController {
 
     @Operation(summary = "Lấy danh sách manager", description = "Lấy tất cả manager đang hoạt động để dùng cho select")
     @GetMapping("/managers")
-    @CheckPermission(api = "/qtbv/managers", action = "VIEW")
+    @CheckPermission(api = "/qtbv/articles/managers", action = "VIEW")
     public ApiResponse<?> getManagers() {
         return ApiResponse.success(managerService.getManagersList());
     }
 
     @Operation(summary = "Lấy danh sách tổ chức", description = "Lấy tất cả tổ chức trong hệ thống để dùng cho select")
     @GetMapping("/organizations")
-    @CheckPermission(api = "/qtbv/organizations", action = "VIEW")
+    @CheckPermission(api = "/qtbv/articles/organizations", action = "VIEW")
     public ApiResponse<?> getOrganizations() {
         return ApiResponse.success(organizationCommonService.getOrganizationsList());
     }

@@ -1,12 +1,13 @@
 package com.frezo.task.service.impl;
 
-import com.frezo.common.exception.AppException;
-import com.frezo.task.common.TaskErrorCode;
 import com.frezo.auth.repository.UserRepository;
+import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.repository.CommentAttachmentRepository;
 import com.frezo.common.repository.CommentRepository;
 import com.frezo.common.service.NotificationService;
+import com.frezo.task.common.TaskErrorCode;
+import com.frezo.task.dto.request.ReviewRequest;
 import com.frezo.task.dto.request.TicketRequest;
 import com.frezo.task.dto.response.TicketResponse;
 import com.frezo.task.entity.Ticket;
@@ -14,6 +15,7 @@ import com.frezo.task.entity.TicketCategory;
 import com.frezo.task.mapper.TicketMapper;
 import com.frezo.task.repository.TicketCategoryRepository;
 import com.frezo.task.repository.TicketRepository;
+import com.frezo.task.security.TaskAccessHelper;
 import com.frezo.task.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +31,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Ticket service — vòng đời OPEN → IN_PROGRESS → RESOLVED → CLOSED.
+ * Ticket service — vòng đời OPEN → IN_PROGRESS → RESOLVED (chờ QL duyệt) → CLOSED.
  *
- * <p><b>Notification wiring (v1.2):</b> Mọi thay đổi trạng thái hoặc assignee đều
- * emit notification realtime tới các bên liên quan:
- * <ul>
- *   <li><b>Người giao (reporter)</b> — luôn được thông báo khi ticket đổi trạng thái, để nắm tình hình.</li>
- *   <li><b>Người xử lý (assignee)</b> — được thông báo khi ticket được giao cho họ, hoặc khi có action ngoài họ.</li>
- * </ul>
- * Notification bao gồm deep-link {@code /task/tickets?ticketId=...} để FE navigate ngay khi click.
+ * <p>Visibility: admin = tất cả; reporter/createdBy = ticket đã giao; assignee = ticket của mình.
+ * <p>RESOLVED = EU hoàn thành, chờ người giao check; CLOSED = đã duyệt.
  */
 @Slf4j
 @Service
@@ -46,7 +43,7 @@ public class TicketServiceImpl implements TicketService {
 
     private static final String TICKET_ENTITY = "TICKET";
     private static final String SUBJECT_TYPE_TICKET = "TICKET";
-    private static final String ACTION_URL_PREFIX = "/task/tickets?ticketId=";
+    private static final String ACTION_URL_PREFIX = "/task?tab=board&ticketId=";
 
     private final TicketRepository ticketRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -55,6 +52,7 @@ public class TicketServiceImpl implements TicketService {
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final CommentAttachmentRepository commentAttachmentRepository;
+    private final TaskAccessHelper accessHelper;
 
     // ============================================================
     // CRUD
@@ -72,37 +70,46 @@ public class TicketServiceImpl implements TicketService {
         if (ticket.getStatus() == null) {
             ticket.setStatus(Ticket.TicketStatus.OPEN);
         }
+        // Chỉ admin mới được tạo thẳng CLOSED; EU không tự đóng
+        if (ticket.getStatus() == Ticket.TicketStatus.CLOSED && !accessHelper.isAdmin()) {
+            ticket.setStatus(Ticket.TicketStatus.OPEN);
+        }
+        if (ticket.getStatus() == Ticket.TicketStatus.RESOLVED && !accessHelper.isAdmin()) {
+            // create + resolve ngay: vẫn OK nếu tự assign mình; giữ RESOLVED
+            if (ticket.getAssigneeId() == null) {
+                accessHelper.currentPersonId().ifPresent(ticket::setAssigneeId);
+            }
+        }
 
         Ticket saved = ticketRepository.save(ticket);
 
-        // Notify assignee nếu có assign ngay lúc tạo
         if (saved.getAssigneeId() != null) {
             notifyAssignment(saved, /*prevAssignee*/ null, currentUser);
         }
 
-        return enrichCounts(ticketMapper.toResponse(saved));
+        return toVisibleResponse(saved);
     }
 
     @Override
     @Transactional
     public TicketResponse update(String id, TicketRequest request) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
+        Ticket ticket = requireVisibleTicket(id);
 
         if (request.getCategory() != null) {
             validateCategoryCode(request.getCategory());
         }
 
-        // Snapshot trước khi update để so sánh
         Ticket.TicketStatus oldStatus = ticket.getStatus();
         String oldAssigneeId = ticket.getAssigneeId();
 
-        // Partial update: null trong request KHÔNG ghi đè (mapper IGNORE).
         ticketMapper.updateEntityFromRequest(request, ticket);
 
-        // intentional clear: client gửi "" / blank → unassign (khác với omit/null = giữ nguyên)
         if (request.getAssigneeId() != null && request.getAssigneeId().isBlank()) {
             ticket.setAssigneeId(null);
+        }
+
+        if (request.getStatus() != null && oldStatus != ticket.getStatus()) {
+            enforceStatusTransition(ticket, oldStatus, ticket.getStatus());
         }
 
         if (ticket.getStatus() == Ticket.TicketStatus.RESOLVED || ticket.getStatus() == Ticket.TicketStatus.CLOSED) {
@@ -112,77 +119,87 @@ public class TicketServiceImpl implements TicketService {
         }
 
         Ticket saved = ticketRepository.save(ticket);
-
         String currentUser = SystemUtils.getCurrentUsername();
-
 
         if (!Objects.equals(oldAssigneeId, saved.getAssigneeId())) {
             notifyAssignment(saved, oldAssigneeId, currentUser);
         }
-
         if (oldStatus != saved.getStatus()) {
             notifyStatusChange(saved, oldStatus, currentUser);
         }
 
-        return enrichCounts(ticketMapper.toResponse(saved));
+        return toVisibleResponse(saved);
     }
 
     @Override
     @Transactional
     public void delete(String id) {
-        if (!ticketRepository.existsById(id)) {
-            throw new AppException(TaskErrorCode.TICKET_NOT_FOUND);
+        Ticket ticket = requireVisibleTicket(id);
+        // Chỉ reporter / admin xóa
+        if (!accessHelper.canReviewTicket(ticket)) {
+            throw new AppException(TaskErrorCode.TICKET_ACCESS_DENIED);
         }
         ticketRepository.deleteById(id);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TicketResponse findById(String id) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
-        return enrichCounts(ticketMapper.toResponse(ticket));
+        return toVisibleResponse(requireVisibleTicket(id));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TicketResponse> findAll() {
-        List<Ticket> tickets = ticketRepository.findAll();
+        List<Ticket> tickets = ticketRepository.findAll().stream()
+                .filter(accessHelper::canViewTicket)
+                .toList();
         List<TicketResponse> responses = ticketMapper.toResponseList(tickets);
         enrichCountsBatch(responses);
+        for (int i = 0; i < responses.size(); i++) {
+            enrichAccessFlags(responses.get(i), tickets.get(i));
+        }
         return responses;
     }
 
     // ============================================================
-    // Status + Assignment (dedicated endpoints)
+    // Status + Assignment + Review
     // ============================================================
 
     @Override
     @Transactional
     public TicketResponse updateStatus(String id, String status) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
-
+        Ticket ticket = requireVisibleTicket(id);
         Ticket.TicketStatus oldStatus = ticket.getStatus();
+        Ticket.TicketStatus newStatus;
         try {
-            ticket.setStatus(Ticket.TicketStatus.valueOf(status.toUpperCase()));
-            if (ticket.getStatus() == Ticket.TicketStatus.RESOLVED || ticket.getStatus() == Ticket.TicketStatus.CLOSED) {
-                ticket.setResolvedAt(LocalDateTime.now());
-            }
-            Ticket saved = ticketRepository.save(ticket);
-
-            if (oldStatus != saved.getStatus()) {
-                notifyStatusChange(saved, oldStatus, SystemUtils.getCurrentUsername());
-            }
-            return enrichCounts(ticketMapper.toResponse(saved));
+            newStatus = Ticket.TicketStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new AppException(TaskErrorCode.TICKET_STATUS_INVALID);
         }
+
+        enforceStatusTransition(ticket, oldStatus, newStatus);
+        ticket.setStatus(newStatus);
+        if (newStatus == Ticket.TicketStatus.RESOLVED || newStatus == Ticket.TicketStatus.CLOSED) {
+            if (ticket.getResolvedAt() == null) {
+                ticket.setResolvedAt(LocalDateTime.now());
+            }
+        }
+        Ticket saved = ticketRepository.save(ticket);
+
+        if (oldStatus != saved.getStatus()) {
+            notifyStatusChange(saved, oldStatus, SystemUtils.getCurrentUsername());
+        }
+        return toVisibleResponse(saved);
     }
 
     @Override
     @Transactional
     public TicketResponse assignTicket(String id, String assigneeId) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
+        Ticket ticket = requireVisibleTicket(id);
+        if (!accessHelper.canReviewTicket(ticket) && !accessHelper.isAdmin()) {
+            throw new AppException(TaskErrorCode.TICKET_ACCESS_DENIED);
+        }
 
         String oldAssigneeId = ticket.getAssigneeId();
         ticket.setAssigneeId(assigneeId);
@@ -194,11 +211,117 @@ public class TicketServiceImpl implements TicketService {
         if (!Objects.equals(oldAssigneeId, saved.getAssigneeId())) {
             notifyAssignment(saved, oldAssigneeId, SystemUtils.getCurrentUsername());
         }
-        return enrichCounts(ticketMapper.toResponse(saved));
+        return toVisibleResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public TicketResponse review(String id, ReviewRequest request) {
+        Ticket ticket = requireVisibleTicket(id);
+        if (!accessHelper.canReviewTicket(ticket)) {
+            throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
+        }
+        if (ticket.getStatus() != Ticket.TicketStatus.RESOLVED) {
+            throw new AppException(TaskErrorCode.TICKET_REVIEW_INVALID);
+        }
+
+        Ticket.TicketStatus oldStatus = ticket.getStatus();
+        boolean approved = request != null && request.isApproved();
+        if (approved) {
+            ticket.setStatus(Ticket.TicketStatus.CLOSED);
+            if (ticket.getResolvedAt() == null) {
+                ticket.setResolvedAt(LocalDateTime.now());
+            }
+            if (request.getNote() != null && !request.getNote().isBlank()) {
+                String existing = ticket.getResolutionNote();
+                String reviewNote = "QL duyệt: " + request.getNote().trim();
+                ticket.setResolutionNote(existing == null || existing.isBlank()
+                        ? reviewNote
+                        : existing + "\n" + reviewNote);
+            }
+        } else {
+            ticket.setStatus(Ticket.TicketStatus.IN_PROGRESS);
+            ticket.setResolvedAt(null);
+            if (request != null && request.getNote() != null && !request.getNote().isBlank()) {
+                String existing = ticket.getResolutionNote();
+                String rejectNote = "QL trả lại: " + request.getNote().trim();
+                ticket.setResolutionNote(existing == null || existing.isBlank()
+                        ? rejectNote
+                        : existing + "\n" + rejectNote);
+            }
+        }
+
+        Ticket saved = ticketRepository.save(ticket);
+        String actor = SystemUtils.getCurrentUsername();
+        notifyReviewResult(saved, approved, actor);
+        if (oldStatus != saved.getStatus()) {
+            notifyStatusChange(saved, oldStatus, actor);
+        }
+        return toVisibleResponse(saved);
+    }
+
+    /**
+     * RESOLVED chỉ assignee/admin; CLOSED chỉ reporter/admin (qua review hoặc admin).
+     * Reject review dùng RESOLVED → IN_PROGRESS (reporter).
+     */
+    private void enforceStatusTransition(Ticket ticket, Ticket.TicketStatus from, Ticket.TicketStatus to) {
+        if (from == to) return;
+        if (accessHelper.isAdmin()) return;
+
+        if (to == Ticket.TicketStatus.RESOLVED) {
+            if (!accessHelper.canCompleteTicket(ticket)) {
+                throw new AppException(TaskErrorCode.TICKET_COMPLETE_FORBIDDEN);
+            }
+            return;
+        }
+        if (to == Ticket.TicketStatus.CLOSED) {
+            // Prefer dedicated /review; allow status patch only for reviewer
+            if (!accessHelper.canReviewTicket(ticket)) {
+                throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
+            }
+            if (from != Ticket.TicketStatus.RESOLVED) {
+                throw new AppException(TaskErrorCode.TICKET_REVIEW_INVALID);
+            }
+            return;
+        }
+        // RESOLVED → IN_PROGRESS = reject by reviewer
+        if (from == Ticket.TicketStatus.RESOLVED && to == Ticket.TicketStatus.IN_PROGRESS) {
+            if (!accessHelper.canReviewTicket(ticket)) {
+                throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
+            }
+            return;
+        }
+        // CLOSED không tự mở lại trừ admin (đã return sớm)
+        if (from == Ticket.TicketStatus.CLOSED) {
+            throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
+        }
+    }
+
+    private Ticket requireVisibleTicket(String id) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
+        if (!accessHelper.canViewTicket(ticket)) {
+            throw new AppException(TaskErrorCode.TICKET_ACCESS_DENIED);
+        }
+        return ticket;
+    }
+
+    private TicketResponse toVisibleResponse(Ticket ticket) {
+        TicketResponse response = enrichCounts(ticketMapper.toResponse(ticket));
+        enrichAccessFlags(response, ticket);
+        return response;
+    }
+
+    private void enrichAccessFlags(TicketResponse response, Ticket ticket) {
+        if (response == null || ticket == null) return;
+        boolean pending = ticket.getStatus() == Ticket.TicketStatus.RESOLVED;
+        response.setPendingReview(pending);
+        response.setCanReview(pending && accessHelper.canReviewTicket(ticket));
+        response.setCanComplete(accessHelper.canCompleteTicket(ticket));
     }
 
     // ============================================================
-    // Comment / attachment aggregates (board card counts)
+    // Comment / attachment aggregates
     // ============================================================
 
     private TicketResponse enrichCounts(TicketResponse response) {
@@ -233,7 +356,6 @@ public class TicketServiceImpl implements TicketService {
             enrichCategoryName(r, categoryNames);
         }
     }
-
 
     private void validateCategoryCode(String code) {
         if (code == null || code.isBlank()) {
@@ -271,14 +393,14 @@ public class TicketServiceImpl implements TicketService {
         return out;
     }
 
+    // ============================================================
+    // Notifications
+    // ============================================================
 
-    /** Gửi thông báo khi assignee đổi (giao mới hoặc đổi người). */
     private void notifyAssignment(Ticket ticket, String prevAssigneeId, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();
         String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
-        String priority = mapPriorityLevel(ticket.getPriority());
 
-        // 1. Assignee mới
         String newAssigneeUsername = resolveUsername(ticket.getAssigneeId());
         if (newAssigneeUsername != null) {
             notificationService.notify(
@@ -290,11 +412,10 @@ public class TicketServiceImpl implements TicketService {
                     ticket.getId(),
                     actionUrl,
                     actor,
-                    /* urgent = */ isUrgent(ticket)
+                    isUrgent(ticket)
             );
         }
 
-        // 2. Assignee cũ (nếu bị đổi giao cho người khác)
         if (prevAssigneeId != null && !Objects.equals(prevAssigneeId, ticket.getAssigneeId())) {
             String oldAssigneeUsername = resolveUsername(prevAssigneeId);
             if (oldAssigneeUsername != null && !Objects.equals(oldAssigneeUsername, actor)) {
@@ -312,7 +433,6 @@ public class TicketServiceImpl implements TicketService {
             }
         }
 
-        // 3. Reporter (người giao) — trừ khi chính họ đang thao tác
         if (ticket.getReporterId() != null && !Objects.equals(ticket.getReporterId(), actor)) {
             notificationService.notify(
                     ticket.getReporterId(),
@@ -326,11 +446,8 @@ public class TicketServiceImpl implements TicketService {
                     false
             );
         }
-
-        log.debug("Ticket {} assignment notified. priority={}", ticket.getCode(), priority);
     }
 
-    /** Gửi thông báo khi status ticket thay đổi. */
     private void notifyStatusChange(Ticket ticket, Ticket.TicketStatus oldStatus, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();
         String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
@@ -340,22 +457,27 @@ public class TicketServiceImpl implements TicketService {
                 || isUrgent(ticket);
 
         List<String> recipients = new ArrayList<>();
-        // Reporter — luôn nhận (trừ chính họ)
         if (ticket.getReporterId() != null && !Objects.equals(ticket.getReporterId(), actor)) {
             recipients.add(ticket.getReporterId());
         }
-        // Assignee — nhận nếu ngoài họ đổi trạng thái
         String assigneeUsername = resolveUsername(ticket.getAssigneeId());
         if (assigneeUsername != null && !Objects.equals(assigneeUsername, actor)) {
             recipients.add(assigneeUsername);
         }
 
+        String notifType = ticket.getStatus() == Ticket.TicketStatus.RESOLVED
+                ? "TICKET_PENDING_REVIEW"
+                : "TICKET_STATUS_CHANGED";
+        String title = ticket.getStatus() == Ticket.TicketStatus.RESOLVED
+                ? "Ticket chờ bạn duyệt hoàn thành"
+                : "Ticket đổi trạng thái: " + statusText;
+
         notificationService.notifyMany(
                 recipients,
-                "Ticket đổi trạng thái: " + statusText,
+                title,
                 "Ticket " + ticketLabel + " chuyển từ "
                         + statusLabel(oldStatus) + " → " + statusText + ".",
-                "TICKET_STATUS_CHANGED",
+                notifType,
                 TICKET_ENTITY,
                 ticket.getId(),
                 actionUrl,
@@ -364,10 +486,29 @@ public class TicketServiceImpl implements TicketService {
         );
     }
 
+    private void notifyReviewResult(Ticket ticket, boolean approved, String actor) {
+        String actionUrl = ACTION_URL_PREFIX + ticket.getId();
+        String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
+        String assigneeUsername = resolveUsername(ticket.getAssigneeId());
+        if (assigneeUsername == null || Objects.equals(assigneeUsername, actor)) return;
+
+        notificationService.notify(
+                assigneeUsername,
+                approved ? "Quản lý đã duyệt ticket hoàn thành" : "Ticket bị trả lại — cần xử lý tiếp",
+                "Ticket " + ticketLabel + (approved
+                        ? " đã được đóng."
+                        : " bị trả về Đang xử lý."),
+                approved ? "TICKET_REVIEW_APPROVED" : "TICKET_REVIEW_REJECTED",
+                TICKET_ENTITY,
+                ticket.getId(),
+                actionUrl,
+                actor,
+                !approved
+        );
+    }
 
     private String resolveUsername(String personId) {
         if (personId == null || personId.isBlank()) return null;
-        // Nếu personId thực ra đã là username (backward compat), thử findByUserName trước
         return userRepository.findByPersonId(personId)
                 .map(u -> u.getUserName())
                 .or(() -> userRepository.findByUserName(personId).map(u -> u.getUserName()))
@@ -379,18 +520,8 @@ public class TicketServiceImpl implements TicketService {
         return switch (s) {
             case OPEN -> "Mới";
             case IN_PROGRESS -> "Đang xử lý";
-            case RESOLVED -> "Đã giải quyết";
+            case RESOLVED -> "Chờ quản lý duyệt";
             case CLOSED -> "Đã đóng";
-        };
-    }
-
-    private static String mapPriorityLevel(Ticket.TicketPriority p) {
-        if (p == null) return "NORMAL";
-        return switch (p) {
-            case LOW -> "LOW";
-            case MEDIUM -> "NORMAL";
-            case HIGH -> "HIGH";
-            case URGENT -> "URGENT";
         };
     }
 

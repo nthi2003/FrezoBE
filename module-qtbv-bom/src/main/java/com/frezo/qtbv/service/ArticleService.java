@@ -35,6 +35,9 @@ public interface ArticleService {
 
     PageResponse<ArticleResponse> getPublicArticles(Integer pageNumber, Integer pageSize);
 
+    /** Landing detail — chỉ bài PUBLIC + PUBLISHED + isPublic. */
+    ArticleResponse getPublicArticleById(String id);
+
     Map<String, Object> filter(ArticleFilterRequest request);
 
     PageResponse<ArticleResponse> getMyDrafts(Integer pageNumber, Integer pageSize, String authorId);

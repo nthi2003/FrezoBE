@@ -27,7 +27,7 @@ public class AccountController {
     }
 
     @GetMapping("/{id}")
-    @CheckPermission(api = "/accounting/accounts", action = "VIEW")
+    @CheckPermission(api = "/accounting/accounts/{id}", action = "VIEW")
     public ApiResponse<?> get(@PathVariable String id) {
         return ApiResponse.ok(svc.getById(id));
     }
@@ -40,20 +40,20 @@ public class AccountController {
     }
 
     @PutMapping("/{id}")
-    @CheckPermission(api = "/accounting/accounts", action = "UPDATE")
+    @CheckPermission(api = "/accounting/accounts/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @RequestBody @Valid AccountRequest req) {
         return ApiResponse.ok(svc.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/accounting/accounts", action = "DELETE")
+    @CheckPermission(api = "/accounting/accounts/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         svc.delete(id);
         return ApiResponse.noContent();
     }
 
     @PostMapping("/seed")
-    @CheckPermission(api = "/accounting/accounts", action = "CREATE")
+    @CheckPermission(api = "/accounting/accounts/seed", action = "CREATE")
     @Operation(summary = "Seed COA theo Thông tư",
             description = "Idempotent — chỉ thêm TK chưa có. Trả về số TK vừa được tạo.")
     public ApiResponse<?> seed(@RequestParam AccountingStandard standard) {

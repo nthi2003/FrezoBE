@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.dto.request.WarehouseZoneRequest;
 import com.frezo.warehouse.service.WarehouseZoneService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,30 +20,35 @@ public class WarehouseZoneController {
 
     @Operation(summary = "Zone theo kho")
     @GetMapping("/by-warehouse/{warehouseId}")
+    @CheckPermission(api = "/warehouse/zone/by-warehouse/{warehouseId}", action = "VIEW")
     public ApiResponse<?> getByWarehouse(@PathVariable String warehouseId) {
         return ApiResponse.success(zoneService.getByWarehouseId(warehouseId));
     }
 
     @Operation(summary = "Chi tiết zone")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/zone/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(zoneService.getById(id));
     }
 
     @Operation(summary = "Thêm zone")
     @PostMapping
+    @CheckPermission(api = "/warehouse/zone", action = "CREATE")
     public ApiResponse<?> create(@Valid @RequestBody WarehouseZoneRequest request) {
         return ApiResponse.success(zoneService.create(request));
     }
 
     @Operation(summary = "Cập nhật zone")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/warehouse/zone/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @RequestBody WarehouseZoneRequest request) {
         return ApiResponse.success(zoneService.update(id, request));
     }
 
     @Operation(summary = "Xoá zone")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/warehouse/zone/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         zoneService.delete(id);
         return ApiResponse.success("Xoá zone thành công");

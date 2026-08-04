@@ -26,4 +26,10 @@ public class TicketResponse {
     private Integer commentCount;
     /** Aggregate comment attachments on this ticket. */
     private Integer attachmentCount;
+    /** RESOLVED = chờ người giao / admin duyệt. */
+    private Boolean pendingReview;
+    /** Current user được duyệt (reporter / admin). */
+    private Boolean canReview;
+    /** Current user là assignee (hoặc admin). */
+    private Boolean canComplete;
 }

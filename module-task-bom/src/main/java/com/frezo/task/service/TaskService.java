@@ -1,5 +1,6 @@
 package com.frezo.task.service;
 
+import com.frezo.task.dto.request.ReviewRequest;
 import com.frezo.task.dto.request.TaskRequest;
 import com.frezo.task.dto.response.TaskResponse;
 
@@ -19,4 +20,7 @@ public interface TaskService {
     TaskResponse assignTask(String taskId, String assigneeId);
 
     TaskResponse updateStatus(String taskId, String status);
+
+    /** Người giao / admin duyệt DONE → CLOSED hoặc trả về IN_PROGRESS. */
+    TaskResponse review(String id, ReviewRequest request);
 }

@@ -154,18 +154,36 @@ public class NotificationServiceImpl implements NotificationService {
     private void trySendUrgentEmail(String username, String title, String message) {
         try {
             Optional<User> userOpt = userRepository.findByUserName(username);
-            if (userOpt.isPresent() && userOpt.get().getEmail() != null) {
-                String actualEmail = userOpt.get().getEmail();
+            if (userOpt.isEmpty() || userOpt.get().getEmail() == null || userOpt.get().getEmail().isBlank()) {
+                log.warn("Could not find email for user: {}. Fallback email not sent.", username);
+                return;
+            }
+            String actualEmail = userOpt.get().getEmail();
+            try {
                 emailService.sendByTemplate("URGENT_NOTIFICATION",
                         Map.of("title", title, "content", message),
                         Collections.singletonList(actualEmail));
-                log.info("Sent fallback email to actual address: {}", actualEmail);
-            } else {
-                log.warn("Could not find email for user: {}. Fallback email not sent.", username);
+                log.info("Sent fallback email (template) to: {}", actualEmail);
+            } catch (Exception templateEx) {
+                // Template chưa seed / SMTP lỗi template → gửi HTML thô
+                String html = "<div style=\"font-family:sans-serif;max-width:560px\">"
+                        + "<h2 style=\"color:#059669\">" + escapeHtml(title) + "</h2>"
+                        + "<p style=\"white-space:pre-line;line-height:1.6\">" + escapeHtml(message) + "</p>"
+                        + "<p style=\"color:#94a3b8;font-size:12px\">Frezo ERP</p></div>";
+                emailService.sendSimple(actualEmail, title, html);
+                log.info("Sent fallback email (raw) to: {} — template error: {}", actualEmail, templateEx.getMessage());
             }
         } catch (Exception e) {
             log.error("Failed to send fallback email to {}", username, e);
         }
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     // ==========================================================

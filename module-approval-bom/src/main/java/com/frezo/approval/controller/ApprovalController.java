@@ -31,7 +31,7 @@ public class ApprovalController {
 
     @Operation(summary = "Inbox của tôi")
     @GetMapping("/my")
-    @CheckPermission(api = "/approvals", action = "VIEW")
+    @CheckPermission(api = "/approvals/my", action = "VIEW")
     public ApiResponse<FePage<ApprovalRequestDto>> listMy(
             @RequestParam(defaultValue = "pending") String status) {
         return ApiResponse.ok(approvalService.listMy(status));
@@ -39,7 +39,7 @@ public class ApprovalController {
 
     @Operation(summary = "Duyệt")
     @PostMapping("/{id}/approve")
-    @CheckPermission(api = "/approvals", action = "APPROVE")
+    @CheckPermission(api = "/approvals/{id}/approve", action = "APPROVE")
     public ApiResponse<ApprovalRequestDto> approve(
             @PathVariable String id,
             @RequestBody(required = false) ApprovalActionPayload payload) {
@@ -49,7 +49,7 @@ public class ApprovalController {
 
     @Operation(summary = "Từ chối")
     @PostMapping("/{id}/reject")
-    @CheckPermission(api = "/approvals", action = "APPROVE")
+    @CheckPermission(api = "/approvals/{id}/reject", action = "APPROVE")
     public ApiResponse<ApprovalRequestDto> reject(
             @PathVariable String id,
             @RequestBody(required = false) ApprovalActionPayload payload) {
@@ -59,14 +59,14 @@ public class ApprovalController {
 
     @Operation(summary = "Timeline theo request id")
     @GetMapping("/{id}/timeline")
-    @CheckPermission(api = "/approvals", action = "VIEW")
+    @CheckPermission(api = "/approvals/{id}/timeline", action = "VIEW")
     public ApiResponse<List<ApprovalStepDto>> timeline(@PathVariable String id) {
         return ApiResponse.ok(approvalService.timeline(id));
     }
 
     @Operation(summary = "Timeline theo subject (embed LeavesPage)")
     @GetMapping("/timeline")
-    @CheckPermission(api = "/approvals", action = "VIEW")
+    @CheckPermission(api = "/approvals/timeline", action = "VIEW")
     public ApiResponse<List<ApprovalStepDto>> timelineBySubject(
             @RequestParam String subjectType,
             @RequestParam String subjectId) {
@@ -75,7 +75,7 @@ public class ApprovalController {
 
     @Operation(summary = "Approval request theo subject")
     @GetMapping("/by-subject")
-    @CheckPermission(api = "/approvals", action = "VIEW")
+    @CheckPermission(api = "/approvals/by-subject", action = "VIEW")
     public ApiResponse<ApprovalRequestDto> bySubject(
             @RequestParam String subjectType,
             @RequestParam String subjectId) {

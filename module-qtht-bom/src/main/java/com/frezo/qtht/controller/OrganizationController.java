@@ -2,19 +2,16 @@ package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
 import com.frezo.common.response.ComboboxResponse;
-import com.frezo.common.response.PageResponse;
 import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.request.OrganizationAddRequest;
 import com.frezo.qtht.dto.request.OrganizationEditRequest;
 import com.frezo.qtht.dto.request.OrganizationFilterRequest;
-import com.frezo.qtht.dto.response.OrganizationResponse;
 import com.frezo.qtht.service.OrganizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -40,14 +37,14 @@ public class OrganizationController {
 
     @Operation(summary = "Cập nhật tổ chức", description = "Cập nhật thông tin của một tổ chức")
     @PutMapping("/{id}")
-    @CheckPermission(api = "/qtht/organization", action = "UPDATE")
+    @CheckPermission(api = "/qtht/organization/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody OrganizationEditRequest request) {
         return organizationService.update(id, request);
     }
 
     @Operation(summary = "Xóa tổ chức", description = "Xóa mềm một tổ chức khỏi hệ thống")
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/qtht/organization", action = "DELETE")
+    @CheckPermission(api = "/qtht/organization/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         organizationService.delete(id);
         return ApiResponse.success("Xóa tổ chức thành công");
@@ -55,22 +52,7 @@ public class OrganizationController {
 
     @Operation(summary = "Lấy danh sách combobox", description = "Lấy danh sách tổ chức dạng combobox")
     @GetMapping("/combobox")
-    public ApiResponse<?> getCombobox(@ModelAttribute OrganizationFilterRequest filter) {
-        PageResponse<OrganizationResponse> data = organizationService.all(filter);
-        List<OrganizationResponse> items = data.getItems() != null ? data.getItems() : Collections.emptyList();
-
-        List<ComboboxResponse> comboboxData = items.stream()
-                .map(this::mapToCombobox)
-                .toList();
-
-        return ApiResponse.success(comboboxData);
-    }
-
-    private ComboboxResponse mapToCombobox(OrganizationResponse org) {
-        return ComboboxResponse.builder()
-                .value(org.getId())
-                .label(org.getName())
-                .description(org.getCode())
-                .build();
+    public ApiResponse<List<ComboboxResponse>> getCombobox(@ModelAttribute OrganizationFilterRequest filter) {
+        return ApiResponse.success(organizationService.getCombobox(filter));
     }
 }

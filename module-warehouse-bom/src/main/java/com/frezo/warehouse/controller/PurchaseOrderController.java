@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.FePage;
 import com.frezo.warehouse.dto.request.PurchaseOrderSaveRequest;
 import com.frezo.warehouse.dto.response.PurchaseOrderDto;
@@ -26,27 +27,32 @@ public class PurchaseOrderController {
     private final PurchaseOrderService purchaseOrderService;
 
     @GetMapping
+    @CheckPermission(api = "/warehouse/purchase-orders", action = "VIEW")
     public ApiResponse<FePage<PurchaseOrderDto>> list() {
         return ApiResponse.ok(purchaseOrderService.list());
     }
 
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/purchase-orders/{id}", action = "VIEW")
     public ApiResponse<PurchaseOrderDto> get(@PathVariable String id) {
         return ApiResponse.ok(purchaseOrderService.get(id));
     }
 
     @PostMapping
+    @CheckPermission(api = "/warehouse/purchase-orders", action = "CREATE")
     public ApiResponse<PurchaseOrderDto> create(@RequestBody PurchaseOrderSaveRequest req) {
         return ApiResponse.ok(purchaseOrderService.create(req));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/warehouse/purchase-orders/{id}", action = "UPDATE")
     public ApiResponse<PurchaseOrderDto> update(@PathVariable String id,
                                                 @RequestBody PurchaseOrderSaveRequest req) {
         return ApiResponse.ok(purchaseOrderService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/warehouse/purchase-orders/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         purchaseOrderService.delete(id);
         return ApiResponse.ok();
@@ -54,12 +60,14 @@ public class PurchaseOrderController {
 
     @Operation(summary = "Tạo PO từ PR APPROVED (idempotent theo prId)")
     @PostMapping("/from-pr/{prId}")
+    @CheckPermission(api = "/warehouse/purchase-orders/from-pr/{prId}", action = "CREATE")
     public ApiResponse<PurchaseOrderDto> fromPr(@PathVariable String prId) {
         return ApiResponse.ok(purchaseOrderService.createFromPr(prId));
     }
 
     @Operation(summary = "Xác nhận nhận hàng + stub tăng StockBalance")
     @PostMapping("/{id}/confirm-receive")
+    @CheckPermission(api = "/warehouse/purchase-orders/{id}/confirm-receive", action = "UPDATE")
     public ApiResponse<PurchaseOrderDto> confirmReceive(@PathVariable String id) {
         return ApiResponse.ok(purchaseOrderService.confirmReceive(id));
     }

@@ -8,7 +8,10 @@ import lombok.Getter;
 public enum TaskStatusEnum {
     OPEN("OPEN", "Mở"),
     IN_PROGRESS("IN_PROGRESS", "Đang thực hiện"),
-    DONE("DONE", "Hoàn thành"),
+    /** EU đánh dấu xong — chờ người giao / admin duyệt. */
+    DONE("DONE", "Hoàn thành (chờ duyệt)"),
+    /** Người giao đã xác nhận hoàn thành. */
+    CLOSED("CLOSED", "Đã đóng"),
     CANCELLED("CANCELLED", "Hủy");
 
     private final String code;

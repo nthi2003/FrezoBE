@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.dto.request.ApilogFilter;
 import com.frezo.qtht.dto.response.ApiLogResponse;
@@ -26,24 +27,28 @@ public class ApiLogController {
     private final com.frezo.qtht.mapper.ApiLogMapper apiLogMapper;
 
     @GetMapping
+    @CheckPermission(api = "/qtht/api-log", action = "VIEW")
     @Operation(summary = "Lấy danh sách API logs")
     public ApiResponse<PageResponse<ApiLogResponse>> getAllLogs(ApilogFilter filter) {
         return ApiResponse.success(apiLogService.all(filter));
     }
 
     @GetMapping("/stats")
+    @CheckPermission(api = "/qtht/api-log/stats", action = "VIEW")
     @Operation(summary = "Lấy thống kê API logs")
     public ApiResponse<ApiLogStatsResponse> getStats(ApilogFilter filter) {
         return ApiResponse.success(apiLogService.getStats(filter));
     }
 
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qtht/api-log/{id}", action = "VIEW")
     @Operation(summary = "Lấy chi tiết API log")
     public ApiResponse<?> getDetail(@PathVariable String id) {
         return ApiResponse.success(apiLogMapper.toResponse(apiLogService.findById(id)));
     }
 
     @DeleteMapping("/bulk/{days}")
+    @CheckPermission(api = "/qtht/api-log/bulk/{days}", action = "DELETE")
     @Operation(summary = "Xóa API logs theo số ngày")
     public ApiResponse<String> deleteByDays(@PathVariable int days) {
         apiLogService.deleteLogs(days);
@@ -51,6 +56,7 @@ public class ApiLogController {
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qtht/api-log/{id}", action = "DELETE")
     @Operation(summary = "Xóa một API log")
     public ApiResponse<String> delete(@PathVariable String id) {
         apiLogService.delete(id);

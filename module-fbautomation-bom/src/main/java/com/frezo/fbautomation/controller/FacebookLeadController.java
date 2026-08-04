@@ -3,6 +3,7 @@ package com.frezo.fbautomation.controller;
 import com.frezo.fbautomation.dto.response.FacebookLeadResponse;
 import com.frezo.fbautomation.service.FacebookLeadService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class FacebookLeadController {
 
     @Operation(summary = "Danh sách leads (lọc theo status + source)")
     @GetMapping
+    @CheckPermission(api = "/fb/leads", action = "VIEW")
     public ApiResponse<List<FacebookLeadResponse>> getAll(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String source) {
@@ -29,6 +31,7 @@ public class FacebookLeadController {
 
     @Operation(summary = "Assign lead cho nhân viên CSKH")
     @PostMapping("/{id}/assign")
+    @CheckPermission(api = "/fb/leads/{id}/assign", action = "UPDATE")
     public ApiResponse<FacebookLeadResponse> assign(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
@@ -41,12 +44,14 @@ public class FacebookLeadController {
 
     @Operation(summary = "Chi tiết lead")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/fb/leads/{id}", action = "VIEW")
     public ApiResponse<FacebookLeadResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(leadService.getById(id));
     }
 
     @Operation(summary = "Xóa lead")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/fb/leads/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         leadService.delete(id);
         return ApiResponse.ok();
@@ -54,6 +59,7 @@ public class FacebookLeadController {
 
     @Operation(summary = "Import lead vào danh sách khách hàng")
     @PostMapping("/{id}/import")
+    @CheckPermission(api = "/fb/leads/{id}/import", action = "UPDATE")
     public ApiResponse<String> importToCustomer(@PathVariable String id) {
         String customerId = leadService.importToCustomer(id);
         return ApiResponse.ok("Đã import thành công, customerId: " + customerId);
@@ -61,6 +67,7 @@ public class FacebookLeadController {
 
     @Operation(summary = "Import nhiều leads vào danh sách khách hàng")
     @PostMapping("/import-batch")
+    @CheckPermission(api = "/fb/leads/import-batch", action = "UPDATE")
     public ApiResponse<String> importBatch(@RequestBody Map<String, List<String>> body) {
         List<String> ids = body.get("ids");
         if (ids == null || ids.isEmpty()) {

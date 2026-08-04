@@ -20,7 +20,7 @@ public class VatReportController {
     private final VatReportService vatReportService;
 
     @GetMapping("/vat")
-    @CheckPermission(api = "/accounting/tax", action = "VIEW")
+    @CheckPermission(api = "/accounting/tax/vat", action = "VIEW")
     public ApiResponse<VatReportResponse> vat(
             @RequestParam int year,
             @RequestParam int month) {

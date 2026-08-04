@@ -21,7 +21,7 @@ import java.util.List;
  * Khấu hao TSCĐ & post GL định kỳ.
  * <p>Endpoint mount song song {@code /qtbv/depreciation} và {@code /asset/depreciation}
  * để backward-compat với FE (giống pattern AssetController).
- * <p>Permission seed: {@code ASSET_DEPRECIATION_VIEW|CREATE|UPDATE} trên {@code /asset/depreciation}.
+ * <p>Permission key canonical: {@code /asset/depreciation/...} (khớp seed STAFF deny / role filters).
  */
 @RestController
 @RequestMapping({"/qtbv/depreciation", "/asset/depreciation"})
@@ -32,8 +32,8 @@ public class DepreciationController {
     private final DepreciationService depreciationService;
 
     @Operation(summary = "Sinh lịch khấu hao cho 1 tài sản (trùng → SCHEDULE_EXISTS)")
-    @CheckPermission(api = "/asset/depreciation", action = "CREATE")
     @PostMapping("/schedules/generate")
+    @CheckPermission(api = "/asset/depreciation/schedules/generate", action = "CREATE")
     public ApiResponse<DepreciationScheduleResponse> generate(@RequestParam String assetId,
                                                               @RequestParam(required = false) String method,
                                                               @RequestParam(required = false) Integer months) {
@@ -45,32 +45,32 @@ public class DepreciationController {
     }
 
     @Operation(summary = "Danh sách schedule (lọc theo assetId nếu có)")
-    @CheckPermission(api = "/asset/depreciation", action = "VIEW")
     @GetMapping("/schedules")
+    @CheckPermission(api = "/asset/depreciation/schedules", action = "VIEW")
     public ApiResponse<List<DepreciationScheduleResponse>> list(
             @RequestParam(required = false) String assetId) {
         return ApiResponse.ok(depreciationService.listSchedules(assetId));
     }
 
     @Operation(summary = "Ghi sổ khấu hao 1 kỳ (idempotent DEP-YYYY-MM; PERIOD_CLOSED nếu kỳ đóng)")
-    @CheckPermission(api = "/asset/depreciation", action = "UPDATE")
     @PostMapping("/post")
+    @CheckPermission(api = "/asset/depreciation/post", action = "UPDATE")
     public ApiResponse<DepreciationPostingResponse> post(@RequestParam int year,
                                                          @RequestParam int month) {
         return ApiResponse.ok(depreciationService.postPeriod(year, month));
     }
 
     @Operation(summary = "Preview khấu hao kỳ (không ghi GL)")
-    @CheckPermission(api = "/asset/depreciation", action = "VIEW")
     @GetMapping("/preview")
+    @CheckPermission(api = "/asset/depreciation/preview", action = "VIEW")
     public ApiResponse<DepreciationPostingResponse> preview(@RequestParam int year,
                                                             @RequestParam int month) {
         return ApiResponse.ok(depreciationService.previewPeriod(year, month));
     }
 
     @Operation(summary = "Danh sách posting theo năm/tháng")
-    @CheckPermission(api = "/asset/depreciation", action = "VIEW")
     @GetMapping("/postings")
+    @CheckPermission(api = "/asset/depreciation/postings", action = "VIEW")
     public ApiResponse<List<DepreciationPostingResponse>> postings(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {

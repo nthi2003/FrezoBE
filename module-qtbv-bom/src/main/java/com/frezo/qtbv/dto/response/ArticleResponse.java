@@ -25,6 +25,7 @@ public class ArticleResponse {
     private PublishScope publishScope;
     private Boolean isActive;
     private Boolean isPublic;
+    private String rejectNote;
     private LocalDateTime publishedAt;
     private Long heartCount;
     private LocalDateTime createdAt;

@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.entity.LeaveRecord;
 import com.frezo.qlns.service.LeaveService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,18 +21,21 @@ public class LeaveController {
 
     @Operation(summary = "Tạo đơn xin nghỉ phép")
     @PostMapping
+    @CheckPermission(api = "/qlns/leave", action = "CREATE")
     public ApiResponse<LeaveRecord> create(@RequestBody LeaveRecord request) {
         return ApiResponse.success(leaveService.create(request));
     }
 
     @Operation(summary = "Phê duyệt đơn nghỉ phép")
     @PutMapping("/{id}/approve")
+    @CheckPermission(api = "/qlns/leave/{id}/approve", action = "UPDATE")
     public ApiResponse<LeaveRecord> approve(@PathVariable String id, @RequestParam String managerId) {
         return ApiResponse.success(leaveService.approve(id, managerId));
     }
 
     @Operation(summary = "Lấy lịch sử nghỉ phép của nhân viên")
     @GetMapping("/person/{personId}")
+    @CheckPermission(api = "/qlns/leave/person/{personId}", action = "VIEW")
     public ApiResponse<List<LeaveRecord>> getByPerson(@PathVariable String personId) {
         return ApiResponse.success(leaveService.getByPersonId(personId));
     }

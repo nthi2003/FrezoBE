@@ -1,6 +1,7 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.response.PageResponse;
 import com.frezo.email.dto.request.EmailTemplateFilter;
 import com.frezo.email.dto.request.EmailTemplateRequest;
@@ -26,18 +27,21 @@ public class EmailtemplateController {
 
     @Operation(summary = "Get all email templates", description = "Returns a paginated list of email templates")
     @GetMapping("")
+    @CheckPermission(api = "/email/template", action = "VIEW")
     public ResponseEntity<ApiResponse<PageResponse<EmailTemplateResponse>>> getAll(EmailTemplateFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(emailTemplateService.all(filter)));
     }
 
     @Operation(summary = "Add new email template")
     @PostMapping("")
+    @CheckPermission(api = "/email/template", action = "CREATE")
     public ResponseEntity<ApiResponse<?>> add(@Valid @RequestBody EmailTemplateRequest request) {
         return ResponseEntity.ok(emailTemplateService.add(request));
     }
 
     @Operation(summary = "Edit existing email template")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/email/template/{id}", action = "UPDATE")
     public ResponseEntity<ApiResponse<?>> edit(@PathVariable("id") String id,
             @Valid @RequestBody EmailTemplateRequest request) {
         return ResponseEntity.ok(emailTemplateService.edit(id, request));
@@ -45,12 +49,14 @@ public class EmailtemplateController {
 
     @Operation(summary = "View email template details")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/email/template/{id}", action = "VIEW")
     public ResponseEntity<ApiResponse<EmailTemplateResponse>> view(@PathVariable("id") String id) {
         return ResponseEntity.ok(ApiResponse.success(emailTemplateService.view(id)));
     }
 
     @Operation(summary = "Delete email template")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/email/template/{id}", action = "DELETE")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable("id") String id) {
         emailTemplateService.delete(id);
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -58,6 +64,7 @@ public class EmailtemplateController {
 
     @Operation(summary = "Send test email using template")
     @PostMapping("/{id}/send-test")
+    @CheckPermission(api = "/email/template/{id}/send-test", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> sendTest(
             @PathVariable("id") String id,
             @Valid @RequestBody SendTestEmailRequest request) {

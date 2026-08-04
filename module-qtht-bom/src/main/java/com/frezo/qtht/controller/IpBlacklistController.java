@@ -2,6 +2,7 @@ package com.frezo.qtht.controller;
 
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.entity.IpBlacklist;
 import com.frezo.qtht.service.IpBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ public class IpBlacklistController {
     private final IpBlacklistService ipBlacklistService;
 
     @PostMapping("/ban")
+    @CheckPermission(api = "/qtht/ip-blacklist/ban", action = "CREATE")
     @Operation(summary = "Cấm truy cập một IP")
     public ApiResponse<IpBlacklist> banIp(@RequestBody Map<String, Object> body) {
         String ipAddress = (String) body.get("ipAddress");
@@ -30,6 +32,7 @@ public class IpBlacklistController {
     }
 
     @DeleteMapping("/unban/{id}")
+    @CheckPermission(api = "/qtht/ip-blacklist/unban/{id}", action = "DELETE")
     @Operation(summary = "Mở khóa một IP")
     public ApiResponse<String> unbanIp(@PathVariable String id) {
         ipBlacklistService.unban(id);
@@ -37,6 +40,7 @@ public class IpBlacklistController {
     }
 
     @GetMapping
+    @CheckPermission(api = "/qtht/ip-blacklist", action = "VIEW")
     @Operation(summary = "Lấy danh sách các IP đang bị cấm")
     public ApiResponse<List<IpBlacklist>> getActiveBans() {
         return ApiResponse.success(ipBlacklistService.getAllActiveBans());

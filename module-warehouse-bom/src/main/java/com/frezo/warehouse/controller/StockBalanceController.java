@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.service.StockBalanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ public class StockBalanceController {
 
     @Operation(summary = "Xem tồn kho", description = "Lọc theo kho, sản phẩm")
     @GetMapping
+    @CheckPermission(api = "/warehouse/stock", action = "VIEW")
     public ApiResponse<?> filter(
             @RequestParam(required = false) String warehouseId,
             @RequestParam(required = false) String productId,
@@ -31,24 +33,28 @@ public class StockBalanceController {
 
     @Operation(summary = "Chi tiết tồn kho")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/warehouse/stock/{id}", action = "VIEW")
     public ApiResponse<?> getById(@PathVariable String id) {
         return ApiResponse.success(stockBalanceService.getById(id));
     }
 
     @Operation(summary = "Cảnh báo tồn kho thấp", description = "Sản phẩm có quantityAvailable <= warningThreshold")
     @GetMapping("/alerts")
+    @CheckPermission(api = "/warehouse/stock/alerts", action = "VIEW")
     public ApiResponse<?> getLowStockAlerts() {
         return ApiResponse.success(stockBalanceService.getLowStockAlerts());
     }
 
     @Operation(summary = "Thống kê kho nhanh", description = "Tổng số kho, sản phẩm, GRN/GIN hôm nay")
     @GetMapping("/stats")
+    @CheckPermission(api = "/warehouse/stock/stats", action = "VIEW")
     public ApiResponse<?> getStats() {
         return ApiResponse.success(stockBalanceService.getStats());
     }
 
     @Operation(summary = "Xuất Excel tồn kho")
     @GetMapping("/export")
+    @CheckPermission(api = "/warehouse/stock/export", action = "VIEW")
     public void exportStock(
             @RequestParam(required = false) String warehouseId,
             @RequestParam(required = false) String productId,

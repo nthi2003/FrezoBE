@@ -1,6 +1,7 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.email.dto.response.EmailInboxResponse;
 import com.frezo.email.service.EmailInboxService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ public class EmailInboxController {
 
     @Operation(summary = "Lấy danh sách email trong hộp thư", description = "folder: inbox, sent, drafts, trash, starred, spam")
     @GetMapping("/{configId}")
+    @CheckPermission(api = "/email/inbox/{configId}", action = "VIEW")
     public ResponseEntity<ApiResponse<List<EmailInboxResponse>>> getInbox(
             @PathVariable String configId,
             @RequestParam(defaultValue = "inbox") String folder,
@@ -31,6 +33,7 @@ public class EmailInboxController {
 
     @Operation(summary = "Xem chi tiết một email")
     @GetMapping("/{configId}/{uid}")
+    @CheckPermission(api = "/email/inbox/{configId}/{uid}", action = "VIEW")
     public ResponseEntity<ApiResponse<EmailInboxResponse>> getEmail(
             @PathVariable String configId,
             @PathVariable long uid) {
@@ -39,6 +42,7 @@ public class EmailInboxController {
 
     @Operation(summary = "Đánh dấu email đã đọc")
     @PutMapping("/{configId}/{uid}/read")
+    @CheckPermission(api = "/email/inbox/{configId}/{uid}/read", action = "UPDATE")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @PathVariable String configId,
             @PathVariable long uid) {

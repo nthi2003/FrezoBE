@@ -5,7 +5,10 @@ import com.frezo.qtht.dto.request.PersonFilterRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
 import com.frezo.qtht.dto.response.PersonResponse;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
+
+import java.util.List;
 
 public interface PersonService {
     PageResponse<PersonResponse> all(PersonFilterRequest filter);
@@ -24,4 +27,6 @@ public interface PersonService {
     String uploadAvatarTemp(String userName, org.springframework.web.multipart.MultipartFile file);
 
     PersonResponse getById(String id);
+
+    List<ComboboxResponse> getCombobox(PersonFilterRequest filter);
 }

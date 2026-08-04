@@ -17,7 +17,8 @@ import jakarta.persistence.*;
 @Builder
 public class Permission extends BaseEntity {
 
-    @Column(name = "code", length = 50, nullable = false, unique = true)
+    /** Max 100: per-endpoint codes (path-derived) exceed legacy VARCHAR(50). */
+    @Column(name = "code", length = 100, nullable = false, unique = true)
     private String code; // MENU_VIEW, MENU_CREATE, ROLE_UPDATE...
 
     @Column(name = "name", length = 200, nullable = false)

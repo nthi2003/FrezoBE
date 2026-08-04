@@ -4,6 +4,7 @@ import com.frezo.fbautomation.dto.request.SocialPostRequest;
 import com.frezo.fbautomation.dto.response.SocialPostResponse;
 import com.frezo.fbautomation.service.SocialPostService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -42,6 +43,7 @@ public class SocialPostController {
     private final SocialPostService service;
 
     @GetMapping
+    @CheckPermission(api = "/mkt/posts", action = "VIEW")
     @Operation(summary = "List bài viết")
     public ApiResponse<List<SocialPostResponse>> list(
             @RequestParam(required = false) String status,
@@ -50,17 +52,20 @@ public class SocialPostController {
     }
 
     @GetMapping("/{id}")
+    @CheckPermission(api = "/mkt/posts/{id}", action = "VIEW")
     public ApiResponse<SocialPostResponse> get(@PathVariable String id) {
         return ApiResponse.ok(service.get(id));
     }
 
     @PostMapping
+    @CheckPermission(api = "/mkt/posts", action = "CREATE")
     @Operation(summary = "Tạo bản nháp hoặc lên lịch")
     public ApiResponse<SocialPostResponse> create(@RequestBody @Valid SocialPostRequest req) {
         return ApiResponse.ok(service.create(req));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/mkt/posts/{id}", action = "UPDATE")
     public ApiResponse<SocialPostResponse> update(
             @PathVariable String id,
             @RequestBody @Valid SocialPostRequest req) {
@@ -68,22 +73,26 @@ public class SocialPostController {
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/mkt/posts/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         service.delete(id);
         return ApiResponse.ok();
     }
 
     @PostMapping("/{id}/duplicate")
+    @CheckPermission(api = "/mkt/posts/{id}/duplicate", action = "CREATE")
     public ApiResponse<SocialPostResponse> duplicate(@PathVariable String id) {
         return ApiResponse.ok(service.duplicate(id));
     }
 
     @PostMapping("/{id}/cancel")
+    @CheckPermission(api = "/mkt/posts/{id}/cancel", action = "UPDATE")
     public ApiResponse<SocialPostResponse> cancel(@PathVariable String id) {
         return ApiResponse.ok(service.cancel(id));
     }
 
     @PostMapping("/{id}/publish")
+    @CheckPermission(api = "/mkt/posts/{id}/publish", action = "UPDATE")
     @Operation(summary = "Publish ngay lập tức (cần Page Access Token)")
     public ApiResponse<SocialPostResponse> publishNow(@PathVariable String id) {
         return ApiResponse.ok(service.publishNow(id));

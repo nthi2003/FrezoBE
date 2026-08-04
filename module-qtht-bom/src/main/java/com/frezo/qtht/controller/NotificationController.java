@@ -1,6 +1,7 @@
 package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.service.NotificationService;
 import com.frezo.common.entity.Notification;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +24,7 @@ public class NotificationController {
 
     @Operation(summary = "Lấy danh sách thông báo", description = "Lấy toàn bộ thông báo của người dùng hiện tại")
     @GetMapping("/my")
+    @CheckPermission(api = "/qtht/notification/my", action = "VIEW")
     public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications(Authentication authentication) {
         String username = authentication.getName();
         return ResponseEntity.ok(ApiResponse.success(notificationService.getMyNotifications(username)));
@@ -30,6 +32,7 @@ public class NotificationController {
 
     @Operation(summary = "Đếm số thông báo chưa đọc", description = "Số badge hiển thị trên chuông")
     @GetMapping("/unread-count")
+    @CheckPermission(api = "/qtht/notification/unread-count", action = "VIEW")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount(Authentication authentication) {
         long count = notificationService.getUnreadCount(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(Map.of("count", count)));
@@ -37,6 +40,7 @@ public class NotificationController {
 
     @Operation(summary = "Đánh dấu đã đọc", description = "Đánh dấu một thông báo là đã đọc")
     @PatchMapping("/{id}/read")
+    @CheckPermission(api = "/qtht/notification/{id}/read", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> markAsRead(@PathVariable String id) {
         notificationService.markAsRead(id);
         return ResponseEntity.ok(ApiResponse.success("Đã đánh dấu đã đọc"));
@@ -44,6 +48,7 @@ public class NotificationController {
 
     @Operation(summary = "Đánh dấu tất cả đã đọc")
     @PatchMapping("/mark-all-read")
+    @CheckPermission(api = "/qtht/notification/mark-all-read", action = "UPDATE")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> markAllRead(Authentication authentication) {
         int n = notificationService.markAllAsRead(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(Map.of("updated", n)));
@@ -51,6 +56,7 @@ public class NotificationController {
 
     @Operation(summary = "Đánh dấu tất cả đã đọc (POST alias)")
     @PostMapping("/mark-all-read")
+    @CheckPermission(api = "/qtht/notification/mark-all-read", action = "CREATE")
     public ResponseEntity<ApiResponse<Map<String, Integer>>> markAllReadPost(Authentication authentication) {
         int n = notificationService.markAllAsRead(authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(Map.of("updated", n)));

@@ -17,6 +17,7 @@ import com.frezo.qtht.repository.OrganizationRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import com.frezo.qtht.service.OrganizationService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -117,6 +118,20 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Transactional(readOnly = true)
     public List<OrganizationResponse> getChildren(String parentId) {
         return Collections.emptyList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComboboxResponse> getCombobox(OrganizationFilterRequest filter) {
+        PageResponse<OrganizationResponse> data = all(filter);
+        List<OrganizationResponse> items = data.getItems() != null ? data.getItems() : Collections.emptyList();
+        return items.stream()
+                .map(org -> ComboboxResponse.builder()
+                        .value(org.getId())
+                        .label(org.getName())
+                        .description(org.getCode())
+                        .build())
+                .toList();
     }
 
 

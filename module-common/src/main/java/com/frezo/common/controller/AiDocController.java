@@ -3,6 +3,7 @@ package com.frezo.common.controller;
 import com.frezo.common.model.ai.AiOcrAnalyzeResponse;
 import com.frezo.common.model.ai.AiOcrReviewSaveRequest;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.common.service.AiDocumentService;
 import java.io.IOException;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class AiDocController {
     }
 
     @PostMapping("/analyze")
+    @CheckPermission(api = "/ai/doc/analyze", action = "CREATE")
     public ResponseEntity<ApiResponse<AiOcrAnalyzeResponse>> analyzeDocument(
         @RequestParam("file") MultipartFile file
     ) throws IOException {
@@ -33,6 +35,7 @@ public class AiDocController {
     }
 
     @PostMapping("/review")
+    @CheckPermission(api = "/ai/doc/review", action = "CREATE")
     public ResponseEntity<ApiResponse<AiOcrAnalyzeResponse>> reviewDocument(
         @RequestBody AiOcrReviewSaveRequest request
     ) {

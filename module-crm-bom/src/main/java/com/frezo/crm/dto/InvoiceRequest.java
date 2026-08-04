@@ -19,6 +19,10 @@ public class InvoiceRequest {
     private String currency;
     private InvoiceStatus status;
     private String notes;
+    /** Sale phụ trách — nếu trống sẽ lấy từ Deal.owner qua Quote. */
+    private String salespersonUsername;
+    /** Override % hoa hồng cho đơn này (null = dùng cấu hình sale / mặc định). */
+    private BigDecimal commissionRatePercent;
     private List<Item> items;
 
     @Data

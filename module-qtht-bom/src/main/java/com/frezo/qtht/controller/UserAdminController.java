@@ -32,12 +32,14 @@ public class UserAdminController {
 
     @Operation(summary = "Search user cho @mention autocomplete (limit 10)")
     @GetMapping("/search")
+    @CheckPermission(api = "/qtht/user/search", action = "VIEW")
     public ApiResponse<List<MentionUserDto>> searchUsers(@RequestParam(required = false) String q) {
         return ApiResponse.ok(commentService.searchUsers(q));
     }
 
     @Operation(summary = "Đăng ký tài khoản mới", description = "Tạo tài khoản người dùng mới vào hệ thống. Bao gồm tạo User, Person và gán Role mặc định. Không cần authentication.")
     @PostMapping("/register")
+    @CheckPermission(api = "/qtht/user/register", action = "CREATE")
     public ResponseEntity<ApiResponse<String>> register(@Valid @RequestBody RegisterRequest request) {
         userAdminService.register(request);
         return ResponseEntity.ok(ApiResponse.success("Đăng ký tài khoản thành công"));

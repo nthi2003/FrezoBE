@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.RequisitionRequest;
 import com.frezo.qlns.dto.response.RequisitionResponse;
 import com.frezo.qlns.service.RequisitionService;
@@ -28,24 +29,28 @@ public class RequisitionController {
 
     @Operation(summary = "Tạo mới nhu cầu tuyển dụng")
     @PostMapping
+    @CheckPermission(api = "/qlns/recruitment/requisitions", action = "CREATE")
     public ApiResponse<RequisitionResponse> create(@RequestBody RequisitionRequest req) {
         return ApiResponse.ok(requisitionService.create(req));
     }
 
     @Operation(summary = "Danh sách nhu cầu tuyển dụng (lọc theo status)")
     @GetMapping
+    @CheckPermission(api = "/qlns/recruitment/requisitions", action = "VIEW")
     public ApiResponse<List<RequisitionResponse>> list(@RequestParam(required = false) String status) {
         return ApiResponse.ok(requisitionService.list(status));
     }
 
     @Operation(summary = "Chi tiết 1 nhu cầu tuyển dụng")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/recruitment/requisitions/{id}", action = "VIEW")
     public ApiResponse<RequisitionResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(requisitionService.getById(id));
     }
 
     @Operation(summary = "Cập nhật nhu cầu tuyển dụng")
     @PutMapping("/{id}")
+    @CheckPermission(api = "/qlns/recruitment/requisitions/{id}", action = "UPDATE")
     public ApiResponse<RequisitionResponse> update(@PathVariable String id,
                                                    @RequestBody RequisitionRequest req) {
         return ApiResponse.ok(requisitionService.update(id, req));
@@ -53,6 +58,7 @@ public class RequisitionController {
 
     @Operation(summary = "Đóng nhu cầu tuyển dụng (không cho apply mới)")
     @PostMapping("/{id}/close")
+    @CheckPermission(api = "/qlns/recruitment/requisitions/{id}/close", action = "UPDATE")
     public ApiResponse<RequisitionResponse> close(@PathVariable String id) {
         return ApiResponse.ok(requisitionService.close(id));
     }

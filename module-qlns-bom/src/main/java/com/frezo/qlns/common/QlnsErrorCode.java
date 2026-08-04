@@ -89,7 +89,23 @@ public enum QlnsErrorCode implements ErrorCode {
     RESIGNATION_PERSON_INACTIVE("qlns.resignation.person.inactive", HttpStatus.BAD_REQUEST,
             "Nhân viên đã ngừng hoạt động — không thể tạo đơn nghỉ việc"),
     RESIGNATION_HANDOVER_INCOMPLETE("qlns.resignation.handover.incomplete", HttpStatus.BAD_REQUEST,
-            "Vui lòng xác nhận đủ checklist bàn giao (laptop, thẻ, tài liệu)");
+            "Vui lòng xác nhận đủ checklist bàn giao (laptop, thẻ, tài liệu)"),
+
+    // -------------------- RECOGNITION / TOKEN --------------------
+    TOKEN_INSUFFICIENT_BALANCE("qlns.recognition.insufficient.balance", HttpStatus.BAD_REQUEST,
+            "Số dư token không đủ"),
+    TOKEN_INVALID_AMOUNT("qlns.recognition.invalid.amount", HttpStatus.BAD_REQUEST,
+            "Số token không hợp lệ"),
+    TOKEN_SELF_GIFT("qlns.recognition.self.gift", HttpStatus.BAD_REQUEST,
+            "Không thể tự tặng token cho chính mình"),
+    TOKEN_REDEEM_NOT_FOUND("qlns.recognition.redeem.not.found", HttpStatus.NOT_FOUND,
+            "Không tìm thấy yêu cầu đổi thưởng"),
+    TOKEN_REDEEM_INVALID_STATUS("qlns.recognition.redeem.invalid.status", HttpStatus.BAD_REQUEST,
+            "Trạng thái yêu cầu đổi thưởng không hợp lệ"),
+    TOKEN_GIFT_MAX_EXCEEDED("qlns.recognition.gift.max", HttpStatus.BAD_REQUEST,
+            "Vượt quá số token tối đa mỗi lần tặng ({0})"),
+    TOKEN_PERSON_REQUIRED("qlns.recognition.person.required", HttpStatus.BAD_REQUEST,
+            "Vui lòng chọn người nhận");
 
     private final String key;
     private final HttpStatus status;

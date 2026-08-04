@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.HireRequest;
 import com.frezo.qlns.dto.request.JobApplicationRequest;
 import com.frezo.qlns.dto.response.JobApplicationResponse;
@@ -28,12 +29,14 @@ public class JobApplicationController {
 
     @Operation(summary = "Ứng viên nộp đơn ứng tuyển vào 1 requisition")
     @PostMapping
+    @CheckPermission(api = "/qlns/recruitment/applications", action = "CREATE")
     public ApiResponse<JobApplicationResponse> create(@RequestBody JobApplicationRequest req) {
         return ApiResponse.ok(jobApplicationService.create(req));
     }
 
     @Operation(summary = "Danh sách đơn ứng tuyển (lọc theo requisition & stage)")
     @GetMapping
+    @CheckPermission(api = "/qlns/recruitment/applications", action = "VIEW")
     public ApiResponse<List<JobApplicationResponse>> list(
             @RequestParam(required = false) String requisitionId,
             @RequestParam(required = false) String stage) {
@@ -42,12 +45,14 @@ public class JobApplicationController {
 
     @Operation(summary = "Chi tiết đơn ứng tuyển")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qlns/recruitment/applications/{id}", action = "VIEW")
     public ApiResponse<JobApplicationResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(jobApplicationService.getById(id));
     }
 
     @Operation(summary = "Chuyển stage của đơn (server tự validate transition hợp lệ)")
     @PostMapping("/{id}/move")
+    @CheckPermission(api = "/qlns/recruitment/applications/{id}/move", action = "CREATE")
     public ApiResponse<JobApplicationResponse> move(@PathVariable String id,
                                                     @RequestParam String stage) {
         return ApiResponse.ok(jobApplicationService.moveStage(id, stage));
@@ -55,6 +60,7 @@ public class JobApplicationController {
 
     @Operation(summary = "Từ chối đơn ứng tuyển")
     @PostMapping("/{id}/reject")
+    @CheckPermission(api = "/qlns/recruitment/applications/{id}/reject", action = "UPDATE")
     public ApiResponse<JobApplicationResponse> reject(@PathVariable String id,
                                                       @RequestParam(required = false) String reason) {
         return ApiResponse.ok(jobApplicationService.reject(id, reason));
@@ -62,6 +68,7 @@ public class JobApplicationController {
 
     @Operation(summary = "Hire — HIRED + (policy A) bắt buộc User+Role trong body")
     @PostMapping("/{id}/hire")
+    @CheckPermission(api = "/qlns/recruitment/applications/{id}/hire", action = "CREATE")
     public ApiResponse<JobApplicationResponse> hire(@PathVariable String id,
                                                     @RequestBody(required = false) HireRequest hireRequest) {
         return ApiResponse.ok(jobApplicationService.markHired(id, hireRequest));

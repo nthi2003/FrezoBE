@@ -55,6 +55,7 @@ FROM (VALUES
     -- System administration
     ('QLHT_PERMISSION',     'Quản Lý Quyền API',        'API Permissions',           '/qtht/permissions',            'src/modules/qtht',      'QLHT_ROLE', 1, 'fa-solid fa-key'),
     ('QLHT_SECURITY',       'Bảo Mật Hệ Thống',         'Security',                  '/qtht/security',               'src/modules/qtht',      NULL, 90, 'fa-solid fa-lock'),
+    ('QLHT_USAGE',          'Sử dụng hệ thống',         'Usage Analytics',           '/qtht/usage',                  'src/modules/qtht',      NULL, 90, 'fa-solid fa-chart-line'),
     ('QLHT_APILOG',         'Nhật Ký API',              'API Log',                   '/qtht/apilogs',                'src/modules/qtht',      NULL, 91, 'fa-solid fa-scroll'),
     ('QLHT_WEBSITE',        'Quản Lý Website',          'Website Management',        '/qtht/website',                'src/modules/qtht',      NULL, 92, 'fa-solid fa-globe'),
     ('QLHT_NEWS',           'Tin Tức Nội Bộ',           'Internal News',             '/qtht/tin-tuc',                'src/modules/qtht',      NULL, 93, 'fa-solid fa-newspaper'),

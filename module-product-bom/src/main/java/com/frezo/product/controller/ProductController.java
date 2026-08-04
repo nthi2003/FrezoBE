@@ -85,37 +85,42 @@ public class ProductController {
 
     @Operation(summary = "Tính giá bán tự động", description = "Tính giá dựa trên sản phẩm, đơn vị và nhóm khách")
     @GetMapping("/calculate-price")
+    @CheckPermission(api = "/product/calculate-price", action = "VIEW")
     public ApiResponse<?> calculatePrice(@RequestParam String productCode, @RequestParam String unitName, @RequestParam String priceGroupCode) {
         return ApiResponse.success(productService.calculatePrice(productCode, unitName, priceGroupCode));
     }
 
     @Operation(summary = "Lịch sử giá vốn theo lô nhập", description = "Trả về cost_price theo importDate từ product_batches (nhập kho nhanh / lô NCC)")
     @GetMapping("/{id}/cost-history")
-    @CheckPermission(api = "/product/{id}", action = "VIEW")
+    @CheckPermission(api = "/product/{id}/cost-history", action = "VIEW")
     public ApiResponse<?> getCostHistory(@PathVariable String id) {
         return ApiResponse.success(productService.getCostHistory(id));
     }
 
     @Operation(summary = "Lấy dữ liệu biểu đồ lợi nhuận", description = "Lấy doanh thu và giá vốn N ngày gần nhất")
     @GetMapping("/dashboard/profit-chart")
+    @CheckPermission(api = "/product/dashboard/profit-chart", action = "VIEW")
     public ApiResponse<?> getProfitChart(@RequestParam(defaultValue = "7") int days) {
         return ApiResponse.success(productService.getProfitChart(days));
     }
 
     @Operation(summary = "Lấy biến động giá", description = "Lấy top sản phẩm biến động giá so với hôm qua")
     @GetMapping("/dashboard/price-fluctuation")
+    @CheckPermission(api = "/product/dashboard/price-fluctuation", action = "VIEW")
     public ApiResponse<?> getPriceFluctuation() {
         return ApiResponse.success(productService.getPriceFluctuation());
     }
 
     @Operation(summary = "So sánh giá thị trường", description = "So sánh giá bán của cửa hàng với giá chợ đầu mối")
     @GetMapping("/dashboard/market-comparison")
+    @CheckPermission(api = "/product/dashboard/market-comparison", action = "VIEW")
     public ApiResponse<?> getMarketComparison() {
         return ApiResponse.success(productService.getMarketComparison());
     }
 
     @Operation(summary = "Upload hình ảnh sản phẩm", description = "Upload ảnh lên MinIO bucket freo-prod")
     @PostMapping("/upload-image")
+    @CheckPermission(api = "/product/upload-image", action = "CREATE")
     public ApiResponse<Map<String, Object>> uploadImage(@RequestParam("file") MultipartFile file) {
         return ApiResponse.success(productService.uploadImage(file));
     }

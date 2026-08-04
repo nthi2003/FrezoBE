@@ -25,6 +25,7 @@ public class CategoryController {
                     """
     )
     @GetMapping
+    @CheckPermission(api = "/qtht/category", action = "VIEW")
     public ResponseEntity<ApiResponse<?>> getAll (CategoryFilter filter) {
         return ResponseEntity.ok(ApiResponse.success(categoryService.all(filter)));
     }
@@ -37,17 +38,19 @@ public class CategoryController {
     }
     @Operation(summary = "Chỉnh sửa danh mục", description = "Chỉnh sửa mới danh mục")
     @PutMapping("/{id}")
-    @CheckPermission(api = "/qtht/category", action = "EDIT")
+    @CheckPermission(api = "/qtht/category/{id}", action = "UPDATE")
     public ResponseEntity<ApiResponse<?>> edit (@PathVariable("id") String id , @RequestBody CategoryRequest request) {
         return ResponseEntity.ok(categoryService.edit(id, request));
     }
     @Operation(summary = "Delete danh mục")
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/qtht/category/{id}", action = "DELETE")
     public void delete(@PathVariable("id") String id) {
         categoryService.delete(id);
     }
     @Operation(summary = "Xem chi tiết danh mục")
     @GetMapping("/{id}")
+    @CheckPermission(api = "/qtht/category/{id}", action = "VIEW")
     public ResponseEntity<ApiResponse<?>> view(@PathVariable("id") String id) {
         return ResponseEntity.ok(ApiResponse.success(categoryService.view(id)));
     }

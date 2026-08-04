@@ -12,6 +12,7 @@ import com.frezo.crm.entity.Invoice;
 import com.frezo.crm.entity.InvoiceItem;
 import com.frezo.crm.repository.InvoiceItemRepository;
 import com.frezo.crm.repository.InvoiceRepository;
+import com.frezo.crm.service.CommissionService;
 import com.frezo.crm.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceRepository invoiceRepo;
     private final InvoiceItemRepository itemRepo;
     private final JournalService journalService;
+    private final CommissionService commissionService;
 
     @Override
     @Transactional
@@ -57,6 +59,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepo.save(inv);
         saveItems(inv, r.getItems());
         recalcTotals(inv);
+        commissionService.applyCommissionFields(inv, r.getSalespersonUsername(), r.getCommissionRatePercent());
         return invoiceRepo.save(inv);
     }
 
@@ -80,6 +83,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             saveItems(inv, r.getItems());
         }
         recalcTotals(inv);
+        commissionService.applyCommissionFields(inv, r.getSalespersonUsername(), r.getCommissionRatePercent());
         return invoiceRepo.save(inv);
     }
 
@@ -161,6 +165,13 @@ public class InvoiceServiceImpl implements InvoiceService {
         req.setIdempotencyKey("invoice-payment:" + inv.getId() + ":" + System.currentTimeMillis());
         req.setLines(lines);
         journalService.createAndPost(req);
+
+        try {
+            commissionService.accrueFromInvoice(inv);
+            invoiceRepo.save(inv);
+        } catch (Exception e) {
+            log.warn("Commission accrue failed for invoice {}: {}", inv.getCode(), e.getMessage());
+        }
 
         return inv;
     }

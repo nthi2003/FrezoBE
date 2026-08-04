@@ -1,6 +1,7 @@
 package com.frezo.warehouse.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.warehouse.service.StockReportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,7 @@ public class StockReportController {
 
     @Operation(summary = "Báo cáo nhập-xuất-tồn", description = "Lọc theo ngày, sản phẩm, kho")
     @GetMapping("/stock-movement")
+    @CheckPermission(api = "/warehouse/report/stock-movement", action = "VIEW")
     public ApiResponse<?> getStockMovementReport(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
@@ -36,12 +38,14 @@ public class StockReportController {
 
     @Operation(summary = "Cảnh báo tồn kho thấp", description = "Danh sách sản phẩm có số lượng tồn dưới ngưỡng cảnh báo")
     @GetMapping("/low-stock")
+    @CheckPermission(api = "/warehouse/report/low-stock", action = "VIEW")
     public ApiResponse<?> getLowStockAlerts() {
         return ApiResponse.success(stockReportService.getLowStockAlerts());
     }
 
     @Operation(summary = "Xuất Excel nhập-xuất-tồn")
     @GetMapping("/stock-movement/export")
+    @CheckPermission(api = "/warehouse/report/stock-movement/export", action = "VIEW")
     public void exportStockMovement(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,

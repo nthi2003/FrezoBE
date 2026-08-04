@@ -18,6 +18,7 @@ public class LandingConfigController {
 
     @Operation(summary = "Lấy cấu hình Landing Page", description = "Lấy cấu hình hiện tại đang active")
     @GetMapping
+    @CheckPermission(api = "/qtbv/landing-config", action = "VIEW")
     public ApiResponse<?> getConfig() {
         return ApiResponse.success(landingConfigService.getConfig());
     }

@@ -1,6 +1,7 @@
 package com.frezo.qlns.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.qlns.dto.request.ManagerScoreRequest;
 import com.frezo.qlns.dto.request.PerformanceReviewRequest;
 import com.frezo.qlns.dto.response.PerformanceReviewResponse;
@@ -26,6 +27,7 @@ public class PerformanceReviewController {
     private final PerformanceReviewService reviewService;
 
     @GetMapping
+    @CheckPermission(api = "/qlns/performance-reviews", action = "VIEW")
     public ApiResponse<List<PerformanceReviewResponse>> list(
             @RequestParam(required = false) String cycleId,
             @RequestParam(required = false) String personId) {
@@ -33,16 +35,19 @@ public class PerformanceReviewController {
     }
 
     @PostMapping
+    @CheckPermission(api = "/qlns/performance-reviews", action = "CREATE")
     public ApiResponse<PerformanceReviewResponse> create(@RequestBody PerformanceReviewRequest req) {
         return ApiResponse.ok(reviewService.create(req));
     }
 
     @PostMapping("/{id}/submit")
+    @CheckPermission(api = "/qlns/performance-reviews/{id}/submit", action = "UPDATE")
     public ApiResponse<PerformanceReviewResponse> submit(@PathVariable String id) {
         return ApiResponse.ok(reviewService.submit(id));
     }
 
     @PostMapping("/{id}/manager-score")
+    @CheckPermission(api = "/qlns/performance-reviews/{id}/manager-score", action = "CREATE")
     public ApiResponse<PerformanceReviewResponse> managerScore(
             @PathVariable String id, @RequestBody ManagerScoreRequest req) {
         return ApiResponse.ok(reviewService.managerScore(id, req));

@@ -1,6 +1,7 @@
 package com.frezo.product.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.product.entity.SaleOrder;
 import com.frezo.product.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +18,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout/{customerId}")
+    @CheckPermission(api = "/product/order/checkout/{customerId}", action = "CREATE")
     @Operation(summary = "Create order from current cart")
     public ApiResponse<SaleOrder> checkout(
             @PathVariable String customerId,
@@ -26,6 +28,7 @@ public class OrderController {
     }
 
     @GetMapping
+    @CheckPermission(api = "/product/order", action = "VIEW")
     @Operation(summary = "Get all sales orders")
     public ApiResponse<java.util.List<SaleOrder>> getAll() {
         return ApiResponse.success(orderService.getAllOrders());

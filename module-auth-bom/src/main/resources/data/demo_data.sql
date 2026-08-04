@@ -377,7 +377,7 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM articles a WHERE a.code = v.code);
 
 -- ============================================================
--- 13) EMAIL TEMPLATES — 4 mẫu email
+-- 13) EMAIL TEMPLATES — mẫu email (WELCOME, leave, OTP…)
 -- ============================================================
 INSERT INTO email_templates (id, code, name, subject, content, description,
                              is_deleted, created_date, created_by, updated_date, updated_by)
@@ -387,7 +387,9 @@ FROM (VALUES
     ('WELCOME',      'Chào mừng nhân viên mới',   'Chào mừng bạn đến với FTECH!',           '<h2>Xin chào {{name}}!</h2><p>Chào mừng bạn gia nhập đại gia đình FTECH. Chúng tôi rất vui khi bạn là thành viên mới.</p><p>Trân trọng,<br/>Team HR</p>',                              'Gửi cho nhân viên onboarding.'),
     ('LEAVE_APPROVE','Duyệt đơn nghỉ phép',        'Đơn nghỉ phép của bạn đã được duyệt',    '<p>Xin chào {{name}},</p><p>Đơn xin nghỉ phép từ <strong>{{start}}</strong> đến <strong>{{end}}</strong> của bạn đã được phê duyệt.</p><p>Chúc bạn có kỳ nghỉ vui vẻ!</p>',            'Gửi khi manager duyệt đơn.'),
     ('LEAVE_REJECT', 'Từ chối đơn nghỉ phép',      'Đơn nghỉ phép của bạn bị từ chối',       '<p>Xin chào {{name}},</p><p>Rất tiếc, đơn nghỉ phép của bạn từ chối với lý do: <em>{{reason}}</em></p>',                                                                              'Gửi khi manager từ chối.'),
-    ('CUSTOMER_WELCOME','Cảm ơn khách hàng mới', 'Cảm ơn bạn đã trở thành khách hàng của FTECH','<h2>Xin chào {{name}}!</h2><p>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của FTECH. Chúng tôi cam kết mang đến trải nghiệm tốt nhất.</p><p>Trân trọng,<br/>Sales Team</p>',              'Gửi cho khách hàng mới đăng ký.')
+    ('CUSTOMER_WELCOME','Cảm ơn khách hàng mới', 'Cảm ơn bạn đã trở thành khách hàng của FTECH','<h2>Xin chào {{name}}!</h2><p>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của FTECH. Chúng tôi cam kết mang đến trải nghiệm tốt nhất.</p><p>Trân trọng,<br/>Sales Team</p>',              'Gửi cho khách hàng mới đăng ký.'),
+    ('URGENT_NOTIFICATION','Thông báo khẩn',     '{{title}}',                               '<div style="font-family:sans-serif;max-width:560px"><h2 style="color:#059669">{{title}}</h2><p style="white-space:pre-line;line-height:1.6;color:#334155">{{content}}</p><p style="color:#94a3b8;font-size:12px">Frezo ERP — không trả lời email này.</p></div>', 'Fallback email cho 2FA / OTP / thông báo urgent.'),
+    ('PASSWORD_RESET','OTP khôi phục mật khẩu',  'Mã OTP khôi phục mật khẩu Frezo',         '<div style="font-family:sans-serif;max-width:560px"><h2 style="color:#059669">Khôi phục mật khẩu</h2><p>Xin chào {{name}},</p><p>Mã OTP của bạn là:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px;color:#0f172a">{{otp}}</p><p>Hiệu lực <strong>{{minutes}}</strong> phút. Không chia sẻ mã này.</p><p style="color:#94a3b8;font-size:12px">Nếu bạn không yêu cầu, hãy bỏ qua email này.</p></div>', 'Gửi OTP khi quên mật khẩu (template chuyên dụng).')
 ) AS v(code, name, subject, content, description)
 WHERE NOT EXISTS (SELECT 1 FROM email_templates e WHERE e.code = v.code);
 

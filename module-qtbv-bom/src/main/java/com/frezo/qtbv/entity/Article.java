@@ -63,6 +63,10 @@ public class Article extends BaseEntity {
     @Builder.Default
     private Boolean isPublic = false;
 
+    /** Lý do từ chối lần gần nhất (khi status = REJECTED). */
+    @Column(name = "reject_note", length = 1000)
+    private String rejectNote;
+
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 

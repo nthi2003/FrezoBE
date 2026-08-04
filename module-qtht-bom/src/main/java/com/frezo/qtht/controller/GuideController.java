@@ -39,12 +39,14 @@ public class GuideController {
     // ── Public (authenticated) ──────────────────────────────────────────
 
     @GetMapping("/published")
+    @CheckPermission(api = "/qtht/guides/published", action = "VIEW")
     @Operation(summary = "Danh sách hướng dẫn đã xuất bản")
     public ApiResponse<List<GuideSummaryResponse>> listPublished() {
         return ApiResponse.ok(guideService.listPublished());
     }
 
     @GetMapping("/published/{slug}")
+    @CheckPermission(api = "/qtht/guides/published/{slug}", action = "VIEW")
     @Operation(summary = "Chi tiết hướng dẫn đã xuất bản theo slug")
     public ApiResponse<GuideResponse> getPublishedBySlug(@PathVariable String slug) {
         return ApiResponse.ok(guideService.getPublishedBySlug(slug));
@@ -61,7 +63,7 @@ public class GuideController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Admin: chi tiết hướng dẫn theo id")
-    @CheckPermission(api = "/qtht/guides", action = "VIEW")
+    @CheckPermission(api = "/qtht/guides/{id}", action = "VIEW")
     public ApiResponse<GuideResponse> getById(@PathVariable String id) {
         return ApiResponse.ok(guideService.getById(id));
     }
@@ -75,7 +77,7 @@ public class GuideController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Admin: cập nhật hướng dẫn")
-    @CheckPermission(api = "/qtht/guides", action = "UPDATE")
+    @CheckPermission(api = "/qtht/guides/{id}", action = "UPDATE")
     public ApiResponse<GuideResponse> update(
             @PathVariable String id,
             @Valid @RequestBody GuideSaveRequest request) {
@@ -84,21 +86,21 @@ public class GuideController {
 
     @PutMapping("/{id}/publish")
     @Operation(summary = "Admin: xuất bản hướng dẫn")
-    @CheckPermission(api = "/qtht/guides", action = "UPDATE")
+    @CheckPermission(api = "/qtht/guides/{id}/publish", action = "UPDATE")
     public ApiResponse<GuideResponse> publish(@PathVariable String id) {
         return ApiResponse.ok(guideService.publish(id));
     }
 
     @PutMapping("/{id}/unpublish")
     @Operation(summary = "Admin: gỡ xuất bản hướng dẫn")
-    @CheckPermission(api = "/qtht/guides", action = "UPDATE")
+    @CheckPermission(api = "/qtht/guides/{id}/unpublish", action = "UPDATE")
     public ApiResponse<GuideResponse> unpublish(@PathVariable String id) {
         return ApiResponse.ok(guideService.unpublish(id));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Admin: xóa mềm hướng dẫn")
-    @CheckPermission(api = "/qtht/guides", action = "DELETE")
+    @CheckPermission(api = "/qtht/guides/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         guideService.delete(id);
         return ApiResponse.ok();

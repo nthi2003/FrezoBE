@@ -29,6 +29,10 @@ public interface PermissionRepository extends JpaRepository<Permission, String> 
      *       (aspect chưa truyền appCode). Nếu multi-tenant sau này, cần thêm.</li>
      * </ul>
      */
+    /**
+     * Match {@code api_path} với hoặc không leading slash — seed cũ dùng {@code qtht/x},
+     * {@code @CheckPermission} dùng {@code /qtht/x}.
+     */
     @Query(value = """
             SELECT COUNT(p.id) > 0
             FROM permission p
@@ -37,7 +41,11 @@ public interface PermissionRepository extends JpaRepository<Permission, String> 
             JOIN user_role ur       ON r.id = ur.role_id
             JOIN users u            ON ur.user_id = u.id
             WHERE u.user_name = :username
-              AND p.api_path  = :apiPath
+              AND (
+                    p.api_path = :apiPath
+                 OR p.api_path = LTRIM(:apiPath, '/')
+                 OR '/' || LTRIM(p.api_path, '/') = :apiPath
+              )
               AND p.action    = :action
               AND p.is_deleted = false
               AND (r.is_deleted = false OR r.is_deleted IS NULL)

@@ -39,7 +39,7 @@ public class BankStatementController {
     }
 
     @PostMapping("/import")
-    @CheckPermission(api = "/accounting/bank-statements", action = "CREATE")
+    @CheckPermission(api = "/accounting/bank-statements/import", action = "CREATE")
     @Operation(summary = "Import CSV sao kê")
     public ApiResponse<BankStatementDto> importCsv(
             @RequestParam String accountId,
@@ -48,7 +48,7 @@ public class BankStatementController {
     }
 
     @GetMapping("/{id}/lines")
-    @CheckPermission(api = "/accounting/bank-statements", action = "VIEW")
+    @CheckPermission(api = "/accounting/bank-statements/{id}/lines", action = "VIEW")
     public ApiResponse<FePage<BankStatementLineDto>> lines(
             @PathVariable String id,
             @RequestParam(defaultValue = "all") String status) {
@@ -56,7 +56,7 @@ public class BankStatementController {
     }
 
     @GetMapping("/{id}/suggestions/{lineId}")
-    @CheckPermission(api = "/accounting/bank-statements", action = "VIEW")
+    @CheckPermission(api = "/accounting/bank-statements/{id}/suggestions/{lineId}", action = "VIEW")
     @Operation(summary = "Gợi ý match — mode=exact|fuzzy")
     public ApiResponse<List<MatchSuggestionDto>> suggestions(
             @PathVariable String id,
@@ -66,7 +66,7 @@ public class BankStatementController {
     }
 
     @PostMapping("/lines/{lineId}/match")
-    @CheckPermission(api = "/accounting/bank-statements", action = "UPDATE")
+    @CheckPermission(api = "/accounting/bank-statements/lines/{lineId}/match", action = "UPDATE")
     public ApiResponse<BankStatementLineDto> match(
             @PathVariable String lineId,
             @RequestBody Map<String, String> body) {
@@ -74,20 +74,20 @@ public class BankStatementController {
     }
 
     @PostMapping("/lines/{lineId}/unmatch")
-    @CheckPermission(api = "/accounting/bank-statements", action = "UPDATE")
+    @CheckPermission(api = "/accounting/bank-statements/lines/{lineId}/unmatch", action = "UPDATE")
     public ApiResponse<BankStatementLineDto> unmatch(@PathVariable String lineId) {
         return ApiResponse.ok(bankStatementService.unmatch(lineId));
     }
 
     @PostMapping("/{id}/lock")
-    @CheckPermission(api = "/accounting/bank-statements", action = "UPDATE")
+    @CheckPermission(api = "/accounting/bank-statements/{id}/lock", action = "UPDATE")
     @Operation(summary = "Khoá statement — chặn match")
     public ApiResponse<BankStatementDto> lock(@PathVariable String id) {
         return ApiResponse.ok(bankStatementService.lock(id));
     }
 
     @PostMapping("/{id}/reopen")
-    @CheckPermission(api = "/accounting/bank-statements", action = "UPDATE")
+    @CheckPermission(api = "/accounting/bank-statements/{id}/reopen", action = "UPDATE")
     @Operation(summary = "Mở lại statement")
     public ApiResponse<BankStatementDto> reopen(@PathVariable String id) {
         return ApiResponse.ok(bankStatementService.reopen(id));

@@ -1,6 +1,7 @@
 package com.frezo.crm.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import com.frezo.crm.dto.EmailSequenceEnrollRequest;
 import com.frezo.crm.dto.EmailSequenceEnrollmentResponse;
 import com.frezo.crm.dto.EmailSequenceRequest;
@@ -27,22 +28,26 @@ public class EmailSequenceController {
     private final EmailSequenceService emailSequenceService;
 
     @GetMapping
+    @CheckPermission(api = "/crm/email-sequences", action = "VIEW")
     public ApiResponse<List<EmailSequenceResponse>> list() {
         return ApiResponse.ok(emailSequenceService.list());
     }
 
     @PostMapping
+    @CheckPermission(api = "/crm/email-sequences", action = "CREATE")
     public ApiResponse<EmailSequenceResponse> create(@RequestBody EmailSequenceRequest req) {
         return ApiResponse.ok(emailSequenceService.create(req));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/crm/email-sequences/{id}", action = "UPDATE")
     public ApiResponse<EmailSequenceResponse> update(
             @PathVariable String id, @RequestBody EmailSequenceRequest req) {
         return ApiResponse.ok(emailSequenceService.update(id, req));
     }
 
     @PostMapping("/{id}/enroll")
+    @CheckPermission(api = "/crm/email-sequences/{id}/enroll", action = "CREATE")
     public ApiResponse<EmailSequenceEnrollmentResponse> enroll(
             @PathVariable String id, @RequestBody EmailSequenceEnrollRequest req) {
         return ApiResponse.ok(emailSequenceService.enroll(id, req));

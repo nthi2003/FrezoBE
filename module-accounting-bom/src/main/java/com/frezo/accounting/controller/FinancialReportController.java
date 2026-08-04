@@ -25,7 +25,7 @@ public class FinancialReportController {
     private final FinancialReportService financialReportService;
 
     @GetMapping("/balance-sheet")
-    @CheckPermission(api = "/accounting/reports", action = "VIEW")
+    @CheckPermission(api = "/accounting/reports/balance-sheet", action = "VIEW")
     @Operation(summary = "Bảng cân đối kế toán (stub từ AccountType + trial-balance)")
     public ApiResponse<BalanceSheetResponse> balanceSheet(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
@@ -34,7 +34,7 @@ public class FinancialReportController {
     }
 
     @GetMapping("/income-statement")
-    @CheckPermission(api = "/accounting/reports", action = "VIEW")
+    @CheckPermission(api = "/accounting/reports/income-statement", action = "VIEW")
     @Operation(summary = "Báo cáo KQKD (stub từ REVENUE/EXPENSE)")
     public ApiResponse<IncomeStatementResponse> incomeStatement(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,

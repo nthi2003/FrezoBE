@@ -39,19 +39,21 @@ public class ArticleController {
 
     @Operation(summary = "Home feed bài viết", description = "Tin đã xuất bản cho Trang chủ — mọi user đăng nhập (không cần QTBV.VIEW)")
     @GetMapping("/home-feed")
+    @CheckPermission(api = "/qtbv/articles/home-feed", action = "VIEW")
     public ApiResponse<?> getHomeFeed() {
         return ApiResponse.success(articleService.getHomeFeed());
     }
 
     @Operation(summary = "Chi tiết bài viết (Home)", description = "Đọc bài đã xuất bản từ /bai-viet — mọi user đăng nhập")
     @GetMapping("/home-feed/{id}")
+    @CheckPermission(api = "/qtbv/articles/home-feed/{id}", action = "VIEW")
     public ApiResponse<?> getHomeFeedById(@PathVariable String id) {
         return ApiResponse.success(articleService.getHomeFeedById(id));
     }
 
     @Operation(summary = "Xem chi tiết bài viết", description = "Xem thông tin chi tiết của bài viết")
     @GetMapping("/{id}")
-    @CheckPermission(api = "/qtbv/articles", action = "VIEW")
+    @CheckPermission(api = "/qtbv/articles/{id}", action = "VIEW")
     public ApiResponse<?> findById(@PathVariable String id) {
         return ApiResponse.success(articleService.findById(id));
     }
@@ -65,14 +67,14 @@ public class ArticleController {
 
     @Operation(summary = "Cập nhật bài viết", description = "Cập nhật bài viết (chỉ khi ở trạng thái DRAFT hoặc REJECTED)")
     @PutMapping("/{id}")
-    @CheckPermission(api = "/qtbv/articles", action = "UPDATE")
+    @CheckPermission(api = "/qtbv/articles/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody ArticleUpdateRequest request) {
         return ApiResponse.success(articleService.update(id, request, securityHelper.getCurrentUserId()));
     }
 
     @Operation(summary = "Xóa bài viết", description = "Xóa mềm bài viết")
     @DeleteMapping("/{id}")
-    @CheckPermission(api = "/qtbv/articles", action = "DELETE")
+    @CheckPermission(api = "/qtbv/articles/{id}", action = "DELETE")
     public ApiResponse<?> delete(@PathVariable String id) {
         articleService.delete(id, securityHelper.getCurrentUserId());
         return ApiResponse.success(null);
@@ -80,7 +82,7 @@ public class ArticleController {
 
     @Operation(summary = "Gửi duyệt bài viết", description = "Gửi bài viết cho quản lý duyệt")
     @PutMapping("/{id}/submit")
-    @CheckPermission(api = "/qtbv/articles/submit", action = "UPDATE")
+    @CheckPermission(api = "/qtbv/articles/{id}/submit", action = "UPDATE")
     public ApiResponse<?> submitForApproval(@PathVariable String id) {
         articleService.submitForApproval(id, securityHelper.getCurrentUserId());
         return ApiResponse.success(null);
@@ -88,14 +90,14 @@ public class ArticleController {
 
     @Operation(summary = "Xuất bản bài viết", description = "Xuất bản bài viết đã được duyệt")
     @PutMapping("/{id}/publish")
-    @CheckPermission(api = "/qtbv/articles/publish", action = "UPDATE")
+    @CheckPermission(api = "/qtbv/articles/{id}/publish", action = "UPDATE")
     public ApiResponse<?> publish(@PathVariable String id) {
         return ApiResponse.success(articleService.publish(id, securityHelper.getCurrentUserId()));
     }
 
     @Operation(summary = "Duyệt/từ chối bài viết", description = "Quản lý duyệt hoặc từ chối bài viết")
     @PutMapping("/{id}/review")
-    @CheckPermission(api = "/qtbv/articles/review", action = "UPDATE")
+    @CheckPermission(api = "/qtbv/articles/{id}/review", action = "UPDATE")
     public ApiResponse<?> review(@PathVariable String id, @Valid @RequestBody ArticleReviewRequest request) {
         return ApiResponse.success(articleService.review(id, request, securityHelper.getCurrentUserId()));
     }

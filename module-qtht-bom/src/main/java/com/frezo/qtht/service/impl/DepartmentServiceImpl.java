@@ -3,6 +3,7 @@ package com.frezo.qtht.service.impl;
 import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.SystemUtils;
+import com.frezo.common.response.ComboboxResponse;
 import com.frezo.common.response.PageResponse;
 import com.frezo.qtht.common.DepartmentStatus;
 import com.frezo.qtht.constant.QthtErrorCode;
@@ -94,6 +95,22 @@ public class DepartmentServiceImpl implements DepartmentService {
             }
         }
         return roots;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComboboxResponse> getCombobox() {
+        DepartmentFilterRequest filter = new DepartmentFilterRequest();
+        filter.setPageNumber(0);
+        filter.setPageSize(100);
+        PageResponse<DepartmentResponse> page = all(filter);
+        List<DepartmentResponse> items = page.getItems() != null ? page.getItems() : List.of();
+        return items.stream()
+                .map(d -> ComboboxResponse.builder()
+                        .value(d.getId())
+                        .label(d.getName() + " (" + d.getCode() + ")")
+                        .build())
+                .toList();
     }
 
     @Override

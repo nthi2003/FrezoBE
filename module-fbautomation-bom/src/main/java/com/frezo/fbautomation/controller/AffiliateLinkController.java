@@ -4,6 +4,7 @@ import com.frezo.fbautomation.dto.request.AffiliateLinkRequest;
 import com.frezo.fbautomation.dto.response.AffiliateLinkResponse;
 import com.frezo.fbautomation.service.AffiliateLinkService;
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.security.CheckPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,6 +37,7 @@ public class AffiliateLinkController {
     private final AffiliateLinkService service;
 
     @GetMapping
+    @CheckPermission(api = "/mkt/affiliate", action = "VIEW")
     public ApiResponse<List<AffiliateLinkResponse>> list(
             @RequestParam(required = false) String campaign,
             @RequestParam(required = false) String status,
@@ -44,17 +46,20 @@ public class AffiliateLinkController {
     }
 
     @GetMapping("/{id}")
+    @CheckPermission(api = "/mkt/affiliate/{id}", action = "VIEW")
     public ApiResponse<AffiliateLinkResponse> get(@PathVariable String id) {
         return ApiResponse.ok(service.get(id));
     }
 
     @PostMapping
+    @CheckPermission(api = "/mkt/affiliate", action = "CREATE")
     @Operation(summary = "Tạo affiliate link mới")
     public ApiResponse<AffiliateLinkResponse> create(@RequestBody @Valid AffiliateLinkRequest req) {
         return ApiResponse.ok(service.create(req));
     }
 
     @PutMapping("/{id}")
+    @CheckPermission(api = "/mkt/affiliate/{id}", action = "UPDATE")
     public ApiResponse<AffiliateLinkResponse> update(
             @PathVariable String id,
             @RequestBody @Valid AffiliateLinkRequest req) {
@@ -62,18 +67,21 @@ public class AffiliateLinkController {
     }
 
     @DeleteMapping("/{id}")
+    @CheckPermission(api = "/mkt/affiliate/{id}", action = "DELETE")
     public ApiResponse<Void> delete(@PathVariable String id) {
         service.delete(id);
         return ApiResponse.ok();
     }
 
     @GetMapping("/dashboard")
+    @CheckPermission(api = "/mkt/affiliate/dashboard", action = "VIEW")
     @Operation(summary = "Dashboard tổng hợp affiliate")
     public ApiResponse<Map<String, Object>> dashboard() {
         return ApiResponse.ok(service.dashboard());
     }
 
     @PostMapping("/{code}/convert")
+    @CheckPermission(api = "/mkt/affiliate/{code}/convert", action = "CREATE")
     @Operation(summary = "Ghi nhận conversion (gọi từ order/lead flow)")
     public ApiResponse<Boolean> recordConversion(
             @PathVariable String code,

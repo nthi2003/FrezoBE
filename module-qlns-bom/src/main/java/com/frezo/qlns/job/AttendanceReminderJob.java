@@ -1,6 +1,7 @@
 package com.frezo.qlns.job;
 
 import com.frezo.auth.entity.User;
+import com.frezo.common.scheduling.SchedulableJob;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.qlns.entity.Attendance;
 import com.frezo.qlns.repository.AttendanceRepository;
@@ -9,7 +10,6 @@ import com.frezo.qtht.repository.SettingRepository;
 import com.frezo.qtht.service.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.DayOfWeek;
@@ -33,7 +33,7 @@ import java.util.*;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AttendanceReminderJob {
+public class AttendanceReminderJob implements SchedulableJob {
 
     private final AttendanceRepository attendanceRepository;
     private final UserRepository userRepository;

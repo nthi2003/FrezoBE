@@ -1,5 +1,6 @@
 package com.frezo.warehouse.job;
 
+import com.frezo.common.scheduling.SchedulableJob;
 import com.frezo.warehouse.entity.StockAlert;
 import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.service.ExpiryAlertService;
@@ -7,7 +8,6 @@ import com.frezo.warehouse.service.ReorderService;
 import com.frezo.warehouse.service.StockAlertNotifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -18,18 +18,47 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class StockAlertJob {
+public class StockAlertJob implements SchedulableJob {
 
     private final ReorderService reorderService;
     private final StockAlertRepository alertRepository;
     private final ExpiryAlertService expiryAlertService;
     private final StockAlertNotifier stockAlertNotifier;
 
+    @Override
+    public String getCode() {
+        return "STOCK_ALERT_SCAN";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Quét cảnh báo tồn kho";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Quét quy tắc tồn kho tối thiểu và lô hàng cận hạn để sinh cảnh báo và gửi thông báo";
+    }
+
+    @Override
+    public String getModuleCode() {
+        return "WAREHOUSE";
+    }
+
+    @Override
+    public String getDefaultCron() {
+        return "0 0 6 * * *";
+    }
+
+    @Override
+    public void execute() {
+        runMorningScan();
+    }
+
     /**
-     * 06:00 mỗi ngày — scan ReorderRule + lô cận hạn → StockAlert OPEN + notify từng alert.
-     * Có thể gọi {@link #runMorningScan()} thủ công qua POST /warehouse/stock-alerts/scan.
+     * Scan ReorderRule + lô cận hạn → StockAlert OPEN + notify từng alert.
+     * Gọi thủ công qua POST /warehouse/stock-alerts/scan, hoặc theo lịch trong bảng system_job.
      */
-    @Scheduled(cron = "0 0 6 * * *")
     public void runMorningScan() {
         log.info("[StockAlertJob] start morning scan");
         reorderService.scanAndRaiseAlerts();

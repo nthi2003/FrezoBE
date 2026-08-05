@@ -10,7 +10,6 @@ import com.frezo.auth.repository.UserRepository;
 import com.frezo.email.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -47,9 +46,8 @@ public class ReportService {
     }
 
     /**
-     * Automated Weekly Report (Every Monday at 8 AM)
+     * Automated Weekly Report — lịch chạy do {@link com.frezo.qtht.job.WeeklyReportJob} + bảng system_job quyết định.
      */
-    @Scheduled(cron = "0 0 8 * * MON")
     public void sendWeeklyReport() {
         log.info("Generating weekly automated report...");
         

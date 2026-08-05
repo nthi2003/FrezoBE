@@ -1,5 +1,7 @@
 package com.frezo.qtht.service.impl;
 
+import com.frezo.auth.entity.User;
+import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.exception.AppException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.ServiceHelper;
@@ -27,7 +29,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.frezo.qtht.entity.Department;
@@ -41,6 +45,7 @@ public class PersonServiceImpl implements PersonService {
     private final PersonMapper personMapper;
     private final OrganizationRepository organizationRepository;
     private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
     private final com.frezo.common.service.MinioService minioService;
 
     @Override
@@ -110,15 +115,39 @@ public class PersonServiceImpl implements PersonService {
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox(PersonFilterRequest filter) {
+        return getCombobox(filter, "id");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ComboboxResponse> getCombobox(PersonFilterRequest filter, String valueField) {
         PageResponse<PersonResponse> data = all(filter);
         List<PersonResponse> items = data.getItems() != null ? data.getItems() : List.of();
-        return items.stream()
-                .map(p -> ComboboxResponse.builder()
-                        .value(p.getId())
-                        .label(p.getName() + " (" + p.getCode() + ")")
-                        .description(p.getJobTitle() + " - " + p.getEmail())
-                        .build())
-                .toList();
+        boolean useUsername = "username".equalsIgnoreCase(valueField);
+        List<ComboboxResponse> out = new ArrayList<>(items.size());
+        for (PersonResponse p : items) {
+            String username = null;
+            if (useUsername) {
+                username = userRepository.findByPersonId(p.getId())
+                        .map(User::getUserName)
+                        .orElse(null);
+                if (!StringUtils.hasText(username)) {
+                    continue;
+                }
+            }
+            String value = useUsername ? username.trim() : p.getId();
+            String label = useUsername
+                    ? p.getName() + " (" + username.trim() + ")"
+                    : p.getName() + " (" + p.getCode() + ")";
+            String description = (p.getJobTitle() != null ? p.getJobTitle() : "")
+                    + (p.getEmail() != null ? " - " + p.getEmail() : "");
+            out.add(ComboboxResponse.builder()
+                    .value(value)
+                    .label(label)
+                    .description(description.trim().isEmpty() ? null : description)
+                    .build());
+        }
+        return out;
     }
 
     @Override

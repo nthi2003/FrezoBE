@@ -44,9 +44,11 @@ public class PersonController {
     }
 
     @GetMapping("/combobox")
-    @Operation(summary = "Combobox nhân sự — lookup dùng chung, JWT only")
-    public ApiResponse<?> getCombobox(@ModelAttribute PersonFilterRequest filter) {
-        return ApiResponse.ok(personService.getCombobox(filter));
+    @Operation(summary = "Combobox nhân sự — lookup dùng chung, JWT only. valueField=username để value = user_name (CRM sale).")
+    public ApiResponse<?> getCombobox(
+            @ModelAttribute PersonFilterRequest filter,
+            @RequestParam(required = false, defaultValue = "id") String valueField) {
+        return ApiResponse.ok(personService.getCombobox(filter, valueField));
     }
 
     @Operation(summary = "Lấy thông tin nhân viên theo ID")

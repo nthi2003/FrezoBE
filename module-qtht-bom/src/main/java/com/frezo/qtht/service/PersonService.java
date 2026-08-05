@@ -29,4 +29,10 @@ public interface PersonService {
     PersonResponse getById(String id);
 
     List<ComboboxResponse> getCombobox(PersonFilterRequest filter);
+
+    /**
+     * Combobox nhân sự.
+     * @param valueField {@code "id"} (mặc định) = personId; {@code "username"} = user_name (bỏ person chưa có tài khoản)
+     */
+    List<ComboboxResponse> getCombobox(PersonFilterRequest filter, String valueField);
 }

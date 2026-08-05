@@ -13,4 +13,6 @@ public class LeaveRequestAddRequest {
     private LocalDate endDate;
     private Double durationDays;
     private String reason;
+    /** URL file đính kèm (giấy khám bệnh, …) — optional. */
+    private String attachmentUrl;
 }

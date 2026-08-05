@@ -66,7 +66,7 @@ public class ApiLogServiceImpl implements ApiLogService {
         long total = apiLogRepository.count(base);
 
         Specification<ApiLog> successSpec = base.and((root, query, cb) ->
-                cb.lessThan(root.get("statusCode"), 400));
+                cb.lessThan(root.<Integer>get("statusCode"), 400));
         long success = apiLogRepository.count(successSpec);
         long failed = Math.max(0, total - success);
 
@@ -115,7 +115,7 @@ public class ApiLogServiceImpl implements ApiLogService {
             applyStatusGroup(filter, root, cb, predicates);
 
             if (Boolean.TRUE.equals(filter.getErrorsOnly())) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("statusCode"), 400));
+                predicates.add(cb.greaterThanOrEqualTo(root.<Integer>get("statusCode"), 400));
             }
 
             if (filter.getIpAddress() != null && !filter.getIpAddress().isEmpty()) {
@@ -166,15 +166,15 @@ public class ApiLogServiceImpl implements ApiLogService {
         }
         switch (group.toLowerCase()) {
             case "2xx" -> predicates.add(cb.and(
-                    cb.greaterThanOrEqualTo(root.get("statusCode"), 200),
-                    cb.lessThan(root.get("statusCode"), 300)));
+                    cb.greaterThanOrEqualTo(root.<Integer>get("statusCode"), 200),
+                    cb.lessThan(root.<Integer>get("statusCode"), 300)));
             case "3xx" -> predicates.add(cb.and(
-                    cb.greaterThanOrEqualTo(root.get("statusCode"), 300),
-                    cb.lessThan(root.get("statusCode"), 400)));
+                    cb.greaterThanOrEqualTo(root.<Integer>get("statusCode"), 300),
+                    cb.lessThan(root.<Integer>get("statusCode"), 400)));
             case "4xx" -> predicates.add(cb.and(
-                    cb.greaterThanOrEqualTo(root.get("statusCode"), 400),
-                    cb.lessThan(root.get("statusCode"), 500)));
-            case "5xx" -> predicates.add(cb.greaterThanOrEqualTo(root.get("statusCode"), 500));
+                    cb.greaterThanOrEqualTo(root.<Integer>get("statusCode"), 400),
+                    cb.lessThan(root.<Integer>get("statusCode"), 500)));
+            case "5xx" -> predicates.add(cb.greaterThanOrEqualTo(root.<Integer>get("statusCode"), 500));
             default -> { /* ignore unknown */ }
         }
     }

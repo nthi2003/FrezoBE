@@ -15,8 +15,4 @@ public interface ApiLogRepository extends JpaRepository<ApiLog, String>, JpaSpec
     @Modifying
     @Query("DELETE FROM ApiLog a WHERE a.effFrom < :cutoff")
     int deleteOlderThan(@Param("cutoff") LocalDateTime cutoff);
-
-    /** @deprecated Dùng {@link #deleteOlderThan} — tên After trước đây xoá nhầm log mới. */
-    @Deprecated
-    void deleteByEffFromAfter(LocalDateTime dateTime);
 }

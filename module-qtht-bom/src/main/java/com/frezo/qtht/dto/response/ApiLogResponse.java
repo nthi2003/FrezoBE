@@ -17,4 +17,9 @@ public class ApiLogResponse {
     private String requestBody;
     private String responseBody;
     private LocalDateTime createdDate;
+    private String userAgent;
+    private String queryString;
+    private String module;
+    private String errorMessage;
+    private String traceId;
 }

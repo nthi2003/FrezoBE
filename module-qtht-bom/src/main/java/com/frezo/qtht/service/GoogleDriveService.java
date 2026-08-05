@@ -27,6 +27,18 @@ public class GoogleDriveService {
     @Value("${google.drive.credentials.path:service-account.json}")
     private String credentialsPath;
 
+    /** Đã có tệp credentials service account để gọi Drive hay chưa. */
+    public boolean isConfigured() {
+        return credentialsPath != null
+                && !credentialsPath.isBlank()
+                && new java.io.File(credentialsPath).isFile();
+    }
+
+    /** Đường dẫn tệp credentials đang cấu hình — dùng cho thông báo hướng dẫn. */
+    public String getCredentialsPath() {
+        return credentialsPath;
+    }
+
     public String uploadFile(java.io.File localFile, String mimeType) throws IOException, GeneralSecurityException {
         Drive driveService = getDriveService();
 

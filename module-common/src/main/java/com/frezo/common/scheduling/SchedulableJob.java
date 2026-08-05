@@ -28,6 +28,19 @@ public interface SchedulableJob {
     /** Cron mặc định (Spring 6 field, có giây) dùng khi seed lần đầu. */
     String getDefaultCron();
 
+    /**
+     * Kiểm tra điều kiện cần trước khi chạy (công cụ ngoài, tệp cấu hình, khoá API...).
+     * <p>
+     * Trả {@code null} khi sẵn sàng; ngược lại trả câu tiếng Việt giải thích thiếu gì và
+     * cách khắc phục — màn hình quản trị hiển thị "Chưa cấu hình" kèm câu này thay vì để
+     * người dùng bấm chạy rồi nhận lỗi.
+     * <p>
+     * Phải nhẹ (không gọi mạng, không sinh tiến trình) vì được gọi mỗi lần tải danh sách job.
+     */
+    default String checkReadiness() {
+        return null;
+    }
+
     /** Thân job. Throw để scheduler ghi nhận lần chạy FAILED. */
     void execute() throws Exception;
 }

@@ -24,6 +24,7 @@ public class AuthTwoFactorService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final AuthTokenBuilder tokenBuilder;
+    private final AuthSessionService sessionService;
 
     /**
      * Bắt đầu flow 2FA: sinh OTP 6 số, lưu vào user + hết hạn 5 phút, gửi qua notification.
@@ -64,6 +65,11 @@ public class AuthTwoFactorService {
         user.setOtpExpiration(null);
         userRepository.save(user);
 
-        return tokenBuilder.buildTokensByUsername(username, "Xác thực thành công");
+        LoginResponse response = tokenBuilder.buildTokensByUsername(username, "Xác thực thành công");
+        String ip = IpResolver.currentClientIp();
+        String userAgent = IpResolver.currentUserAgent();
+        sessionService.saveLoginHistory(username, ip, userAgent, "SUCCESS");
+        sessionService.createSession(username, response.getToken(), response.getRefreshToken(), ip, userAgent);
+        return response;
     }
 }

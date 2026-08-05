@@ -3,20 +3,26 @@ package com.frezo.server.service;
 import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.entity.Notification;
+import com.frezo.common.helper.ServiceHelper;
 import com.frezo.common.repository.NotificationRepository;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.service.NotificationService;
 import com.frezo.email.service.EmailService;
 import com.frezo.qtht.service.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -196,6 +202,57 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<Notification> getMyNotifications(String username, Integer page, Integer size,
+                                                         String tab, String type, String search) {
+        if (username == null || username.isBlank()) {
+            int p = page == null ? 0 : Math.max(page - 1, 0);
+            int s = size == null || size <= 0 ? 20 : size;
+            return PageResponse.empty(p, s);
+        }
+
+        Pageable pageable = ServiceHelper.createPageable(
+                page != null ? page : 1,
+                size,
+                Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Specification<Notification> spec = buildMyNotificationsSpec(username, tab, type, search);
+        Page<Notification> result = notificationRepository.findAll(spec, pageable);
+        return PageResponse.from(result);
+    }
+
+    private static Specification<Notification> buildMyNotificationsSpec(
+            String username, String tab, String type, String search) {
+        return (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            predicates.add(cb.equal(root.get("username"), username));
+
+            String tabKey = tab == null ? "all" : tab.trim().toLowerCase();
+            if ("unread".equals(tabKey)) {
+                predicates.add(cb.or(
+                        cb.isFalse(root.get("isRead")),
+                        cb.isNull(root.get("isRead"))));
+            } else if ("urgent".equals(tabKey)) {
+                predicates.add(cb.equal(cb.upper(root.get("priority")), "URGENT"));
+            }
+
+            if (StringUtils.hasText(type) && !"ALL".equalsIgnoreCase(type.trim())) {
+                predicates.add(cb.equal(root.get("type"), type.trim()));
+            }
+
+            if (StringUtils.hasText(search)) {
+                String like = "%" + search.trim().toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(cb.coalesce(root.get("title"), "")), like),
+                        cb.like(cb.lower(cb.coalesce(root.get("message"), "")), like),
+                        cb.like(cb.lower(cb.coalesce(root.get("senderUsername"), "")), like)));
+            }
+
+            return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+    }
+
+    @Override
     @Transactional
     public void markAsRead(String notificationId) {
         notificationRepository.findById(notificationId).ifPresent(n -> {
@@ -217,5 +274,17 @@ public class NotificationServiceImpl implements NotificationService {
     public long getUnreadCount(String username) {
         if (username == null || username.isBlank()) return 0;
         return notificationRepository.countByUsernameAndIsReadFalse(username);
+    }
+
+    @Override
+    public long getTotalCount(String username) {
+        if (username == null || username.isBlank()) return 0;
+        return notificationRepository.countByUsername(username);
+    }
+
+    @Override
+    public long getUrgentUnreadCount(String username) {
+        if (username == null || username.isBlank()) return 0;
+        return notificationRepository.countByUsernameAndPriorityAndIsReadFalse(username, "URGENT");
     }
 }

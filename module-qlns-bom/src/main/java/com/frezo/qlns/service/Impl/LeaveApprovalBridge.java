@@ -4,6 +4,8 @@ import com.frezo.approval.entity.ApprovalRequest;
 import com.frezo.approval.service.ApprovalCreator;
 import com.frezo.common.domain.SubjectType;
 import com.frezo.common.exception.AppException;
+import com.frezo.common.helper.SystemUtils;
+import com.frezo.qlns.common.QlnsErrorCode;
 import com.frezo.qlns.common.StatusContarct;
 import com.frezo.qlns.entity.Contract;
 import com.frezo.qlns.entity.LeaveRequest;
@@ -63,6 +65,65 @@ public class LeaveApprovalBridge {
                 null);
         leave.setApprovalRequestId(req.getId());
         leaveRequestRepository.save(leave);
+    }
+
+    // ============================================================
+    // IDOR guard — đơn nghỉ chỉ của chính mình, trừ khi là người duyệt
+    // ============================================================
+
+    /**
+     * Chặn đọc đơn nghỉ của người khác qua {@code GET /qlns/leave-request/my/{contractId}}.
+     * <p>Cho qua khi: admin / HR / có quyền duyệt (xem {@link LeaveApprovalResolver#canViewOthersLeave()}),
+     * hoặc {@code contractId} thuộc đúng hồ sơ nhân sự của current user.
+     *
+     * @throws AppException 403 khi không sở hữu HĐ, 404 khi HĐ không tồn tại
+     */
+    public void assertCanViewContractLeaves(String contractId) {
+        if (contractId == null || contractId.isBlank()) {
+            throw new AppException(QlnsErrorCode.CONTRACT_NOT_FOUND);
+        }
+        if (approvalResolver.canViewOthersLeave()) return;
+
+        String me = approvalResolver.currentPersonId();
+        if (me == null) {
+            throw new AppException(QlnsErrorCode.LEAVE_REQUEST_VIEW_DENIED);
+        }
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new AppException(QlnsErrorCode.CONTRACT_NOT_FOUND));
+        if (!me.equals(contract.getPersonId())) {
+            throw new AppException(QlnsErrorCode.LEAVE_REQUEST_VIEW_DENIED);
+        }
+    }
+
+    /**
+     * Chặn đọc chi tiết / timeline đơn nghỉ của người khác.
+     * <p>Cho qua khi: admin / HR / có quyền duyệt, người tạo đơn, QL đang được giao duyệt đơn,
+     * hoặc đơn thuộc chính hồ sơ nhân sự của current user.
+     */
+    public void assertCanViewLeave(LeaveRequest leave) {
+        if (leave == null) {
+            throw new AppException(QlnsErrorCode.LEAVE_REQUEST_NOT_FOUND);
+        }
+        if (approvalResolver.canViewOthersLeave()) return;
+
+        String actor = SystemUtils.getCurrentUsername();
+        if (actor != null
+                && (actor.equals(leave.getCreatedBy()) || actor.equals(leave.getManagerUsername()))) {
+            return;
+        }
+        String me = approvalResolver.currentPersonId();
+        if (me != null && (me.equals(leave.getPersonId()) || ownsContract(me, leave.getContractId()))) {
+            return;
+        }
+        throw new AppException(QlnsErrorCode.LEAVE_REQUEST_VIEW_DENIED);
+    }
+
+    /** HĐ legacy chưa set personId trên đơn → đối chiếu qua Contract. */
+    private boolean ownsContract(String personId, String contractId) {
+        if (contractId == null || contractId.isBlank()) return false;
+        return contractRepository.findById(contractId)
+                .map(c -> personId.equals(c.getPersonId()))
+                .orElse(false);
     }
 
     public String resolveManagerUsername(String personId) {

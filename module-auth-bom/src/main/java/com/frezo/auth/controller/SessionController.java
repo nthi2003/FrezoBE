@@ -66,21 +66,21 @@ public class SessionController {
         return ResponseEntity.ok(ApiResponse.success(userSessionService.countActiveSessions(username)));
     }
 
-    @Operation(summary = "Heartbeat phiên", description = "Cập nhật lastActiveTime cho session JWT hiện tại (FE ping mỗi 1–2 phút)")
+    @Operation(summary = "Heartbeat phiên", description = "Cập nhật lastActiveTime cho session JWT hiện tại (FE ping ~20–30s khi tab visible)")
     @PostMapping("/heartbeat")
     public ResponseEntity<ApiResponse<Map<String, Object>>> heartbeat(HttpServletRequest request) {
         String token = extractBearer(request);
-        boolean ok = userSessionService.heartbeat(token);
+        boolean ok = userSessionService.heartbeat(token, SystemUtils.getCurrentUsername());
         return ResponseEntity.ok(ApiResponse.success(Map.of("ok", ok)));
     }
 
-    @Operation(summary = "Số user đang online", description = "Distinct username có lastActive trong N phút (mặc định 5)")
+    @Operation(summary = "Số user đang online", description = "Distinct username có lastActive trong N giây (mặc định 90)")
     @GetMapping("/online-count")
     @CheckPermission(api = "/auth/session/online-count", action = "VIEW")
     public ResponseEntity<ApiResponse<Map<String, Long>>> onlineCount(
-            @RequestParam(defaultValue = "5") int minutes) {
+            @RequestParam(defaultValue = "90") int seconds) {
         return ResponseEntity.ok(ApiResponse.success(Map.of(
-                "onlineUsers", userSessionService.countOnlineUsers(minutes),
+                "onlineUsers", userSessionService.countOnlineUsers(seconds),
                 "activeSessions", userSessionService.countAllActiveSessions()
         )));
     }

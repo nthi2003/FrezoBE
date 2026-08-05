@@ -57,6 +57,7 @@ public class AuthLoginProcessor {
 
             LoginResponse response = tokenBuilder.buildTokens(detail, "Đăng nhập thành công");
             sessionService.saveLoginHistory(username, ip, userAgent, "SUCCESS");
+            sessionService.createSession(username, response.getToken(), response.getRefreshToken(), ip, userAgent);
             return response;
 
         } catch (BadCredentialsException | UsernameNotFoundException e) {
@@ -70,8 +71,10 @@ public class AuthLoginProcessor {
         }
     }
 
-    /** Refresh cặp token — delegate xuống {@link AuthTokenBuilder}. */
+    /** Refresh cặp token — cập nhật access token trên UserSession để heartbeat khớp. */
     public LoginResponse refreshToken(String refreshToken) {
-        return tokenBuilder.refreshTokens(refreshToken);
+        LoginResponse response = tokenBuilder.refreshTokens(refreshToken);
+        sessionService.rotateAccessToken(refreshToken, response.getToken());
+        return response;
     }
 }

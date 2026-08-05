@@ -18,14 +18,14 @@ public interface UserSessionService {
 
     long countActiveSessions(String username);
 
-    /** Cập nhật lastActiveTime theo JWT token hiện tại. */
-    boolean heartbeat(String token);
+    /** Cập nhật lastActiveTime theo JWT (token hoặc username fallback). */
+    boolean heartbeat(String token, String username);
 
     /** Số phiên active toàn hệ thống. */
     long countAllActiveSessions();
 
-    /** Số user distinct còn heartbeat trong cửa sổ onlineMinutes. */
-    long countOnlineUsers(int onlineMinutes);
+    /** Số user distinct còn heartbeat trong cửa sổ onlineSeconds. */
+    long countOnlineUsers(int onlineSeconds);
 
     Page<UserSession> getAllActiveSessions(Pageable pageable);
 }

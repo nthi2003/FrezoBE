@@ -68,10 +68,39 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public boolean heartbeat(String token) {
-        if (!StringUtils.hasText(token)) return false;
-        int updated = userSessionRepository.touchByToken(token.trim(), LocalDateTime.now());
-        return updated > 0;
+    public boolean heartbeat(String token, String username) {
+        LocalDateTime now = LocalDateTime.now();
+        String trimmed = StringUtils.hasText(token) ? token.trim() : null;
+
+        if (trimmed != null) {
+            int byToken = userSessionRepository.touchByToken(trimmed, now);
+            if (byToken > 0) return true;
+        }
+
+        if (StringUtils.hasText(username)) {
+            int byUser = userSessionRepository.touchByUsername(username, now);
+            if (byUser > 0) {
+                if (trimmed != null) {
+                    userSessionRepository.updateTokenByUsername(username, trimmed);
+                }
+                return true;
+            }
+            // Self-heal: login cũ chưa ghi UserSession → tạo phiên để online-count hoạt động
+            if (trimmed != null) {
+                UserSession session = UserSession.builder()
+                        .username(username)
+                        .token(trimmed)
+                        .loginTime(now)
+                        .lastActiveTime(now)
+                        .expiresAt(now.plusHours(24))
+                        .isActive(true)
+                        .deviceInfo("Desktop")
+                        .build();
+                userSessionRepository.save(session);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -80,9 +109,9 @@ public class UserSessionServiceImpl implements UserSessionService {
     }
 
     @Override
-    public long countOnlineUsers(int onlineMinutes) {
-        int minutes = onlineMinutes <= 0 ? 5 : onlineMinutes;
-        return userSessionRepository.countDistinctOnlineUsers(LocalDateTime.now().minusMinutes(minutes));
+    public long countOnlineUsers(int onlineSeconds) {
+        int seconds = onlineSeconds <= 0 ? 90 : Math.min(onlineSeconds, 3600);
+        return userSessionRepository.countDistinctOnlineUsers(LocalDateTime.now().minusSeconds(seconds));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.frezo.common.service;
 
 import com.frezo.common.entity.Notification;
+import com.frezo.common.response.PageResponse;
 import java.util.List;
 
 public interface NotificationService {
@@ -34,7 +35,20 @@ public interface NotificationService {
                     String type, String entityType, String entityId,
                     String actionUrl, String senderUsername, boolean urgent);
 
+    /** Legacy — trả toàn bộ (mới nhất trước). Bell/lobby vẫn dùng. */
     List<Notification> getMyNotifications(String username);
+
+    /**
+     * Phân trang + lọc tối thiểu.
+     * {@code page}/{@code size} theo convention {@link com.frezo.common.helper.ServiceHelper#createPageable}
+     * (page 1-based; size null → lấy hết trong 1 trang).
+     *
+     * @param tab    {@code all} | {@code unread} | {@code urgent} (null = all)
+     * @param type   loại thông báo (null / ALL = mọi loại)
+     * @param search tìm title / message / senderUsername
+     */
+    PageResponse<Notification> getMyNotifications(String username, Integer page, Integer size,
+                                                   String tab, String type, String search);
 
     void markAsRead(String notificationId);
 
@@ -43,4 +57,10 @@ public interface NotificationService {
 
     /** v1.2 — unread count cho badge. */
     long getUnreadCount(String username);
+
+    /** Tổng số thông báo của user (không filter). */
+    long getTotalCount(String username);
+
+    /** Số thông báo khẩn chưa đọc. */
+    long getUrgentUnreadCount(String username);
 }

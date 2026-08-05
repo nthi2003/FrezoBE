@@ -94,6 +94,26 @@ public class AuthSessionService {
         }
     }
 
+    /**
+     * Sau refresh JWT: cập nhật access token trên session còn active (khớp heartbeat).
+     * FE giữ nguyên refresh token cũ — tra theo refreshToken.
+     */
+    public void rotateAccessToken(String refreshToken, String newAccessToken) {
+        if (refreshToken == null || refreshToken.isBlank() || newAccessToken == null || newAccessToken.isBlank()) {
+            return;
+        }
+        try {
+            userSessionRepository.findByRefreshToken(refreshToken).ifPresent(session -> {
+                if (!Boolean.TRUE.equals(session.getIsActive())) return;
+                session.setToken(newAccessToken);
+                session.setLastActiveTime(LocalDateTime.now());
+                userSessionRepository.save(session);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to rotate session access token", e);
+        }
+    }
+
     private String parseDeviceInfo(String userAgent) {
         if (userAgent == null) return "Unknown";
         if (userAgent.contains("Mobile")) return "Mobile";

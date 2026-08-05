@@ -43,8 +43,8 @@ public class UserActivityServiceImpl implements UserActivityService {
 
     @Override
     @Transactional(readOnly = true)
-    public Map<String, Object> usageSummary(int onlineMinutes) {
-        int window = Math.max(1, Math.min(onlineMinutes, 60));
+    public Map<String, Object> usageSummary(int onlineSeconds) {
+        int window = Math.max(30, Math.min(onlineSeconds <= 0 ? 90 : onlineSeconds, 3600));
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.atStartOfDay();
         LocalDateTime end = today.plusDays(1).atStartOfDay();
@@ -55,7 +55,8 @@ public class UserActivityServiceImpl implements UserActivityService {
         data.put("uniqueUsersToday", loginHistoryRepository.countDistinctUsersSuccessBetween(start, end));
         data.put("onlineUsers", userSessionService.countOnlineUsers(window));
         data.put("activeSessions", userSessionService.countAllActiveSessions());
-        data.put("onlineWindowMinutes", window);
+        data.put("onlineWindowSeconds", window);
+        data.put("onlineWindowMinutes", Math.max(1, (window + 59) / 60));
         data.put("asOf", LocalDateTime.now().toString());
         return data;
     }

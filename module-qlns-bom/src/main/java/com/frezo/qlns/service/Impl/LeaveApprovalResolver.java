@@ -1,9 +1,11 @@
 package com.frezo.qlns.service.impl;
 
 import com.frezo.auth.repository.UserRepository;
+import com.frezo.common.helper.SystemUtils;
 import com.frezo.qtht.entity.Department;
 import com.frezo.qtht.entity.Person;
 import com.frezo.qtht.repository.DepartmentRepository;
+import com.frezo.qtht.repository.PermissionRepository;
 import com.frezo.qtht.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,9 +48,20 @@ public class LeaveApprovalResolver {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final PermissionRepository permissionRepository;
 
     @Value("${frezo.leave.hr-users:admin}")
     private String hrUsersRaw;
+
+    /**
+     * Permission code cho phép xem đơn nghỉ của người khác.
+     * Mirror alias FE {@code LEAVE.APPROVE} / {@code APPROVALS.APPROVE}
+     * (xem {@code FrezoFE/packages/erp/src/lib/hooks/usePermission.ts}).
+     */
+    private static final List<String> LEAVE_VIEW_OTHERS_CODES = List.of(
+            "QLNS_LEAVE_APPROVE",
+            "QLNS_LEAVE_REQUEST_APPROVE",
+            "APPROVALS_APPROVE");
 
     /**
      * Tìm username QL trực tiếp của nhân viên (theo departmentId → managerId → User).
@@ -114,5 +128,67 @@ public class LeaveApprovalResolver {
                 .flatMap(personId -> personRepository.findByIdAndIsDeletedFalse(personId))
                 .map(Person::getIsAdmin)
                 .orElse(false);
+    }
+
+    // ============================================================
+    // Ownership / scope — chống IDOR cho các endpoint self-service
+    // ============================================================
+
+    /** {@code personId} của user đăng nhập; {@code null} nếu chưa liên kết hồ sơ nhân sự. */
+    public String currentPersonId() {
+        String username = SystemUtils.getCurrentUsername();
+        if (username == null) return null;
+        return userRepository.findByUserName(username)
+                .map(u -> u.getPersonId())
+                .filter(id -> id != null && !id.isBlank())
+                .orElse(null);
+    }
+
+    /** Current user nằm trong danh sách HR (config {@code frezo.leave.hr-users}). */
+    public boolean isCurrentUserHr() {
+        String username = SystemUtils.getCurrentUsername();
+        return username != null && resolveHrUsernames().contains(username);
+    }
+
+    /** Current user là QL trực tiếp của {@code personId} (theo Department.managerId/deputy). */
+    public boolean isDirectManagerOf(String personId) {
+        String username = SystemUtils.getCurrentUsername();
+        if (username == null || personId == null || personId.isBlank()) return false;
+        return username.equals(resolveManagerUsername(personId));
+    }
+
+    /**
+     * Current user có ít nhất một trong các permission code (so khớp bỏ qua hoa/thường
+     * và {@code .} ↔ {@code _} — cùng rule normalize của FE).
+     */
+    public boolean hasAnyPermissionCode(Collection<String> codes) {
+        if (codes == null || codes.isEmpty()) return false;
+        String username = SystemUtils.getCurrentUsername();
+        if (username == null) return false;
+        try {
+            List<String> granted = permissionRepository.findCodesByUsername(username);
+            if (granted == null || granted.isEmpty()) return false;
+            List<String> wanted = codes.stream().map(LeaveApprovalResolver::normalizeCode).toList();
+            return granted.stream()
+                    .filter(c -> c != null && !c.isBlank())
+                    .map(LeaveApprovalResolver::normalizeCode)
+                    .anyMatch(wanted::contains);
+        } catch (Exception e) {
+            // Fail-closed: lỗi tra permission → coi như không có quyền mở rộng.
+            log.warn("[leave-approval] Không tra được permission cho user={}: {}", username, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Được xem đơn nghỉ của nhân viên khác? Admin / HR / người có quyền duyệt.
+     * Nhân viên thường → false, chỉ xem được đơn của chính mình.
+     */
+    public boolean canViewOthersLeave() {
+        return isCurrentUserAdmin() || isCurrentUserHr() || hasAnyPermissionCode(LEAVE_VIEW_OTHERS_CODES);
+    }
+
+    private static String normalizeCode(String code) {
+        return code.replace('.', '_').toUpperCase();
     }
 }

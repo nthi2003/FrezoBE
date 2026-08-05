@@ -41,5 +41,13 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
     @Query("UPDATE UserSession s SET s.lastActiveTime = :now WHERE s.token = :token AND s.isActive = true")
     int touchByToken(@Param("token") String token, @Param("now") LocalDateTime now);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserSession s SET s.lastActiveTime = :now WHERE s.username = :username AND s.isActive = true")
+    int touchByUsername(@Param("username") String username, @Param("now") LocalDateTime now);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserSession s SET s.token = :token WHERE s.username = :username AND s.isActive = true")
+    int updateTokenByUsername(@Param("username") String username, @Param("token") String token);
+
     void deleteByExpiresAtBefore(LocalDateTime dateTime);
 }

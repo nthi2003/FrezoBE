@@ -120,6 +120,8 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
     @Override
     public List<LeaveRequestResponse> getMyRequests(String contractId) {
+        // Chống IDOR: chỉ chủ HĐ (hoặc admin/HR/người duyệt) mới đọc được đơn của HĐ này.
+        approvalBridge.assertCanViewContractLeaves(contractId);
         List<LeaveRequest> all = leaveRequestRepository.findByContractIdOrderByCreatedDateDesc(contractId);
         return all.stream().map(this::enrich).toList();
     }
@@ -159,6 +161,11 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
     @Override
     public List<LeaveRequestHistoryResponse> getHistory(String requestId) {
+        // Chống IDOR: timeline chứa lý do nghỉ + comment duyệt — không cho đọc đơn người khác.
+        LeaveRequest leave = leaveRequestRepository.findById(requestId)
+                .orElseThrow(() -> new AppException(QlnsErrorCode.LEAVE_REQUEST_NOT_FOUND));
+        approvalBridge.assertCanViewLeave(leave);
+
         return historyRepository.findByRequestIdOrderByCreatedDateAsc(requestId).stream()
                 .map(h -> {
                     LeaveRequestHistoryResponse r = new LeaveRequestHistoryResponse();

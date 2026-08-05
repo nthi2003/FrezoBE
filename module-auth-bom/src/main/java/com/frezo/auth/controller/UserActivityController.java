@@ -33,7 +33,7 @@ public class UserActivityController {
     @GetMapping("/usage-summary")
     @CheckPermission(api = "/auth/statistic/usage-summary", action = "VIEW")
     public ResponseEntity<ApiResponse<Map<String, Object>>> usageSummary(
-            @RequestParam(defaultValue = "5") int onlineMinutes) {
-        return ResponseEntity.ok(ApiResponse.success(userActivityService.usageSummary(onlineMinutes)));
+            @RequestParam(defaultValue = "90") int onlineSeconds) {
+        return ResponseEntity.ok(ApiResponse.success(userActivityService.usageSummary(onlineSeconds)));
     }
 }

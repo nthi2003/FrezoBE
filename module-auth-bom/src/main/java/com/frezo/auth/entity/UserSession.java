@@ -22,10 +22,10 @@ public class UserSession extends BaseEntity {
     @Column(name = "username", length = 100, nullable = false)
     private String username;
 
-    @Column(name = "token", length = 500)
+    @Column(name = "token", length = 2000)
     private String token;
 
-    @Column(name = "refresh_token", length = 500)
+    @Column(name = "refresh_token", length = 2000)
     private String refreshToken;
 
     @Column(name = "ip_address", length = 100)

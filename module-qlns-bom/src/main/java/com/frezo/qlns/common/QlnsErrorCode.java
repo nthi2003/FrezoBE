@@ -31,6 +31,8 @@ public enum QlnsErrorCode implements ErrorCode {
     LEAVE_REQUEST_NOT_FOUND("error.leave.request.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy đơn nghỉ phép"),
     LEAVE_REQUEST_INVALID_STATUS("error.leave.request.invalid.status", HttpStatus.BAD_REQUEST, "Trạng thái đơn nghỉ không hợp lệ"),
     LEAVE_REQUEST_PERMISSION_DENIED("error.leave.request.permission.denied", HttpStatus.FORBIDDEN, "Không có quyền hủy đơn nghỉ"),
+    LEAVE_REQUEST_VIEW_DENIED("error.leave.request.view.denied", HttpStatus.FORBIDDEN,
+            "Không có quyền xem đơn nghỉ của nhân viên khác"),
     LEAVE_NOT_FOUND("exception.leave.not_found", HttpStatus.NOT_FOUND, "Không tìm thấy bản ghi nghỉ phép"),
 
     // -------------------- ATTENDANCE --------------------

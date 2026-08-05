@@ -52,7 +52,7 @@ public class ApiLogController {
     @Operation(summary = "Xóa API logs theo số ngày")
     public ApiResponse<String> deleteByDays(@PathVariable int days) {
         apiLogService.deleteLogs(days);
-        return ApiResponse.success("Xóa thành công log của " + days + " ngày gần đây.");
+        return ApiResponse.success("Đã xoá log cũ hơn " + days + " ngày.");
     }
 
     @DeleteMapping("/{id}")

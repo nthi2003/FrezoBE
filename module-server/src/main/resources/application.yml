@@ -166,6 +166,27 @@ frezo:
   # ----------------------------------------------------------
   leave:
     hr-users: ${LEAVE_HR_USERS:admin}
+  # ----------------------------------------------------------
+  # API audit log (trang /qtht/apilogs) — ghi mọi HTTP request trừ noise.
+  # aspect-enabled=false: tắt Aspect legacy (tránh ghi trùng với Filter).
+  # ----------------------------------------------------------
+  api-log:
+    enabled: ${API_LOG_ENABLED:true}
+    aspect-enabled: ${API_LOG_ASPECT_ENABLED:false}
+    include-body: ${API_LOG_INCLUDE_BODY:true}
+    async: ${API_LOG_ASYNC:true}
+    max-body-length: ${API_LOG_MAX_BODY_LENGTH:4000}
+    exclude-path-prefixes:
+      - /actuator
+      - /swagger
+      - /swagger-ui
+      - /v3/api-docs
+      - /api-docs
+      - /favicon
+      - /error
+      - /ws-endpoint
+      - /auth/session/heartbeat
+      - /qtht/api-log
 
 server:
   port: 7410

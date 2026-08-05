@@ -8,7 +8,13 @@
 --              (sidebar = role_menu) và KHÔNG tự gate API (API = role_permission).
 -- Created: 2026-07-16 (Batch I4)
 -- Updated: 2026-08-04 — prefix match + CRM/WH/ACC/QLNS hubs
+-- Updated: 2026-08-04b — QLHT_WORKFLOW→workflows; SALARY_BAND→qtht/category
 -- IDEMPOTENT: NOT EXISTS trên (menu_id, permission_id)
+--
+-- Cố ý KHÔNG map (folder / portal / chưa có API seed):
+--   MENU_* parents, QLHT_EMAIL/FB/MKT (folder), HOME, PROFILE,
+--   MENU_DOCS, QLHT_MKT_ZALO (chưa có /mkt/zalo @CheckPermission),
+--   QLHT_NEWS / QLHT_BGHD (soft-deleted)
 -- ============================================================
 
 -- api_prefix: không leading slash; khớp exact HOẶC prefix + '/'
@@ -36,7 +42,8 @@ WITH menu_api_map(menu_code, api_prefix) AS (
         ('QLHT_STAFF',          'qlns/person'),
         ('QLHT_CONTRACT',       'qlns/contract'),
         ('QLHT_PAYROLL',        'qlns/payroll'),
-        ('QLHT_SALARY_BAND',    'qlns/salary-bands'),
+        -- SalaryBandsPage persist qua /qtht/category?groupCode=SalaryBand (không có /qlns/salary-bands)
+        ('QLHT_SALARY_BAND',    'qtht/category'),
         ('QLHT_LEAVE',          'qlns/leave'),
         ('QLHT_LEAVE',          'qlns/leave-request'),
         ('QLHT_ATTENDANCE',     'qlns/attendance'),
@@ -90,9 +97,10 @@ WITH menu_api_map(menu_code, api_prefix) AS (
         ('ACC_SETTINGS',        'accounting/setting'),
         ('ACC_SETTINGS',        'accounting/settings'),
 
-        -- ========================= Approval =========================
+        -- ========================= Approval / Visual Workflow =========================
         ('APPR_INBOX',          'approvals'),
         ('APPR_FLOWS',          'approval-flows'),
+        ('QLHT_WORKFLOW',       'workflows'),
 
         -- ========================= Tasks =========================
         ('QLHT_CV',             'task/task'),
@@ -131,7 +139,7 @@ WITH menu_api_map(menu_code, api_prefix) AS (
         ('QLHT_EVENT',          'qtbv/event'),
         ('QLHT_EVENT',          'events'),
         ('QLHT_WEBSITE',        'qtbv/landing-config'),
-        ('QLHT_WEBSITE',        'qtbv/banner'),
+        ('QLHT_WEBSITE',        'qtbv/banners'),
 
         -- ========================= Contracts / Assets / DMDC =========================
         ('QLHT_BGHD',           'qlns/contract'),

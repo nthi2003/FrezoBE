@@ -69,6 +69,8 @@ WITH perm_matrix(module, entity, actions) AS (
         -- Legacy singular 'article' kept for idempotent reseed of old DBs;
         -- SA-ART-002 adds /qtbv/articles (plural + leading slash) in block below.
         ('qtbv', 'article',         ARRAY['VIEW','CREATE','UPDATE','DELETE']),
+        -- Legacy singular 'banner' kept for idempotent reseed of old DBs;
+        -- QTBV banners block below adds /qtbv/banners (plural + leading slash).
         ('qtbv', 'banner',          ARRAY['VIEW','CREATE','UPDATE','DELETE']),
         ('qtbv', 'landing-config',  ARRAY['VIEW','UPDATE']),
         ('qtbv', 'event',           ARRAY['VIEW','CREATE','UPDATE','DELETE']),
@@ -200,6 +202,47 @@ SELECT
     NOW(), 'system',
     NOW(), 'system'
 FROM s1_perms s
+WHERE NOT EXISTS (
+    SELECT 1 FROM permission p WHERE p.code = s.code
+);
+
+-- ============================================================
+-- QTBV banners — align api_path với @CheckPermission (/qtbv/banners)
+-- Soft-delete legacy singular qtbv/banner (QTBV_BANNER_*)
+-- ============================================================
+UPDATE permission
+SET is_deleted = true,
+    updated_date = NOW(),
+    updated_by = 'system'
+WHERE code IN (
+    'QTBV_BANNER_VIEW',
+    'QTBV_BANNER_CREATE',
+    'QTBV_BANNER_UPDATE',
+    'QTBV_BANNER_DELETE'
+)
+  AND (is_deleted = false OR is_deleted IS NULL);
+
+WITH qtbv_banner_perms(code, name, api_method, api_path, action) AS (
+    VALUES
+        ('QTBV_BANNERS_VIEW',       'Banners - VIEW',       'GET',    '/qtbv/banners',       'VIEW'),
+        ('QTBV_BANNERS_CREATE',     'Banners - CREATE',     'POST',   '/qtbv/banners',       'CREATE'),
+        ('QTBV_BANNERS_ID_VIEW',    'Banners Id - VIEW',    'GET',    '/qtbv/banners/{id}',  'VIEW'),
+        ('QTBV_BANNERS_ID_UPDATE',  'Banners Id - UPDATE',  'PUT',    '/qtbv/banners/{id}',  'UPDATE'),
+        ('QTBV_BANNERS_ID_DELETE',  'Banners Id - DELETE',  'DELETE', '/qtbv/banners/{id}',  'DELETE')
+)
+INSERT INTO permission (id, code, name, api_method, api_path, action, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT
+    gen_random_uuid(),
+    s.code,
+    s.name,
+    s.api_method,
+    s.api_path,
+    s.action,
+    'QTHT',
+    false,
+    NOW(), 'system',
+    NOW(), 'system'
+FROM qtbv_banner_perms s
 WHERE NOT EXISTS (
     SELECT 1 FROM permission p WHERE p.code = s.code
 );
@@ -824,6 +867,11 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('QTBV_ARTICLES_ORGANIZATIONS_VIEW', '/qtbv/articles/organizations - VIEW', 'GET', '/qtbv/articles/organizations', 'VIEW'),
         ('QTBV_LANDING_CONFIG_VIEW', '/qtbv/landing-config - VIEW', 'GET', '/qtbv/landing-config', 'VIEW'),
         ('QTBV_LANDING_CONFIG_UPDATE', '/qtbv/landing-config - UPDATE', 'PUT', '/qtbv/landing-config', 'UPDATE'),
+        ('QTBV_BANNERS_VIEW', '/qtbv/banners - VIEW', 'GET', '/qtbv/banners', 'VIEW'),
+        ('QTBV_BANNERS_CREATE', '/qtbv/banners - CREATE', 'POST', '/qtbv/banners', 'CREATE'),
+        ('QTBV_BANNERS_ID_VIEW', '/qtbv/banners/{id} - VIEW', 'GET', '/qtbv/banners/{id}', 'VIEW'),
+        ('QTBV_BANNERS_ID_UPDATE', '/qtbv/banners/{id} - UPDATE', 'PUT', '/qtbv/banners/{id}', 'UPDATE'),
+        ('QTBV_BANNERS_ID_DELETE', '/qtbv/banners/{id} - DELETE', 'DELETE', '/qtbv/banners/{id}', 'DELETE'),
         ('QTHT_API_LOG_VIEW', '/qtht/api-log - VIEW', 'GET', '/qtht/api-log', 'VIEW'),
         ('QTHT_API_LOG_STATS_VIEW', '/qtht/api-log/stats - VIEW', 'GET', '/qtht/api-log/stats', 'VIEW'),
         ('QTHT_API_LOG_ID_VIEW', '/qtht/api-log/{id} - VIEW', 'GET', '/qtht/api-log/{id}', 'VIEW'),
@@ -1072,7 +1120,8 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('WAREHOUSE_ZONE_ID_VIEW', '/warehouse/zone/{id} - VIEW', 'GET', '/warehouse/zone/{id}', 'VIEW'),
         ('WAREHOUSE_ZONE_CREATE', '/warehouse/zone - CREATE', 'POST', '/warehouse/zone', 'CREATE'),
         ('WAREHOUSE_ZONE_ID_UPDATE', '/warehouse/zone/{id} - UPDATE', 'PUT', '/warehouse/zone/{id}', 'UPDATE'),
-        ('WAREHOUSE_ZONE_ID_DELETE', '/warehouse/zone/{id} - DELETE', 'DELETE', '/warehouse/zone/{id}', 'DELETE')
+        ('WAREHOUSE_ZONE_ID_DELETE', '/warehouse/zone/{id} - DELETE', 'DELETE', '/warehouse/zone/{id}', 'DELETE'),
+        ('QTHT_UX_POPUPS_EVENT_CODE_VIEW', '/qtht/ux-popups/{eventCode} - VIEW', 'GET', '/qtht/ux-popups/{eventCode}', 'VIEW')
 )
 INSERT INTO permission (id, code, name, api_method, api_path, action, app_code, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT

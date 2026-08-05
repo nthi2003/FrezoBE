@@ -68,7 +68,7 @@ FROM (VALUES
     -- HR
     ('QLNS_OKR',           'OKR',                  'OKRs',                 '/qlns/okrs',                       'src/modules/qlns',       'MENU_HRM',        7,  'Target'),
     ('QLNS_PERF',          'Đánh giá hiệu suất',   'Performance Reviews',  '/qlns/performance-reviews',        'src/modules/qlns',       'MENU_HRM',        8,  'BarChart3'),
-    ('QLNS_RECOGNITION',   'Ghi nhận',             'Recognition',          '/qlns/recognition',                'src/modules/qlns',       'MENU_HRM',        8,  'Gift'),
+    ('QLNS_RECOGNITION',   'Ghi nhận',             'Recognition',          '/qlns/recognition',                'src/modules/qlns',       'MENU_HRM',        12, 'Gift'),
     ('QLNS_ONBOARD',       'Onboarding',           'Onboarding',           '/qlns/onboarding',                 'src/modules/qlns',       'MENU_HRM',        9,  'UserPlus'),
     ('QLNS_RECRUIT',       'Yêu cầu tuyển dụng',   'Requisitions',         '/qlns/recruitment/requisitions',   'src/modules/qlns',       'MENU_HRM',        10, 'Briefcase'),
     ('QLNS_RECRUIT_BOARD', 'Kanban tuyển dụng',    'Recruitment Board',    '/qlns/recruitment/board',          'src/modules/qlns',       'MENU_HRM',        11, 'LayoutGrid'),
@@ -128,7 +128,7 @@ UPDATE menu SET parent_code = 'MENU_HRM', order_index = 5,  fe_url = '/qlns/leav
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 6,  fe_url = '/admin/attendance',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ATTENDANCE';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 7,  fe_url = '/qlns/okrs',                     is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_OKR';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 8,  fe_url = '/qlns/performance-reviews',      is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_PERF';
-UPDATE menu SET parent_code = 'MENU_HRM', order_index = 8,  fe_url = '/qlns/recognition',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECOGNITION';
+UPDATE menu SET parent_code = 'MENU_HRM', order_index = 12, fe_url = '/qlns/recognition',              is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECOGNITION';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 9,  fe_url = '/qlns/onboarding',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_ONBOARD';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 10, fe_url = '/qlns/recruitment/requisitions', is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECRUIT';
 UPDATE menu SET parent_code = 'MENU_HRM', order_index = 11, fe_url = '/qlns/recruitment/board',        is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLNS_RECRUIT_BOARD';

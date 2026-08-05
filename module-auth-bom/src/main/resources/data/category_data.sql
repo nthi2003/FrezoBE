@@ -91,7 +91,8 @@ FROM (VALUES
     ('ChucDanh', 'Chức danh',             3),
     ('LOCATION', 'Địa bàn',               4),
     ('INDUSTRY', 'Ngành nghề',            5),
-    ('DonVi',    'Đơn vị tính',           6)
+    ('DonVi',    'Đơn vị tính',           6),
+    ('UX_POPUP', 'Popup UX thành công',   7)
 ) AS v(code, name, cat_group)
 WHERE NOT EXISTS (
     SELECT 1 FROM category_group cg WHERE cg.code = v.code
@@ -162,6 +163,53 @@ FROM (VALUES
     ('UOM_CHUC',  'chục',   'dozen10',    'chục',  'DonVi', 16,  'Chục (10 cái)'),
     ('UOM_LON',   'lon',    'can',        'lon',   'DonVi', 17,  'Lon'),
     ('UOM_TAN',   'tấn',    'ton',        'tấn',   'DonVi', 18,  'Tấn')
+) AS v(code, name, name_en, short_name, group_code, order_index, description)
+WHERE NOT EXISTS (
+    SELECT 1 FROM categories c
+    WHERE c.group_code = v.group_code AND c.code = v.code
+);
+
+-- ============================================================
+-- 3) UX_POPUP templates — name=title, description=body (hoặc JSON
+--    {"body":"...","imageUrl":"..."}). active=false để tắt popup.
+--    Admin sửa tại /admin/category-management (group UX_POPUP).
+-- ============================================================
+INSERT INTO category_group (code, name, cat_group, is_deleted)
+SELECT 'UX_POPUP', 'Popup UX thành công', 7, false
+WHERE NOT EXISTS (
+    SELECT 1 FROM category_group cg WHERE cg.code = 'UX_POPUP'
+);
+
+INSERT INTO categories (id, code, name, name_en, short_name, group_code, order_index, description, active, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), v.code, v.name, v.name_en, v.short_name, v.group_code, v.order_index, v.description, true, false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    (
+        'ATTENDANCE_FIRST_CHECKIN',
+        'Chúc ngày làm việc hiệu quả!',
+        'Have a productive day!',
+        'CHECKIN',
+        'UX_POPUP',
+        1,
+        'Bạn vừa check-in thành công. Chúc một ngày làm việc tràn đầy năng lượng và đạt nhiều kết quả tốt!'
+    ),
+    (
+        'LOGIN_FIRST_OF_DAY',
+        'Chào buổi sáng!',
+        'Good morning!',
+        'LOGIN',
+        'UX_POPUP',
+        2,
+        'Chào mừng bạn trở lại Frezo. Chúc một ngày làm việc vui vẻ!'
+    ),
+    (
+        'TASK_COMPLETED',
+        'Hoàn thành công việc!',
+        'Task completed!',
+        'TASK',
+        'UX_POPUP',
+        3,
+        'Tuyệt vời — bạn vừa hoàn thành một công việc. Tiếp tục phát huy nhé!'
+    )
 ) AS v(code, name, name_en, short_name, group_code, order_index, description)
 WHERE NOT EXISTS (
     SELECT 1 FROM categories c

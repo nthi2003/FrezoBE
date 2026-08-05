@@ -29,6 +29,8 @@ public interface StockBatchRepository extends JpaRepository<StockBatch, String> 
 
     List<StockBatch> findByWarehouseIdAndIsDeletedFalseOrderByExpiryDateAsc(String warehouseId);
 
+    List<StockBatch> findByProductIdAndIsDeletedFalseOrderByExpiryDateAsc(String productId);
+
     List<StockBatch> findByWarehouseIdAndProductIdAndIsDeletedFalse(String warehouseId, String productId);
 
     @Query("""

@@ -1,5 +1,6 @@
 package com.frezo.task.controller;
 
+import com.frezo.task.dto.request.ReviewRequest;
 import com.frezo.task.dto.request.TaskRequest;
 import com.frezo.task.dto.response.TaskResponse;
 import com.frezo.task.service.TaskService;
@@ -74,7 +75,7 @@ public class TaskController {
     @Operation(summary = "Manager/assigner review completed task (DONE → CLOSED or back to IN_PROGRESS)")
     public ApiResponse<TaskResponse> review(
             @PathVariable String id,
-            @RequestBody com.frezo.task.dto.request.ReviewRequest request) {
+            @RequestBody ReviewRequest request) {
         return ApiResponse.ok(taskService.review(id, request));
     }
 }

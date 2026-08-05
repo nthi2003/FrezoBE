@@ -23,4 +23,6 @@ public interface CategoryRepository extends JpaRepository<Category, String>, Jpa
 
     Optional<Category> findByCode(String code);
 
+    Optional<Category> findByGroupCodeAndCodeAndIsDeletedFalse(String groupCode, String code);
+
 }

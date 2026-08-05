@@ -35,4 +35,5 @@ public class AttendanceResponse {
     private AttendanceStatus status;
     private String approvedBy;
     private String note;
+    private String popupEvent;
 }

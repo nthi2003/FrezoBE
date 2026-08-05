@@ -5,13 +5,18 @@ import com.frezo.warehouse.dto.response.FefoSuggestResponse;
 import com.frezo.warehouse.dto.response.StockBatchResponse;
 
 import java.time.LocalDate;
-import java.util.List;
 
 public interface StockBatchService {
 
     StockBatchResponse getById(String id);
 
-    FePage<StockBatchResponse> list(String warehouseId, String productId);
+    FePage<StockBatchResponse> list(
+            String warehouseId,
+            String productId,
+            String status,
+            String keyword,
+            LocalDate expiryFrom,
+            LocalDate expiryTo);
 
     FefoSuggestResponse suggestFefo(String warehouseId, String productId, double qty);
 

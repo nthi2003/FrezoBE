@@ -71,7 +71,7 @@ WHERE m.app_code = 'QTHT'
   -- HOME = portal mọi staff; DASHBOARD KPI chỉ Admin/Manager (không gán STAFF)
   AND m.code IN (
       'HOME',
-      'MENU_HRM', 'QLHT_ATTENDANCE',
+      'MENU_HRM', 'QLHT_ATTENDANCE', 'QLNS_RECOGNITION',
       'MENU_TASK', 'QLHT_CV', 'QLHT_TICKET',
       'MENU_GROWTH', 'QLHT_EVENT',
       'MENU_QTHT', 'QLHT_ARTICLE'

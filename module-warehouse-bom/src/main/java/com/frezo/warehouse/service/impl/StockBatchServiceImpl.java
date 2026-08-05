@@ -51,19 +51,67 @@ public class StockBatchServiceImpl implements StockBatchService {
     }
 
     @Override
-    public FePage<StockBatchResponse> list(String warehouseId, String productId) {
+    public FePage<StockBatchResponse> list(
+            String warehouseId,
+            String productId,
+            String status,
+            String keyword,
+            LocalDate expiryFrom,
+            LocalDate expiryTo) {
         List<StockBatch> batches;
-        if (warehouseId != null && productId != null) {
+        boolean hasWh = warehouseId != null && !warehouseId.isBlank();
+        boolean hasProduct = productId != null && !productId.isBlank();
+        if (hasWh && hasProduct) {
             batches = batchRepository.findByWarehouseIdAndProductIdAndIsDeletedFalseOrderByExpiryDateAsc(
                     warehouseId, productId);
-        } else if (warehouseId != null) {
+        } else if (hasWh) {
             batches = batchRepository.findByWarehouseIdAndIsDeletedFalseOrderByExpiryDateAsc(warehouseId);
+        } else if (hasProduct) {
+            batches = batchRepository.findByProductIdAndIsDeletedFalseOrderByExpiryDateAsc(productId);
         } else {
             batches = batchRepository.findAll().stream()
                     .filter(b -> Boolean.FALSE.equals(b.getIsDeleted()))
                     .toList();
         }
-        return FePage.all(batches.stream().map(this::toResponse).toList());
+
+        String statusKey = status != null && !status.isBlank() ? status.trim().toUpperCase() : null;
+        String kw = keyword != null && !keyword.isBlank() ? keyword.trim().toLowerCase() : null;
+
+        List<StockBatchResponse> rows = batches.stream()
+                .map(this::toResponse)
+                .filter(r -> statusKey == null
+                        || (r.getStatus() != null && statusKey.equals(r.getStatus().toUpperCase())))
+                .filter(r -> matchesKeyword(r, kw))
+                .filter(r -> matchesExpiryRange(r.getExpiryDate(), expiryFrom, expiryTo))
+                .toList();
+        return FePage.all(rows);
+    }
+
+    private static boolean matchesKeyword(StockBatchResponse r, String kw) {
+        if (kw == null) return true;
+        return containsIgnoreCase(r.getBatchCode(), kw)
+                || containsIgnoreCase(r.getProductCode(), kw)
+                || containsIgnoreCase(r.getProductName(), kw)
+                || containsIgnoreCase(r.getSupplierName(), kw)
+                || containsIgnoreCase(r.getLocationLabel(), kw);
+    }
+
+    private static boolean containsIgnoreCase(String value, String kw) {
+        return value != null && value.toLowerCase().contains(kw);
+    }
+
+    private static boolean matchesExpiryRange(String expiryIso, LocalDate from, LocalDate to) {
+        if (from == null && to == null) return true;
+        if (expiryIso == null || expiryIso.isBlank()) return false;
+        LocalDate expiry;
+        try {
+            expiry = LocalDate.parse(expiryIso, DATE_FMT);
+        } catch (Exception ex) {
+            return false;
+        }
+        if (from != null && expiry.isBefore(from)) return false;
+        if (to != null && expiry.isAfter(to)) return false;
+        return true;
     }
 
     @Override

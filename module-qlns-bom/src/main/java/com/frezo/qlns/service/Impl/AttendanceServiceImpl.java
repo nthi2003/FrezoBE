@@ -149,12 +149,15 @@ public class AttendanceServiceImpl implements AttendanceService {
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
+    public static final String POPUP_ATTENDANCE_FIRST_CHECKIN = "ATTENDANCE_FIRST_CHECKIN";
+
     // ---- CHECK-IN: Nhân viên check-in từ Mobile App ----
     // 1. Kiểm tra bản ghi chấm công đã tồn tại chưa (theo personId + ngày)
     // 2. IDEMPOTENT: nếu đã có checkInTime hôm nay → return existing (retry offline queue an toàn)
     // 3. Validate vị trí GPS (trong bán kính cho phép) và WiFi (trong danh sách)
     // 4. Lưu thông tin check-in kèm GPS/WiFi metadata
     // 5. Tính số phút đi muộn dựa trên shiftType và config giờ làm việc
+    // 6. First punch of day → popupEvent = ATTENDANCE_FIRST_CHECKIN (FE load template)
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request) {
         Optional<Attendance> existing = attendanceRepository.findByPersonIdAndAttendanceDate(
@@ -165,6 +168,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         if (existing.isPresent() && existing.get().getCheckInTime() != null) {
             return attendanceMapper.toResponse(existing.get());
         }
+
+        // True first punch hôm nay (chưa có checkInTime) → UX popup
+        boolean firstCheckInOfDay = true;
 
         String orgId = resolveOrgId(request.getPersonId());
         GeoAttendanceConfig geo = getGeoConfig(orgId);
@@ -207,7 +213,11 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Attendance saved = attendanceRepository.save(attendance);
         // Enrich displayStatus (LATE/OK) — FE/mobile không phải đoán từ lateMinutes
-        return enrichResponse(attendanceMapper.toResponse(saved), null);
+        AttendanceResponse response = enrichResponse(attendanceMapper.toResponse(saved), null);
+        if (firstCheckInOfDay) {
+            response.setPopupEvent(POPUP_ATTENDANCE_FIRST_CHECKIN);
+        }
+        return response;
     }
 
     // ---- CHECK-OUT: Nhân viên check-out từ Mobile App ----

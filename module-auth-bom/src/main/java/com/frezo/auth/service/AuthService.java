@@ -13,7 +13,8 @@ public interface AuthService {
     LoginResponse login(LoginRequest request);
     LoginResponse verifyOtp(String username, String code);
     void forgotPassword(String email);
-    void resetPassword(String key, String newPassword);
+    String verifyResetOtp(String email, String otp);
+    void resetPassword(String email, String resetToken, String newPassword);
     List<LoginHistory> getLoginHistory(String username);
     LoginResponse refreshToken(String refreshToken);
     String upload(File file, String username);

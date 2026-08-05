@@ -45,10 +45,21 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Nếu email tồn tại, mã OTP đã được gửi. Kiểm tra hộp thư."));
     }
 
-    @Operation(summary = "Đặt lại mật khẩu", description = "Đặt mật khẩu mới bằng mã OTP nhận từ email (param key = OTP)")
+    @Operation(summary = "Xác thực OTP quên mật khẩu",
+            description = "Kiểm tra mã OTP theo email; trả về resetToken dùng 1 lần để đặt mật khẩu mới")
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<ApiResponse<String>> verifyResetOtp(@RequestParam String email, @RequestParam String otp) {
+        String resetToken = authService.verifyResetOtp(email, otp);
+        return ResponseEntity.ok(ApiResponse.success(resetToken, "Mã OTP hợp lệ. Vui lòng đặt mật khẩu mới."));
+    }
+
+    @Operation(summary = "Đặt lại mật khẩu",
+            description = "Đặt mật khẩu mới bằng resetToken lấy từ /auth/verify-reset-otp")
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String key, @RequestParam String newPassword) {
-        authService.resetPassword(key, newPassword);
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestParam String email,
+                                                           @RequestParam String resetToken,
+                                                           @RequestParam String newPassword) {
+        authService.resetPassword(email, resetToken, newPassword);
         return ResponseEntity.ok(ApiResponse.success(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập."));
     }
 

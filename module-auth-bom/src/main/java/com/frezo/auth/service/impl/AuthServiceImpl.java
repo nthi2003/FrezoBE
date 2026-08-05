@@ -59,8 +59,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void resetPassword(String key, String newPassword) {
-        passwordResetService.resetPassword(key, newPassword);
+    public String verifyResetOtp(String email, String otp) {
+        return passwordResetService.verifyResetOtp(email, otp);
+    }
+
+    @Override
+    public void resetPassword(String email, String resetToken, String newPassword) {
+        passwordResetService.resetPassword(email, resetToken, newPassword);
     }
 
     @Override

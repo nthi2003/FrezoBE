@@ -53,7 +53,7 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
             if (daysLeft > alertDays) continue;
 
             String idem = "expiry|" + batch.getId() + "|" + today;
-            if (alertRepository.findByIdempotencyKeyAndIsDeletedFalse(idem).isPresent()) continue;
+            if (alertRepository.existsByIdempotencyKeyAndIsDeletedFalse(idem)) continue;
 
             String severity = daysLeft <= 0 ? "CRITICAL" : (daysLeft <= 1 ? "CRITICAL" : "WARNING");
             StockAlert alert = StockAlert.builder()

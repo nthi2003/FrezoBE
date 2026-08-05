@@ -179,9 +179,9 @@ public class ReorderServiceImpl implements ReorderService {
             if (current >= min) continue;
 
             String idem = rule.getProductId() + "|" + rule.getWarehouseId() + "|" + dayKey;
-            if (alertRepository.findByIdempotencyKeyAndIsDeletedFalse(idem).isPresent()) continue;
-            if (alertRepository.findByProductIdAndWarehouseIdAndStatusAndIsDeletedFalse(
-                    rule.getProductId(), rule.getWarehouseId(), "OPEN").isPresent()) continue;
+            if (alertRepository.existsByIdempotencyKeyAndIsDeletedFalse(idem)) continue;
+            if (alertRepository.existsOpenAlertOfType(
+                    rule.getProductId(), rule.getWarehouseId(), "LOW_STOCK", "OPEN")) continue;
 
             String severity = current <= 0 ? "CRITICAL" : "WARNING";
             StockAlert alert = StockAlert.builder()

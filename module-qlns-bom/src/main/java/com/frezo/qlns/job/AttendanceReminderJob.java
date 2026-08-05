@@ -51,7 +51,36 @@ public class AttendanceReminderJob implements SchedulableJob {
 
     private volatile LocalDate lastSweepDate = LocalDate.now();
 
-    @Scheduled(cron = "0 */5 * * * MON-FRI")
+    @Override
+    public String getCode() {
+        return "ATTENDANCE_REMINDER";
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Nhắc chấm công";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Nhắc nhân viên check-in trước giờ vào ca và check-out sau giờ tan ca";
+    }
+
+    @Override
+    public String getModuleCode() {
+        return "QLNS";
+    }
+
+    @Override
+    public String getDefaultCron() {
+        return "0 */5 * * * MON-FRI";
+    }
+
+    @Override
+    public void execute() {
+        tick();
+    }
+
     public void tick() {
         LocalDate today = LocalDate.now();
         // Reset dedup mỗi ngày

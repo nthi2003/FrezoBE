@@ -2,6 +2,7 @@ package com.frezo.qtht.job;
 
 import com.frezo.common.exception.AppException;
 import com.frezo.common.exception.CommonErrorCode;
+import com.frezo.common.scheduling.JobExecutionException;
 import com.frezo.common.scheduling.SchedulableJob;
 import com.frezo.qtht.entity.SystemJob;
 import com.frezo.qtht.entity.SystemJobHistory;
@@ -196,7 +197,7 @@ public class DynamicJobScheduler {
             bean.execute();
         } catch (Exception e) {
             status = STATUS_FAILED;
-            message = e.getClass().getSimpleName() + ": " + e.getMessage();
+            message = buildFailureMessage(e);
             log.error("[JobScheduler] job {} lỗi: {}", code, e.getMessage(), e);
         }
 
@@ -246,6 +247,23 @@ public class DynamicJobScheduler {
         return catalog.containsKey(code);
     }
 
+    /**
+     * Lý do job chưa chạy được (thiếu công cụ / thiếu cấu hình), hoặc {@code null} nếu sẵn sàng.
+     * Lỗi khi tự kiểm tra cũng coi là chưa sẵn sàng để màn hình quản trị không im lặng.
+     */
+    public String readinessMessage(String code) {
+        SchedulableJob bean = catalog.get(code);
+        if (bean == null) {
+            return null;
+        }
+        try {
+            return bean.checkReadiness();
+        } catch (Exception e) {
+            log.warn("[JobScheduler] không kiểm tra được điều kiện chạy của job {}: {}", code, e.getMessage());
+            return "Không kiểm tra được điều kiện chạy của tác vụ. Xem nhật ký hệ thống để biết chi tiết.";
+        }
+    }
+
     public Collection<SchedulableJob> catalog() {
         return catalog.values();
     }
@@ -255,6 +273,19 @@ public class DynamicJobScheduler {
                 .filter(CronExpression::isValidExpression)
                 .map(cron -> CronExpression.parse(cron).next(LocalDateTime.now()))
                 .orElse(null);
+    }
+
+    /**
+     * Dòng đầu là câu tiếng Việt cho quản trị viên, dòng sau giữ chi tiết kỹ thuật để dò lỗi.
+     * Màn hình danh sách chỉ hiện dòng đầu; phần chi tiết nằm trong popup lịch sử chạy.
+     */
+    private static String buildFailureMessage(Exception e) {
+        String friendly = e instanceof JobExecutionException
+                ? e.getMessage()
+                : "Tác vụ chạy thất bại do lỗi hệ thống. Hãy xem chi tiết kỹ thuật bên dưới hoặc nhật ký máy chủ.";
+        String detail = e.getClass().getSimpleName()
+                + (e.getMessage() == null ? "" : ": " + e.getMessage());
+        return friendly + "\nChi tiết kỹ thuật: " + detail;
     }
 
     private static String truncate(String message) {

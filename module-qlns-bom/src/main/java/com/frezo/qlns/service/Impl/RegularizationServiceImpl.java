@@ -32,6 +32,8 @@ public class RegularizationServiceImpl implements RegularizationService {
     private final AttendanceRegularizationRepository repo;
     private final AttendanceRepository attendanceRepository;
     private final NotificationService notificationService;
+    /** Dùng chung helper danh tính/scope (personId hiện tại, admin, HR, QL trực tiếp). */
+    private final LeaveApprovalResolver accessResolver;
 
     @Value("${frezo.leave.hr-users:admin}")
     private String hrUsersCsv;
@@ -77,7 +79,26 @@ public class RegularizationServiceImpl implements RegularizationService {
 
     @Override
     public List<AttendanceRegularization> myRequests(String personId) {
+        assertCanViewPersonRequests(personId);
         return repo.findByPersonIdOrderByCreatedDateDesc(personId);
+    }
+
+    /**
+     * Chống IDOR: chỉ chính chủ (hoặc admin / HR / QL trực tiếp) đọc được đơn giải trình
+     * theo {@code personId}. Người duyệt dùng {@code /pending} nên không cần ngoại lệ rộng hơn.
+     */
+    private void assertCanViewPersonRequests(String personId) {
+        if (personId == null || personId.isBlank()) {
+            throw new AppException("regularization.invalid.input", HttpStatus.BAD_REQUEST);
+        }
+        if (accessResolver.isCurrentUserAdmin()
+                || accessResolver.isCurrentUserHr()
+                || accessResolver.isDirectManagerOf(personId)) {
+            return;
+        }
+        String me = accessResolver.currentPersonId();
+        if (me != null && me.equals(personId)) return;
+        throw new AppException("regularization.view.denied", HttpStatus.FORBIDDEN);
     }
 
     @Override

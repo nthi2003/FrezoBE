@@ -34,4 +34,10 @@ public interface SocialPostService {
 
     /** List with basic filter. */
     List<SocialPostResponse> list(String status, String channel);
+
+    /**
+     * Quét bài SCHEDULED tới giờ và publish. Lịch chạy do bảng {@code system_job} quyết định —
+     * gọi qua {@code SocialPostPublishJob}.
+     */
+    void runScheduler();
 }

@@ -160,7 +160,7 @@ public class SocialPostServiceImpl implements SocialPostService {
     // ============================================================
     //  SCHEDULER — mỗi phút quét bài tới giờ
     // ============================================================
-    @Scheduled(cron = "0 * * * * *") // mỗi phút, giây :00
+    @Override
     @Transactional
     public void runScheduler() {
         List<SocialPost> due = repository.findByStatusAndScheduledAtLessThanEqual("SCHEDULED", OffsetDateTime.now());

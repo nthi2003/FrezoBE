@@ -25,8 +25,11 @@ public class SystemJobDto {
 
     private Boolean enabled;
 
-    /** ENABLED | DISABLED | RUNNING | ERROR. */
+    /** ENABLED | DISABLED | RUNNING | NOT_READY — trạng thái vận hành, không phải kết quả chạy. */
     private String status;
+
+    /** Lý do chưa chạy được (tiếng Việt) khi status = NOT_READY; null nếu sẵn sàng. */
+    private String readinessMessage;
 
     private LocalDateTime lastRunAt;
 

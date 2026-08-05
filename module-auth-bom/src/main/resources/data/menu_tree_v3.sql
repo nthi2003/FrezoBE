@@ -109,7 +109,9 @@ FROM (VALUES
     ('QLHT_TICKET_CAT',    'Danh mục Ticket',      'Ticket Categories',    '/task/categories',                 'src/modules/tasks',      'MENU_TASK',       4,  'FolderTree'),
     -- Guide CMS (FR-DOC-03/04)
     ('QLHT_GUIDE',         'Quản lý hướng dẫn',    'Guide CMS',            '/admin/guides',                    'src/modules/docs',       'MENU_QTHT',       18, 'BookOpen'),
-    ('QLHT_USAGE',         'Sử dụng hệ thống',     'Usage Analytics',      '/qtht/usage',                      'src/modules/qtht',       'MENU_QTHT',       12, 'Activity')
+    ('QLHT_USAGE',         'Sử dụng hệ thống',     'Usage Analytics',      '/qtht/usage',                      'src/modules/qtht',       'MENU_QTHT',       12, 'Activity'),
+    -- Scheduled jobs admin (FR-QTHT-JOBS)
+    ('QLHT_JOBS',          'Tác vụ nền',           'Scheduled Jobs',       '/qtht/jobs',                       'src/modules/qtht',       'MENU_QTHT',       19, 'Clock')
 ) AS v(code, name, name_en, fe_url, folder_path, parent_code, order_index, icon)
 WHERE NOT EXISTS (
     SELECT 1 FROM menu m WHERE m.app_code = 'QTHT' AND m.code = v.code
@@ -228,6 +230,7 @@ UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 15, fe_url = '/admin/ar
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 16, fe_url = '/qtht/settings',             is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_SETTING';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 17, fe_url = '/admin/article-management',  is_deleted = false, status = true, name = 'Quản Lý Bài Viết', name_en = 'Articles', updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_ARTICLE';
 UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 18, fe_url = '/admin/guides',               is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_GUIDE';
+UPDATE menu SET parent_code = 'MENU_QTHT', order_index = 19, fe_url = '/qtht/jobs',                   is_deleted = false, status = true, updated_date = NOW(), updated_by = 'system' WHERE app_code = 'QTHT' AND code = 'QLHT_JOBS';
 
 -- ------------------------------------------------------------
 -- 4) Soft-delete deprecated mega-parents / legacy folders

@@ -18,8 +18,8 @@ public interface UserSessionService {
 
     long countActiveSessions(String username);
 
-    /** Cập nhật lastActiveTime theo JWT (token hoặc username fallback). */
-    boolean heartbeat(String token, String username);
+    /** Cập nhật lastActiveTime theo JWT (sessionId / token / username fallback). */
+    boolean heartbeat(String token, String sessionId, String username);
 
     /** Số phiên active toàn hệ thống. */
     long countAllActiveSessions();

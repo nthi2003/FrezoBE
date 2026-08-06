@@ -33,8 +33,12 @@ public class AuthTokenBuilder {
 
     /** Sinh cặp token (access + refresh) từ {@link CustomUserDetail}. */
     public LoginResponse buildTokens(CustomUserDetail userDetail, String message) {
-        String token = buildAccessToken(userDetail);
-        String refreshToken = tokenProvider.generateRefreshToken(userDetail.getUsername());
+        return buildTokens(userDetail, message, null);
+    }
+
+    public LoginResponse buildTokens(CustomUserDetail userDetail, String message, String sessionId) {
+        String token = buildAccessToken(userDetail, sessionId);
+        String refreshToken = tokenProvider.generateRefreshToken(userDetail.getUsername(), sessionId);
         return LoginResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
@@ -44,26 +48,39 @@ public class AuthTokenBuilder {
 
     /** Sinh cặp token mới từ username — dùng cho verifyOtp + refreshToken. */
     public LoginResponse buildTokensByUsername(String username, String message) {
+        return buildTokensByUsername(username, message, null);
+    }
+
+    public LoginResponse buildTokensByUsername(String username, String message, String sessionId) {
         CustomUserDetail detail = (CustomUserDetail) userDetailsService.loadUserByUsername(username);
-        return buildTokens(detail, message);
+        return buildTokens(detail, message, sessionId);
     }
 
     /**
-     * Refresh cặp token khi refresh token vẫn còn hiệu lực.
-     * Đưa vào đây (thay vì LoginProcessor) vì đã sẵn {@code tokenProvider} + {@code userDetailsService}.
+     * Refresh access token — giữ nguyên refresh token, embed sessionId vào access token mới.
      */
-    public LoginResponse refreshTokens(String refreshToken) {
+    public LoginResponse refreshTokens(String refreshToken, String sessionId) {
         if (refreshToken == null || !tokenProvider.validateToken(refreshToken)) {
             throw new AuthException("Invalid refresh token");
         }
         String username = tokenProvider.getUsernameFromJWT(refreshToken);
-        return buildTokensByUsername(username, "Token refreshed");
+        CustomUserDetail detail = (CustomUserDetail) userDetailsService.loadUserByUsername(username);
+        String accessToken = buildAccessToken(detail, sessionId);
+        return LoginResponse.builder()
+                .token(accessToken)
+                .refreshToken(refreshToken)
+                .message("Token refreshed")
+                .build();
     }
 
     /**
      * Chỉ sinh access token (không refresh) — hiếm dùng, giữ để backward-compat.
      */
     public String buildAccessToken(CustomUserDetail userDetail) {
+        return buildAccessToken(userDetail, null);
+    }
+
+    public String buildAccessToken(CustomUserDetail userDetail, String sessionId) {
         User user = userDetail.getUser();
         List<String> roleIds = userDetail.getAuthorities().stream()
                 .map(a -> a.getAuthority())
@@ -91,7 +108,7 @@ public class AuthTokenBuilder {
 
         PersonInfo info = resolvePersonInfo(user.getPersonId());
         return tokenProvider.generateToken(user.getUserName(), roles, user.getDataAction(),
-                info.orgId(), appCode, info.isAdmin());
+                info.orgId(), appCode, info.isAdmin(), sessionId);
     }
 
     // ============================================================

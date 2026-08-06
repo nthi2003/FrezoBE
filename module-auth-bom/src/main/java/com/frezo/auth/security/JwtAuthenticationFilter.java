@@ -1,6 +1,5 @@
 package com.frezo.auth.security;
 
-import com.frezo.auth.repository.TokenBlacklistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
-    private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final SessionValidationService sessionValidationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -33,13 +32,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                // Check if token is blacklisted
-                if (tokenBlacklistRepository.existsByToken(jwt)) {
-                    log.warn("Token is blacklisted, rejecting request");
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
-                    response.getWriter().write("{\"status\": 401, \"message\": \"Token đã bị vô hiệu hóa. Vui lòng đăng nhập lại.\"}");
+                if (sessionValidationService.isAccessTokenRejected(jwt)) {
+                    log.warn("Token rejected (blacklisted or revoked session), denying request");
+                    writeUnauthorized(response);
                     return;
                 }
 
@@ -56,6 +51,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write("{\"status\": 401, \"message\": \"Token đã bị vô hiệu hóa. Vui lòng đăng nhập lại.\"}");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

@@ -38,6 +38,10 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
     long countDistinctOnlineUsers(@Param("since") LocalDateTime since);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserSession s SET s.lastActiveTime = :now WHERE s.id = :sessionId AND s.isActive = true")
+    int touchBySessionId(@Param("sessionId") String sessionId, @Param("now") LocalDateTime now);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE UserSession s SET s.lastActiveTime = :now WHERE s.token = :token AND s.isActive = true")
     int touchByToken(@Param("token") String token, @Param("now") LocalDateTime now);
 

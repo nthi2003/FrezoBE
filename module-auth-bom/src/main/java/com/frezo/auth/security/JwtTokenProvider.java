@@ -69,6 +69,11 @@ public class JwtTokenProvider {
 
     public String generateToken(String username, List<String> roles, Short dataAction, String orgId,
                                  String appCode, Boolean isAdmin) {
+        return generateToken(username, roles, dataAction, orgId, appCode, isAdmin, null);
+    }
+
+    public String generateToken(String username, List<String> roles, Short dataAction, String orgId,
+                                 String appCode, Boolean isAdmin, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + props.getExpiration());
 
@@ -80,6 +85,9 @@ public class JwtTokenProvider {
         claims.put("orgid", orgId);
         claims.put("appCode", appCode);
         claims.put("isAdmin", isAdmin != null ? isAdmin : false);
+        if (sessionId != null && !sessionId.isBlank()) {
+            claims.put("sessionId", sessionId);
+        }
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -90,21 +98,36 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(String username) {
+        return generateRefreshToken(username, null);
+    }
+
+    public String generateRefreshToken(String username, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + props.getRefreshExpiration());
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .setIssuer(props.getIssuer())
                 .claim("isRefresh", true)
                 .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
+                .setExpiration(expiryDate);
+        if (sessionId != null && !sessionId.isBlank()) {
+            builder.claim("sessionId", sessionId);
+        }
+        return builder.signWith(getSigningKey(), SignatureAlgorithm.HS512).compact();
     }
 
     public String getUsernameFromJWT(String token) {
         return getClaimsFromJWT(token).getSubject();
+    }
+
+    /** sessionId gắn với {@code user_session.id} — dùng validate phiên còn active. */
+    public String getSessionIdFromJWT(String token) {
+        try {
+            return getClaimsFromJWT(token).get("sessionId", String.class);
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     public Boolean getIsAdminFromJWT(String token) {

@@ -3,6 +3,7 @@ package com.frezo.auth.service.impl;
 import com.frezo.auth.entity.UserSession;
 import com.frezo.auth.repository.UserSessionRepository;
 import com.frezo.auth.service.UserSessionService;
+import com.frezo.auth.service.impl.auth.AuthSessionService;
 import com.frezo.common.exception.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.util.List;
 public class UserSessionServiceImpl implements UserSessionService {
 
     private final UserSessionRepository userSessionRepository;
+    private final AuthSessionService authSessionService;
 
     @Override
     public List<UserSession> getActiveSessions(String username) {
@@ -37,13 +39,7 @@ public class UserSessionServiceImpl implements UserSessionService {
     public void revokeSession(String sessionId, String revokedBy) {
         UserSession session = userSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new AuthException("Session not found"));
-
-        session.setIsActive(false);
-        session.setRevokedAt(LocalDateTime.now());
-        session.setRevokedBy(revokedBy);
-        userSessionRepository.save(session);
-
-        log.info("Session {} revoked by {}", sessionId, revokedBy);
+        authSessionService.revokeSessionRecord(session, revokedBy);
     }
 
     @Override
@@ -52,12 +48,8 @@ public class UserSessionServiceImpl implements UserSessionService {
         List<UserSession> otherSessions = userSessionRepository.findByUsernameAndIsActiveTrueAndIdNot(username, currentSessionId);
 
         for (UserSession session : otherSessions) {
-            session.setIsActive(false);
-            session.setRevokedAt(LocalDateTime.now());
-            session.setRevokedBy(revokedBy);
+            authSessionService.revokeSessionRecord(session, revokedBy);
         }
-
-        userSessionRepository.saveAll(otherSessions);
         log.info("Revoked {} other sessions for user {}", otherSessions.size(), username);
     }
 
@@ -68,9 +60,14 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
-    public boolean heartbeat(String token, String username) {
+    public boolean heartbeat(String token, String sessionId, String username) {
         LocalDateTime now = LocalDateTime.now();
         String trimmed = StringUtils.hasText(token) ? token.trim() : null;
+
+        if (StringUtils.hasText(sessionId)) {
+            int bySession = userSessionRepository.touchBySessionId(sessionId, now);
+            if (bySession > 0) return true;
+        }
 
         if (trimmed != null) {
             int byToken = userSessionRepository.touchByToken(trimmed, now);

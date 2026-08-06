@@ -1,6 +1,7 @@
 package com.frezo.auth.controller;
 
 import com.frezo.auth.entity.UserSession;
+import com.frezo.auth.security.JwtTokenProvider;
 import com.frezo.auth.service.UserSessionService;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.ApiResponse;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class SessionController {
 
     private final UserSessionService userSessionService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary = "Lấy danh sách phiên đăng nhập đang hoạt động", description = "Lấy tất cả các phiên đăng nhập đang hoạt động của người dùng hiện tại")
     @GetMapping("/active")
@@ -70,7 +72,8 @@ public class SessionController {
     @PostMapping("/heartbeat")
     public ResponseEntity<ApiResponse<Map<String, Object>>> heartbeat(HttpServletRequest request) {
         String token = extractBearer(request);
-        boolean ok = userSessionService.heartbeat(token, SystemUtils.getCurrentUsername());
+        String sessionId = token != null ? jwtTokenProvider.getSessionIdFromJWT(token) : null;
+        boolean ok = userSessionService.heartbeat(token, sessionId, SystemUtils.getCurrentUsername());
         return ResponseEntity.ok(ApiResponse.success(Map.of("ok", ok)));
     }
 

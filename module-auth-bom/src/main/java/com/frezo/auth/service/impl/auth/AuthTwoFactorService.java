@@ -65,11 +65,12 @@ public class AuthTwoFactorService {
         user.setOtpExpiration(null);
         userRepository.save(user);
 
-        LoginResponse response = tokenBuilder.buildTokensByUsername(username, "Xác thực thành công");
         String ip = IpResolver.currentClientIp();
         String userAgent = IpResolver.currentUserAgent();
+        String sessionId = sessionService.beginSession(username, ip, userAgent);
+        LoginResponse response = tokenBuilder.buildTokensByUsername(username, "Xác thực thành công", sessionId);
         sessionService.saveLoginHistory(username, ip, userAgent, "SUCCESS");
-        sessionService.createSession(username, response.getToken(), response.getRefreshToken(), ip, userAgent);
+        sessionService.completeSession(sessionId, response.getToken(), response.getRefreshToken());
         return response;
     }
 }

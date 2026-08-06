@@ -55,9 +55,10 @@ public class AuthLoginProcessor {
                 return twofa;
             }
 
-            LoginResponse response = tokenBuilder.buildTokens(detail, "Đăng nhập thành công");
+            String sessionId = sessionService.beginSession(username, ip, userAgent);
+            LoginResponse response = tokenBuilder.buildTokens(detail, "Đăng nhập thành công", sessionId);
             sessionService.saveLoginHistory(username, ip, userAgent, "SUCCESS");
-            sessionService.createSession(username, response.getToken(), response.getRefreshToken(), ip, userAgent);
+            sessionService.completeSession(sessionId, response.getToken(), response.getRefreshToken());
             return response;
 
         } catch (BadCredentialsException | UsernameNotFoundException e) {
@@ -73,7 +74,9 @@ public class AuthLoginProcessor {
 
     /** Refresh cặp token — cập nhật access token trên UserSession để heartbeat khớp. */
     public LoginResponse refreshToken(String refreshToken) {
-        LoginResponse response = tokenBuilder.refreshTokens(refreshToken);
+        sessionService.assertRefreshTokenAllowed(refreshToken);
+        String sessionId = sessionService.resolveSessionId(refreshToken);
+        LoginResponse response = tokenBuilder.refreshTokens(refreshToken, sessionId);
         sessionService.rotateAccessToken(refreshToken, response.getToken());
         return response;
     }

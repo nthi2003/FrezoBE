@@ -848,6 +848,26 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('QLNS_RESIGNATION_ID_SETTLE_PAYROLL_CREATE', '/qlns/resignation/{id}/settle-payroll - CREATE', 'POST', '/qlns/resignation/{id}/settle-payroll', 'CREATE'),
         ('QLNS_RESIGNATION_ID_COMPLETE_UPDATE', '/qlns/resignation/{id}/complete - UPDATE', 'POST', '/qlns/resignation/{id}/complete', 'UPDATE'),
         ('QLNS_RESIGNATION_ID_CANCEL_UPDATE', '/qlns/resignation/{id}/cancel - UPDATE', 'POST', '/qlns/resignation/{id}/cancel', 'UPDATE'),
+
+        ('QLNS_JOB_POSITION_VIEW', '/qlns/job-position - VIEW', 'GET', '/qlns/job-position', 'VIEW'),
+        ('QLNS_JOB_POSITION_CREATE', '/qlns/job-position - CREATE', 'POST', '/qlns/job-position', 'CREATE'),
+        ('QLNS_JOB_POSITION_ID_UPDATE', '/qlns/job-position/{id} - UPDATE', 'PUT', '/qlns/job-position/{id}', 'UPDATE'),
+        ('QLNS_JOB_POSITION_ID_DELETE', '/qlns/job-position/{id} - DELETE', 'DELETE', '/qlns/job-position/{id}', 'DELETE'),
+        ('QLNS_JOB_POSITION_CATEGORY_USAGE_VIEW', '/qlns/job-position/category-usage - VIEW', 'GET', '/qlns/job-position/category-usage', 'VIEW'),
+
+        ('QLNS_PAYROLL_COMPONENT_VIEW', '/qlns/payroll-component - VIEW', 'GET', '/qlns/payroll-component', 'VIEW'),
+        ('QLNS_PAYROLL_COMPONENT_CREATE', '/qlns/payroll-component - CREATE', 'POST', '/qlns/payroll-component', 'CREATE'),
+        ('QLNS_PAYROLL_COMPONENT_ID_UPDATE', '/qlns/payroll-component/{id} - UPDATE', 'PUT', '/qlns/payroll-component/{id}', 'UPDATE'),
+        ('QLNS_PAYROLL_COMPONENT_ID_DELETE', '/qlns/payroll-component/{id} - DELETE', 'DELETE', '/qlns/payroll-component/{id}', 'DELETE'),
+
+        ('QLNS_PERSON_WORK_HISTORY_VIEW', '/qlns/person-work-history - VIEW', 'GET', '/qlns/person-work-history', 'VIEW'),
+        ('QLNS_PERSON_WORK_HISTORY_CREATE', '/qlns/person-work-history - CREATE', 'POST', '/qlns/person-work-history', 'CREATE'),
+        ('QLNS_PERSON_WORK_HISTORY_ID_DELETE', '/qlns/person-work-history/{id} - DELETE', 'DELETE', '/qlns/person-work-history/{id}', 'DELETE'),
+
+        ('QLNS_PERSON_STATISTICS_VIEW', '/qlns/person-statistics - VIEW', 'GET', '/qlns/person-statistics', 'VIEW'),
+
+        ('QLNS_PERSON_IMPORT_CREATE', '/qlns/person/import - CREATE', 'POST', '/qlns/person/import', 'CREATE'),
+        ('QLNS_PERSON_EXPORT_VIEW', '/qlns/person/export - VIEW', 'GET', '/qlns/person/export', 'VIEW'),
         ('QLNS_REPORT_TIMESHEET_VIEW', '/qlns/report/timesheet - VIEW', 'GET', '/qlns/report/timesheet', 'VIEW'),
         ('QLNS_REPORT_TIMESHEET_EXPORT_VIEW', '/qlns/report/timesheet/export - VIEW', 'GET', '/qlns/report/timesheet/export', 'VIEW'),
         ('QTBV_ARTICLES_FILTER_VIEW', '/qtbv/articles/filter - VIEW', 'POST', '/qtbv/articles/filter', 'VIEW'),
@@ -1174,3 +1194,29 @@ SET action = 'UPDATE',
     updated_by = 'system'
 WHERE code = 'QTHT_CATEGORY_ID_EDIT'
   AND action = 'EDIT';
+
+-- ============================================================
+-- QTBV News utilities — /qtbv/news (categories, mottos, pins, page-data)
+-- IDEMPOTENT
+-- ============================================================
+WITH qtbv_news_perms(code, name, api_method, api_path, action) AS (
+    VALUES
+        ('QTBV_NEWS_PAGE_DATA_VIEW',    'News Page Data - VIEW',    'GET',    '/qtbv/news/page-data',    'VIEW'),
+        ('QTBV_NEWS_CATEGORIES_VIEW',   'News Categories - VIEW',   'GET',    '/qtbv/news/categories',   'VIEW'),
+        ('QTBV_NEWS_CATEGORIES_CREATE', 'News Categories - CREATE', 'POST',   '/qtbv/news/categories',   'CREATE'),
+        ('QTBV_NEWS_CATEGORIES_ID_UPDATE', 'News Categories Id - UPDATE', 'PUT', '/qtbv/news/categories/{id}', 'UPDATE'),
+        ('QTBV_NEWS_CATEGORIES_ID_DELETE', 'News Categories Id - DELETE', 'DELETE', '/qtbv/news/categories/{id}', 'DELETE'),
+        ('QTBV_NEWS_MOTTOS_VIEW',       'News Mottos - VIEW',       'GET',    '/qtbv/news/mottos',       'VIEW'),
+        ('QTBV_NEWS_MOTTOS_CREATE',     'News Mottos - CREATE',     'POST',   '/qtbv/news/mottos',       'CREATE'),
+        ('QTBV_NEWS_MOTTOS_ID_UPDATE',  'News Mottos Id - UPDATE',  'PUT',    '/qtbv/news/mottos/{id}',  'UPDATE'),
+        ('QTBV_NEWS_MOTTOS_ID_DELETE',  'News Mottos Id - DELETE',  'DELETE', '/qtbv/news/mottos/{id}',  'DELETE'),
+        ('QTBV_NEWS_PINS_VIEW',         'News Pins - VIEW',         'GET',    '/qtbv/news/pins',         'VIEW'),
+        ('QTBV_NEWS_PINS_CREATE',       'News Pins - CREATE',       'POST',   '/qtbv/news/pins',         'CREATE'),
+        ('QTBV_NEWS_PINS_DELETE',       'News Pins - DELETE',       'DELETE', '/qtbv/news/pins',         'UPDATE')
+)
+INSERT INTO permission (id, code, name, app_code, api_method, api_path, action, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), s.code, s.name, 'QTHT', s.api_method, s.api_path, s.action, false, NOW(), 'system', NOW(), 'system'
+FROM qtbv_news_perms s
+WHERE NOT EXISTS (
+    SELECT 1 FROM permission p WHERE p.code = s.code AND p.app_code = 'QTHT'
+);

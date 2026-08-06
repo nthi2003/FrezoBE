@@ -10,6 +10,9 @@ import com.frezo.qtht.constant.QthtErrorCode;
 import com.frezo.qtht.dto.request.PersonAddRequest;
 import com.frezo.qtht.dto.request.PersonFilterRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
+import com.frezo.qtht.dto.request.PersonImportBatchRequest;
+import com.frezo.qtht.dto.request.PersonImportRowRequest;
+import com.frezo.qtht.dto.response.PersonImportResultResponse;
 import com.frezo.qtht.dto.response.PersonResponse;
 import com.frezo.qtht.entity.Organization;
 import com.frezo.qtht.entity.Person;
@@ -35,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import com.frezo.qtht.entity.Department;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 @Slf4j
 @Service
@@ -174,6 +179,76 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PersonResponse> exportAll(PersonFilterRequest filter) {
+        PersonFilterRequest f = filter != null ? filter : new PersonFilterRequest();
+        f.setPageNumber(1);
+        f.setPageSize(10000);
+        PageResponse<PersonResponse> page = all(f);
+        return page.getItems() != null ? page.getItems() : List.of();
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public PersonImportResultResponse importBatch(PersonImportBatchRequest request) {
+        List<PersonImportRowRequest> rows = request.getRows() != null ? request.getRows() : List.of();
+        List<String> errors = new ArrayList<>();
+        int success = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            PersonImportRowRequest row = rows.get(i);
+            int line = i + 1;
+            try {
+                if (row.getEmail() == null || row.getEmail().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Email bắt buộc");
+                }
+                if (row.getName() == null || row.getName().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Họ tên bắt buộc");
+                }
+                String code = row.getCode();
+                if (code == null || code.trim().isEmpty()) {
+                    code = "NV" + (System.currentTimeMillis() % 100000) + line;
+                }
+                PersonAddRequest add = new PersonAddRequest();
+                add.setCode(code.trim());
+                add.setName(row.getName().trim());
+                add.setEmail(row.getEmail().trim());
+                add.setPhone(trimOrNull(row.getPhone()));
+                add.setGender(trimOrNull(row.getGender()));
+                add.setAddress(trimOrNull(row.getAddress()));
+                add.setOrgId(trimOrNull(row.getOrgId()));
+                add.setDepartmentId(trimOrNull(row.getDepartmentId()));
+                add.setJobTitle(trimOrNull(row.getJobTitle()));
+                add.setIdentityNumber(trimOrNull(row.getIdentityNumber()));
+                add.setSocialInsuranceNumber(trimOrNull(row.getSocialInsuranceNumber()));
+                add.setBankAccount(trimOrNull(row.getBankAccount()));
+                add.setBankName(trimOrNull(row.getBankName()));
+                add.setActivated(true);
+                add.setDob(parseDate(row.getBirthDate()));
+                add.setJoinDate(parseDate(row.getJoinDate()));
+                createPerson(add);
+                success++;
+            } catch (Exception ex) {
+                errors.add("Dòng " + line + ": " + ex.getMessage());
+            }
+        }
+        return PersonImportResultResponse.builder()
+                .total(rows.size())
+                .success(success)
+                .failed(rows.size() - success)
+                .errors(errors)
+                .build();
+    }
+
+    private LocalDate parseDate(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return null;
+        try {
+            return LocalDate.parse(raw.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
     @Transactional(readOnly = true)
     protected Person findPersonById(String id) {
         return personRepository.findByIdAndIsDeletedFalse(id)
@@ -202,6 +277,16 @@ public class PersonServiceImpl implements PersonService {
         person.setActivated(request.getActivated());
         person.setJobTitle(trimOrNull(request.getJobTitle()));
         person.setAvatarUrl(request.getAvatarUrl());
+        person.setIdentityNumber(trimOrNull(request.getIdentityNumber()));
+        person.setSocialInsuranceNumber(trimOrNull(request.getSocialInsuranceNumber()));
+        person.setBankAccount(trimOrNull(request.getBankAccount()));
+        person.setBankName(trimOrNull(request.getBankName()));
+        person.setBankBranch(trimOrNull(request.getBankBranch()));
+        person.setJoinDate(request.getJoinDate());
+        person.setResignDate(request.getResignDate());
+        person.setJobPositionId(trimOrNull(request.getJobPositionId()));
+        person.setIdCardFrontUrl(request.getIdCardFrontUrl());
+        person.setIdCardBackUrl(request.getIdCardBackUrl());
         person.setIsDeleted(false);
 
         setOrganization(person, request.getOrgId());

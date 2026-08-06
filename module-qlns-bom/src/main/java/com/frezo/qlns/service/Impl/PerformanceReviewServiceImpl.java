@@ -8,6 +8,7 @@ import com.frezo.qlns.dto.response.PerformanceReviewResponse;
 import com.frezo.qlns.entity.PerformanceReview;
 import com.frezo.qlns.repository.PerformanceReviewRepository;
 import com.frezo.qlns.service.PerformanceReviewService;
+import com.frezo.qlns.service.impl.OkrScopeResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,19 +24,37 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private final PerformanceReviewRepository reviewRepository;
+    private final OkrScopeResolver scopeResolver;
 
     @Override
     public List<PerformanceReviewResponse> list(String cycleId, String personId) {
+        String me = currentPerson();
         List<PerformanceReview> list;
         if (cycleId != null) list = reviewRepository.findByCycleIdAndIsDeletedFalse(cycleId);
         else if (personId != null) list = reviewRepository.findByPersonIdAndIsDeletedFalse(personId);
         else list = reviewRepository.findByIsDeletedFalseOrderByCreatedDateDesc();
-        return list.stream().map(this::toDto).toList();
+        return list.stream()
+                .filter(r -> canView(me, r))
+                .map(this::toDto).toList();
     }
 
     @Override
     @Transactional
     public PerformanceReviewResponse create(PerformanceReviewRequest req) {
+        String me = currentPerson();
+        if (req.getPersonId() == null || req.getPersonId().isBlank()) {
+            req.setPersonId(me);
+        }
+        if (!me.equals(req.getPersonId()) && !scopeResolver.isAdmin()
+                && !scopeResolver.subordinatePersonIds(me).contains(req.getPersonId())) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Không thể tạo đánh giá ngoài phạm vi quản lý");
+        }
+        validateScore(req.getSelfScore(), "Điểm tự đánh giá");
+        if (req.getManagerPersonId() != null && !req.getManagerPersonId().isBlank()
+                && !scopeResolver.isAdmin()
+                && !scopeResolver.subordinatePersonIds(req.getManagerPersonId()).contains(req.getPersonId())) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Người đánh giá không quản lý nhân viên này");
+        }
         PerformanceReview r = PerformanceReview.builder()
                 .cycleId(req.getCycleId())
                 .personId(req.getPersonId())
@@ -52,6 +71,10 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     @Transactional
     public PerformanceReviewResponse submit(String id) {
         PerformanceReview r = find(id);
+        String me = currentPerson();
+        if (!scopeResolver.isAdmin() && !me.equals(r.getPersonId())) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Chỉ nhân viên được gửi tự đánh giá của mình");
+        }
         if (!"DRAFT".equals(r.getStatus())) {
             throw new AppException(CommonErrorCode.CONFLICT, "Chỉ DRAFT mới submit được");
         }
@@ -64,6 +87,13 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     @Transactional
     public PerformanceReviewResponse managerScore(String id, ManagerScoreRequest req) {
         PerformanceReview r = find(id);
+        String me = currentPerson();
+        boolean assigned = me.equals(r.getManagerPersonId());
+        boolean actualManager = scopeResolver.subordinatePersonIds(me).contains(r.getPersonId());
+        if (!scopeResolver.isAdmin() && (!assigned || !actualManager)) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Chỉ quản lý được chọn mới được xác nhận đánh giá");
+        }
+        validateScore(req.getManagerScore(), "Điểm quản lý");
         if (!"SUBMITTED".equals(r.getStatus()) && !"SCORED".equals(r.getStatus())) {
             throw new AppException(CommonErrorCode.CONFLICT, "Review chưa submit");
         }
@@ -94,5 +124,23 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .submittedAt(r.getSubmittedAt() != null ? r.getSubmittedAt().format(ISO) : null)
                 .scoredAt(r.getScoredAt() != null ? r.getScoredAt().format(ISO) : null)
                 .build();
+    }
+
+    private boolean canView(String me, PerformanceReview review) {
+        return scopeResolver.isAdmin()
+                || me.equals(review.getPersonId())
+                || me.equals(review.getManagerPersonId())
+                || scopeResolver.subordinatePersonIds(me).contains(review.getPersonId());
+    }
+
+    private String currentPerson() {
+        return scopeResolver.currentPersonId()
+                .orElseThrow(() -> new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự"));
+    }
+
+    private void validateScore(Double score, String field) {
+        if (score != null && (score < 0 || score > 100)) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, field + " phải từ 0 đến 100%");
+        }
     }
 }

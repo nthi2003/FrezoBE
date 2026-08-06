@@ -115,6 +115,36 @@ public class OkrScopeResolver {
         throw new AppException(CommonErrorCode.FORBIDDEN, "Không thể gán OKR cho nhân viên ngoài phạm vi");
     }
 
+    /**
+     * Quyền công bố được kiểm tra theo đúng phạm vi mục tiêu, không dựa vào nút FE.
+     * Admin đại diện cấp công ty; manager chỉ được công bố team/phòng mình quản lý.
+     */
+    public void assertCanPublish(String scopeType, String ownerPersonId, String departmentId) {
+        String me = currentPersonId().orElse(null);
+        if (me == null) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự");
+        }
+        String scope = scopeType == null ? "PERSONAL" : scopeType.trim().toUpperCase();
+        if (isAdmin()) return;
+        if ("PERSONAL".equals(scope)) {
+            if (me.equals(ownerPersonId)) return;
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Chỉ chủ OKR được công bố mục tiêu cá nhân");
+        }
+        if (!isManager(me)) {
+            throw new AppException(CommonErrorCode.FORBIDDEN, "Chỉ quản lý được công bố mục tiêu theo đơn vị");
+        }
+        if ("TEAM".equals(scope) && subordinatePersonIds(me).contains(ownerPersonId)) return;
+        if ("DEPARTMENT".equals(scope) && departmentId != null
+                && departmentRepository.findManagedByPersonId(me).stream()
+                .anyMatch(d -> departmentId.equals(d.getId())
+                        || (d.getPath() != null && departmentRepository
+                        .findByPathStartingWithAndIsDeletedFalse(d.getPath()).stream()
+                        .anyMatch(child -> departmentId.equals(child.getId()))))) {
+            return;
+        }
+        throw new AppException(CommonErrorCode.FORBIDDEN, "Không được công bố OKR ngoài phạm vi quản lý");
+    }
+
     public static String normalizeScope(String scope) {
         if (scope == null || scope.isBlank()) return "mine";
         return scope.trim().toLowerCase();

@@ -44,4 +44,7 @@ public interface ArticleService {
 
     PageResponse<ArticleResponse> getPendingApproval(Integer pageNumber, Integer pageSize, String managerId);
 
+    /** Toggle hiển thị trên /bai-viet — cho phép mọi trạng thái đã có bài. */
+    ArticleResponse updateDisplayOnNews(String id, Boolean displayOnNews);
+
 }

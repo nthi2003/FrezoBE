@@ -1,6 +1,7 @@
 package com.frezo.qtbv.entity;
 
 import com.frezo.common.domain.BaseEntity;
+import com.frezo.qtbv.common.ArticleContentType;
 import com.frezo.qtbv.common.ArticleStatus;
 import com.frezo.qtbv.common.PublishScope;
 import com.frezo.qtht.entity.Organization;
@@ -27,6 +28,31 @@ public class Article extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(length = 500)
+    private String summary;
+
+    @Column(name = "thumbnail_url", length = 1000)
+    private String thumbnailUrl;
+
+    @Column(length = 50)
+    private String type;
+
+    @Column(name = "category_id", length = 50)
+    private String categoryId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "content_type", length = 20)
+    @Builder.Default
+    private ArticleContentType contentType = ArticleContentType.ARTICLE;
+
+    @Column(name = "external_url", length = 1000)
+    private String externalUrl;
+
+    /** Hiển thị trên trang Tin tức nội bộ (/bai-viet). */
+    @Column(name = "display_on_news", nullable = false)
+    @Builder.Default
+    private Boolean displayOnNews = true;
 
     @Column(name = "author_id", nullable = false, length = 50)
     private String authorId;

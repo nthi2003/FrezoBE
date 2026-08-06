@@ -15,4 +15,7 @@ public interface BannerRepository extends JpaRepository<Banner, String> {
     Optional<Banner> findByIdAndIsDeletedFalse(String id);
 
     List<Banner> findByStatusAndIsDeletedFalseOrderByPositionAscOrderIndexAsc(String status);
+
+    List<Banner> findByPinForNewsPageTrueAndStatusAndIsDeletedFalseOrderByOrderIndexAsc(
+            String status);
 }

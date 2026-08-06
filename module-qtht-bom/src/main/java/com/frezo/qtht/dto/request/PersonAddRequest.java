@@ -31,6 +31,16 @@ public class PersonAddRequest {
 
     private LocalDate dob;
 
+    @JsonProperty("birthDate")
+    public LocalDate getBirthDate() {
+        return dob;
+    }
+
+    @JsonProperty("birthDate")
+    public void setBirthDate(LocalDate birthDate) {
+        this.dob = birthDate;
+    }
+
     @JsonProperty("phone")
     private String phone;
 
@@ -59,4 +69,34 @@ public class PersonAddRequest {
 
     @JsonProperty("avatarUrl")
     private String avatarUrl;
+
+    @JsonProperty("identityNumber")
+    private String identityNumber;
+
+    @JsonProperty("socialInsuranceNumber")
+    private String socialInsuranceNumber;
+
+    @JsonProperty("bankAccount")
+    private String bankAccount;
+
+    @JsonProperty("bankName")
+    private String bankName;
+
+    @JsonProperty("bankBranch")
+    private String bankBranch;
+
+    @JsonProperty("joinDate")
+    private LocalDate joinDate;
+
+    @JsonProperty("resignDate")
+    private LocalDate resignDate;
+
+    @JsonProperty("jobPositionId")
+    private String jobPositionId;
+
+    @JsonProperty("idCardFrontUrl")
+    private String idCardFrontUrl;
+
+    @JsonProperty("idCardBackUrl")
+    private String idCardBackUrl;
 }

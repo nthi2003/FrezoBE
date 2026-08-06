@@ -1,5 +1,6 @@
 package com.frezo.qtht.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,11 @@ public class PersonResponse {
     private Boolean activated;
 
     private LocalDate dob;
+
+    @JsonProperty("birthDate")
+    public LocalDate getBirthDate() {
+        return dob;
+    }
 
     private String phone;
 
@@ -45,4 +51,24 @@ public class PersonResponse {
     private String departmentName;
 
     private String avatarUrl;
+
+    private String identityNumber;
+
+    private String socialInsuranceNumber;
+
+    private String bankAccount;
+
+    private String bankName;
+
+    private String bankBranch;
+
+    private LocalDate joinDate;
+
+    private LocalDate resignDate;
+
+    private String jobPositionId;
+
+    private String idCardFrontUrl;
+
+    private String idCardBackUrl;
 }

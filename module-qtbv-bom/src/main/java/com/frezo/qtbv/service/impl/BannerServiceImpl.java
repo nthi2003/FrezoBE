@@ -41,6 +41,8 @@ public class BannerServiceImpl implements BannerService {
                 .position(StringUtils.hasText(request.getPosition()) ? request.getPosition() : "hero")
                 .status(StringUtils.hasText(request.getStatus()) ? request.getStatus() : "ACTIVE")
                 .orderIndex(request.getOrderIndex() != null ? request.getOrderIndex() : 0)
+                .organizationId(request.getOrganizationId())
+                .pinForNewsPage(Boolean.TRUE.equals(request.getPinForNewsPage()))
                 .build();
         return bannerRepository.save(banner);
     }
@@ -65,6 +67,13 @@ public class BannerServiceImpl implements BannerService {
         }
         if (request.getOrderIndex() != null) {
             banner.setOrderIndex(request.getOrderIndex());
+        }
+        if (request.getOrganizationId() != null) {
+            banner.setOrganizationId(StringUtils.hasText(request.getOrganizationId())
+                    ? request.getOrganizationId().trim() : null);
+        }
+        if (request.getPinForNewsPage() != null) {
+            banner.setPinForNewsPage(request.getPinForNewsPage());
         }
         return bannerRepository.save(banner);
     }

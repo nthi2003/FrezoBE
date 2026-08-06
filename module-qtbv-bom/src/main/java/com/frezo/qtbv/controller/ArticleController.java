@@ -3,6 +3,7 @@ package com.frezo.qtbv.controller;
 import com.frezo.common.response.ApiResponse;
 import com.frezo.qtbv.config.SecurityHelper;
 import com.frezo.qtbv.dto.request.ArticleCreateRequest;
+import com.frezo.qtbv.dto.request.ArticleDisplayOnNewsRequest;
 import com.frezo.qtbv.dto.request.ArticleFilterRequest;
 import com.frezo.qtbv.dto.request.ArticleReviewRequest;
 import com.frezo.qtbv.dto.request.ArticleUpdateRequest;
@@ -70,6 +71,15 @@ public class ArticleController {
     @CheckPermission(api = "/qtbv/articles/{id}", action = "UPDATE")
     public ApiResponse<?> update(@PathVariable String id, @Valid @RequestBody ArticleUpdateRequest request) {
         return ApiResponse.success(articleService.update(id, request, securityHelper.getCurrentUserId()));
+    }
+
+    @Operation(summary = "Bật/tắt hiển thị trên Tin tức", description = "Cập nhật displayOnNews cho trang /bai-viet (mọi trạng thái bài)")
+    @PatchMapping("/{id}/display-on-news")
+    @CheckPermission(api = "/qtbv/articles/{id}", action = "UPDATE")
+    public ApiResponse<?> updateDisplayOnNews(
+            @PathVariable String id,
+            @RequestBody ArticleDisplayOnNewsRequest request) {
+        return ApiResponse.success(articleService.updateDisplayOnNews(id, request.getDisplayOnNews()));
     }
 
     @Operation(summary = "Xóa bài viết", description = "Xóa mềm bài viết")

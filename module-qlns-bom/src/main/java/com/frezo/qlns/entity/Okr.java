@@ -37,6 +37,38 @@ public class Okr extends BaseEntity {
     @Column(name = "period_label", length = 50)
     private String periodLabel;
 
+    @Column(name = "cycle_id", length = 36)
+    private String cycleId;
+
+    @Column(name = "department_id", length = 36)
+    private String departmentId;
+
+    @Column(name = "org_id", length = 36)
+    private String orgId;
+
+    @Column(name = "parent_okr_id", length = 36)
+    private String parentOkrId;
+
+    /** PERSONAL / TEAM / DEPARTMENT / COMPANY */
+    @Column(name = "scope_type", length = 20)
+    private String scopeType;
+
+    /** COMMITTED / STRETCH */
+    @Column(name = "objective_type", length = 20)
+    private String objectiveType;
+
+    @Column(name = "cross_link_ids", columnDefinition = "text")
+    private String crossLinkIds;
+
+    @Column(name = "published", nullable = false)
+    private Boolean published;
+
+    @Column(name = "published_at")
+    private java.time.LocalDateTime publishedAt;
+
+    @Column(name = "published_by", length = 100)
+    private String publishedBy;
+
     @Column(name = "start_date")
     private LocalDate startDate;
 

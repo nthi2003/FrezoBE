@@ -68,4 +68,34 @@ public class Person extends BaseEntity {
 
     @Column(name = "org_id", insertable = false, updatable = false)
     private String orgId;
+
+    @Column(name = "identity_number", length = 20)
+    private String identityNumber;
+
+    @Column(name = "social_insurance_number", length = 30)
+    private String socialInsuranceNumber;
+
+    @Column(name = "bank_account", length = 50)
+    private String bankAccount;
+
+    @Column(name = "bank_name", length = 255)
+    private String bankName;
+
+    @Column(name = "bank_branch", length = 255)
+    private String bankBranch;
+
+    @Column(name = "join_date")
+    private LocalDate joinDate;
+
+    @Column(name = "resign_date")
+    private LocalDate resignDate;
+
+    @Column(name = "job_position_id", length = 36)
+    private String jobPositionId;
+
+    @Column(name = "id_card_front_url", length = 1000)
+    private String idCardFrontUrl;
+
+    @Column(name = "id_card_back_url", length = 1000)
+    private String idCardBackUrl;
 }

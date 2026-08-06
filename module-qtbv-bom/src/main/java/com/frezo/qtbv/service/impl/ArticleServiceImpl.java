@@ -15,9 +15,11 @@ import com.frezo.qtbv.dto.request.ArticleUpdateRequest;
 import com.frezo.qtbv.dto.response.ArticleResponse;
 import com.frezo.qtbv.entity.Article;
 import com.frezo.qtbv.entity.ArticleRevision;
+import com.frezo.qtbv.entity.NewsCategory;
 import com.frezo.qtbv.mapper.ArticleMapper;
 import com.frezo.qtbv.repository.ArticleRepository;
 import com.frezo.qtbv.repository.ArticleRevisionRepository;
+import com.frezo.qtbv.repository.NewsCategoryRepository;
 import com.frezo.qtbv.service.ArticleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,6 +65,7 @@ public class ArticleServiceImpl implements ArticleService {
     private final SecurityHelper helper;
     private final ArticleRevisionRepository articleRevisionRepository;
     private final CodeSequenceService codeSequenceService;
+    private final NewsCategoryRepository newsCategoryRepository;
 
     @Override
     @Transactional
@@ -78,6 +83,12 @@ public class ArticleServiceImpl implements ArticleService {
         article.setIsDeleted(false);
         if (article.getPublishScope() == null) {
             article.setPublishScope(PublishScope.INTERNAL);
+        }
+        if (article.getContentType() == null) {
+            article.setContentType(com.frezo.qtbv.common.ArticleContentType.ARTICLE);
+        }
+        if (article.getDisplayOnNews() == null) {
+            article.setDisplayOnNews(true);
         }
         syncPublicFlag(article);
 
@@ -135,6 +146,9 @@ public class ArticleServiceImpl implements ArticleService {
         }
         if (article.getPublishScope() == null) {
             article.setPublishScope(PublishScope.INTERNAL);
+        }
+        if (article.getDisplayOnNews() == null) {
+            article.setDisplayOnNews(true);
         }
         syncPublicFlag(article);
         articleRepository.save(article);
@@ -223,6 +237,7 @@ public class ArticleServiceImpl implements ArticleService {
                 .map(articleMapper::toDto)
                 .collect(Collectors.toList());
         enrichArticlesWithHeartCount(responses);
+        enrichCategoryMeta(responses);
         return responses;
     }
 
@@ -232,8 +247,24 @@ public class ArticleServiceImpl implements ArticleService {
         if (!ArticleStatus.PUBLISHED.equals(article.getStatus()) || !Boolean.TRUE.equals(article.getIsActive())) {
             throw new AppException(ERR_ARTICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
         }
+        if (Boolean.FALSE.equals(article.getDisplayOnNews())) {
+            throw new AppException(ERR_ARTICLE_NOT_FOUND, HttpStatus.NOT_FOUND);
+        }
         ArticleResponse response = articleMapper.toDto(article);
         enrichArticlesWithHeartCount(Collections.singletonList(response));
+        enrichCategoryMeta(Collections.singletonList(response));
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public ArticleResponse updateDisplayOnNews(String id, Boolean displayOnNews) {
+        Article article = getArticleByIdOrThrow(id);
+        article.setDisplayOnNews(displayOnNews != null ? displayOnNews : true);
+        articleRepository.save(article);
+        ArticleResponse response = articleMapper.toDto(article);
+        enrichArticlesWithHeartCount(Collections.singletonList(response));
+        enrichCategoryMeta(Collections.singletonList(response));
         return response;
     }
 
@@ -430,5 +461,25 @@ public class ArticleServiceImpl implements ArticleService {
             spec = spec.and(GenericSpecification.lessThanOrEqual("publishedAt", f.getPublishDateTo()));
 
         return spec;
+    }
+
+    private void enrichCategoryMeta(List<ArticleResponse> articles) {
+        if (articles == null || articles.isEmpty()) return;
+        Set<String> catIds = articles.stream()
+                .map(ArticleResponse::getCategoryId)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        if (catIds.isEmpty()) return;
+        Map<String, NewsCategory> byId = newsCategoryRepository.findAllById(catIds).stream()
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .collect(Collectors.toMap(NewsCategory::getId, c -> c, (a, b) -> a));
+        for (ArticleResponse a : articles) {
+            if (!StringUtils.hasText(a.getCategoryId())) continue;
+            NewsCategory cat = byId.get(a.getCategoryId());
+            if (cat != null) {
+                a.setCategoryName(cat.getName());
+                a.setCategoryColor(cat.getColor());
+            }
+        }
     }
 }

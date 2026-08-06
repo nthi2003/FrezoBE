@@ -40,8 +40,12 @@ WITH menu_api_map(menu_code, api_prefix) AS (
 
         -- ========================= QLNS / HRM =========================
         ('QLHT_STAFF',          'qlns/person'),
+        ('QLHT_STAFF',          'qlns/job-position'),
+        ('QLHT_STAFF',          'qlns/person-work-history'),
+        ('QLHT_STAFF',          'qlns/person-statistics'),
         ('QLHT_CONTRACT',       'qlns/contract'),
         ('QLHT_PAYROLL',        'qlns/payroll'),
+        ('QLHT_PAYROLL',        'qlns/payroll-component'),
         -- SalaryBandsPage persist qua /qtht/category?groupCode=SalaryBand (không có /qlns/salary-bands)
         ('QLHT_SALARY_BAND',    'qtht/category'),
         ('QLHT_LEAVE',          'qlns/leave'),
@@ -136,6 +140,11 @@ WITH menu_api_map(menu_code, api_prefix) AS (
         ('QLHT_ARTICLE',        'qtbv/articles'),
         ('QLHT_ARTICLE',        'qtbv/managers'),
         ('QLHT_ARTICLE',        'qtbv/organizations'),
+        ('QLHT_TIEN_ICH',       'qtbv/news'),
+        ('QLHT_TIEN_ICH',       'qtbv/banners'),
+        ('QLHT_TIEN_ICH',       'qtbv/articles'),
+        ('QLHT_TIEN_ICH',       'qtbv/managers'),
+        ('QLHT_TIEN_ICH',       'qtbv/organizations'),
         ('QLHT_EVENT',          'qtbv/event'),
         ('QLHT_EVENT',          'events'),
         ('QLHT_WEBSITE',        'qtbv/landing-config'),
@@ -148,7 +157,9 @@ WITH menu_api_map(menu_code, api_prefix) AS (
         ('QLDM_SIGNER',         'dmdc/signer'),
         ('QLDM_TITLE',          'dmdc/title'),
         ('QLDM_LOCATION',       'dmdc/location'),
-        ('QLDM_INDUSTRY',       'dmdc/industry')
+        ('QLNS_HR_SETUP',       'qlns/job-position'),
+        ('QLNS_HR_SETUP',       'qlns/payroll-component'),
+        ('QLNS_HR_SETUP',       'qtht/category'),
 )
 INSERT INTO menu_permission (id, menu_id, permission_id, is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT

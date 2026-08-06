@@ -8,6 +8,8 @@
 --                       (legacy TITLE → migrate idempotent bên dưới)
 -- Updated: 2026-07-30 — Seed groupCode DonVi (Đơn vị tính) + UOM_* cho SME
 --                       rau củ / thương mại. Align FE category.schema.ts.
+-- Updated: 2026-08-06 — Seed item cho 7 group HR (CapBac, TrinhDo, ChiNhanh,
+--                       LoaiHopDong, GiaiDoan, KetQuaDanhGia, LyDoNghiViec).
 -- IDEMPOTENT: NOT EXISTS trên (group_code, code)
 -- ============================================================
 
@@ -211,6 +213,81 @@ FROM (VALUES
         'Tuyệt vời — bạn vừa hoàn thành một công việc. Tiếp tục phát huy nhé!'
     )
 ) AS v(code, name, name_en, short_name, group_code, order_index, description)
+WHERE NOT EXISTS (
+    SELECT 1 FROM categories c
+    WHERE c.group_code = v.group_code AND c.code = v.code
+);
+
+-- HR Hạng mục — group codes for Module Hồ sơ nhân sự (2026-08-06)
+INSERT INTO category_group (code, name, cat_group, is_deleted)
+SELECT v.code, v.name, 3, false
+FROM (VALUES
+    ('TrinhDo', 'Trình độ'),
+    ('CapBac', 'Cấp bậc'),
+    ('ChiNhanh', 'Chi nhánh'),
+    ('LoaiHopDong', 'Loại hợp đồng'),
+    ('GiaiDoan', 'Giai đoạn'),
+    ('KetQuaDanhGia', 'Kết quả đánh giá'),
+    ('LyDoNghiViec', 'Lý do nghỉ việc')
+) AS v(code, name)
+WHERE NOT EXISTS (SELECT 1 FROM category_group cg WHERE cg.code = v.code);
+
+-- HR Hạng mục items — không có item thì select Cấp bậc / Chức danh ở
+-- /qlns/settings?tab=positions rỗng (ChucDanh dùng TTL_* seed ở phần 2).
+-- name / name_en unique toàn bảng categories (CategoryServiceImpl.validateRequest)
+-- → tên không được trùng ChucDanh / SalaryBand; name_en để NULL cho chắc.
+INSERT INTO categories (id, code, name, name_en, short_name, group_code, order_index, description, active, is_deleted, created_date, created_by, updated_date, updated_by)
+SELECT gen_random_uuid(), v.code, v.name, NULL, v.short_name, v.group_code, v.order_index, NULL, true, false, NOW(), 'system', NOW(), 'system'
+FROM (VALUES
+    -- ---------- CapBac (Cấp bậc) — dùng cho hr_job_position.rank_code ----------
+    ('CB_INTERN',        'Thực tập',                        'TT',     'CapBac', 1),
+    ('CB_STAFF',         'Nhân viên',                       'NV',     'CapBac', 2),
+    ('CB_SPECIALIST',    'Chuyên viên',                     'CV',     'CapBac', 3),
+    ('CB_SR_SPECIALIST', 'Chuyên viên chính',               'CVC',    'CapBac', 4),
+    ('CB_LEAD',          'Tổ trưởng',                       'TOT',    'CapBac', 5),
+    ('CB_MIDDLE_MGR',    'Quản lý cấp trung',               'QLCT',   'CapBac', 6),
+    ('CB_SENIOR_MGR',    'Quản lý cấp cao',                 'QLCC',   'CapBac', 7),
+    ('CB_EXECUTIVE',     'Ban giám đốc',                    'BGD',    'CapBac', 8),
+    -- ---------- TrinhDo (Trình độ) ----------
+    ('TD_THPT',      'Trung học phổ thông',                 'THPT',   'TrinhDo', 1),
+    ('TD_TRUNGCAP',  'Trung cấp',                           'TC',     'TrinhDo', 2),
+    ('TD_CAODANG',   'Cao đẳng',                            'CD',     'TrinhDo', 3),
+    ('TD_DAIHOC',    'Đại học',                             'DH',     'TrinhDo', 4),
+    ('TD_THACSI',    'Thạc sĩ',                             'ThS',    'TrinhDo', 5),
+    ('TD_TIENSI',    'Tiến sĩ',                             'TS',     'TrinhDo', 6),
+    ('TD_KHAC',      'Trình độ khác',                       'TDK',    'TrinhDo', 7),
+    -- ---------- ChiNhanh (Chi nhánh) ----------
+    ('CN_HQ',   'Trụ sở chính',                             'HQ',     'ChiNhanh', 1),
+    ('CN_HN',   'Chi nhánh Hà Nội',                         'CN-HN',  'ChiNhanh', 2),
+    ('CN_HCM',  'Chi nhánh TP. Hồ Chí Minh',                'CN-HCM', 'ChiNhanh', 3),
+    ('CN_DN',   'Chi nhánh Đà Nẵng',                        'CN-DN',  'ChiNhanh', 4),
+    -- ---------- LoaiHopDong (Loại hợp đồng) ----------
+    ('LHD_THUVIEC',      'Hợp đồng thử việc',               'HDTV',   'LoaiHopDong', 1),
+    ('LHD_XACDINH',      'Hợp đồng xác định thời hạn',      'HDXD',   'LoaiHopDong', 2),
+    ('LHD_KHONGXACDINH', 'Hợp đồng không xác định thời hạn','HDKXD',  'LoaiHopDong', 3),
+    ('LHD_THOIVU',       'Hợp đồng thời vụ',                'HDTVU',  'LoaiHopDong', 4),
+    ('LHD_KHOANVIEC',    'Hợp đồng khoán việc',             'HDKV',   'LoaiHopDong', 5),
+    ('LHD_THUCTAP',      'Hợp đồng thực tập',               'HDTT',   'LoaiHopDong', 6),
+    -- ---------- GiaiDoan (Giai đoạn làm việc) ----------
+    ('GD_NHANVIEC',   'Nhận việc',                          'ONB',    'GiaiDoan', 1),
+    ('GD_THUVIEC',    'Thử việc',                           'TVIEC',  'GiaiDoan', 2),
+    ('GD_CHINHTHUC',  'Chính thức',                         'CTHUC',  'GiaiDoan', 3),
+    ('GD_TAMHOAN',    'Tạm hoãn hợp đồng',                  'THOAN',  'GiaiDoan', 4),
+    ('GD_NGHIVIEC',   'Đã nghỉ việc',                       'NGHI',   'GiaiDoan', 5),
+    -- ---------- KetQuaDanhGia (Kết quả đánh giá) ----------
+    ('KQ_XUATSAC',      'Xuất sắc',                         'A+',     'KetQuaDanhGia', 1),
+    ('KQ_TOT',          'Tốt',                              'A',      'KetQuaDanhGia', 2),
+    ('KQ_DAT',          'Đạt',                              'B',      'KetQuaDanhGia', 3),
+    ('KQ_CANCAITHIEN',  'Cần cải thiện',                    'C',      'KetQuaDanhGia', 4),
+    ('KQ_KHONGDAT',     'Không đạt',                        'D',      'KetQuaDanhGia', 5),
+    -- ---------- LyDoNghiViec (Lý do nghỉ việc) ----------
+    ('LDN_CANHAN',     'Nghỉ theo nguyện vọng cá nhân',     'CANHAN', 'LyDoNghiViec', 1),
+    ('LDN_HETHAN',     'Hết hạn hợp đồng',                  'HETHAN', 'LyDoNghiViec', 2),
+    ('LDN_CHUYENCT',   'Chuyển công tác',                   'CHUYEN', 'LyDoNghiViec', 3),
+    ('LDN_KHONGDATYC', 'Không đạt yêu cầu công việc',       'KDATYC', 'LyDoNghiViec', 4),
+    ('LDN_TINHGIAN',   'Tinh giản nhân sự',                 'TGIAN',  'LyDoNghiViec', 5),
+    ('LDN_KHAC',       'Lý do khác',                        'LDKHAC', 'LyDoNghiViec', 6)
+) AS v(code, name, short_name, group_code, order_index)
 WHERE NOT EXISTS (
     SELECT 1 FROM categories c
     WHERE c.group_code = v.group_code AND c.code = v.code

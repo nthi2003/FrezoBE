@@ -41,4 +41,13 @@ public class Banner extends BaseEntity {
     @Column(name = "order_index")
     @Builder.Default
     private Integer orderIndex = 0;
+
+    /** Phạm vi đơn vị — null = toàn hệ thống. */
+    @Column(name = "organization_id", length = 50)
+    private String organizationId;
+
+    /** Ghim banner lên trang Tin tức nội bộ (/bai-viet). */
+    @Column(name = "pin_for_news_page", nullable = false)
+    @Builder.Default
+    private Boolean pinForNewsPage = false;
 }

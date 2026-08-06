@@ -14,4 +14,5 @@ public interface OkrService {
     OkrResponse update(String id, OkrRequest req);
     void delete(String id);
     OkrResponse checkIn(String id, OkrCheckInRequest req);
+    OkrResponse publish(String id);
 }

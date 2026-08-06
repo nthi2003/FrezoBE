@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,6 +99,7 @@ public class OkrServiceImpl implements OkrService {
     @Override
     @Transactional
     public OkrResponse create(OkrRequest req) {
+        validateRequest(req, true);
         String me = scopeResolver.currentPersonId()
                 .orElseThrow(() -> new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự"));
 
@@ -110,6 +113,14 @@ public class OkrServiceImpl implements OkrService {
                 .description(req.getDescription())
                 .ownerPersonId(ownerId)
                 .periodLabel(req.getPeriodLabel())
+                .cycleId(req.getCycleId())
+                .departmentId(req.getDepartmentId())
+                .orgId(req.getOrgId())
+                .parentOkrId(req.getParentOkrId())
+                .scopeType(normalizeScopeType(req.getScopeType()))
+                .objectiveType(normalizeObjectiveType(req.getObjectiveType()))
+                .crossLinkIds(join(req.getCrossLinkIds()))
+                .published(false)
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .status(req.getStatus() != null ? req.getStatus() : "ACTIVE")
@@ -119,6 +130,9 @@ public class OkrServiceImpl implements OkrService {
         okr = okrRepository.save(okr);
         saveKeyResults(okr.getId(), req.getKeyResults(), true);
         recalculateProgress(okr);
+        if (Boolean.TRUE.equals(req.getPublished())) {
+            publishInternal(okr);
+        }
         return toResponse(okr);
     }
 
@@ -127,6 +141,7 @@ public class OkrServiceImpl implements OkrService {
     public OkrResponse update(String id, OkrRequest req) {
         Okr okr = find(id);
         scopeResolver.assertCanModify(okr.getOwnerPersonId());
+        validateRequest(req, false);
         if (req.getTitle() != null) okr.setTitle(req.getTitle());
         if (req.getDescription() != null) okr.setDescription(req.getDescription());
         if (req.getOwnerPersonId() != null) {
@@ -134,6 +149,13 @@ public class OkrServiceImpl implements OkrService {
             okr.setOwnerPersonId(req.getOwnerPersonId());
         }
         if (req.getPeriodLabel() != null) okr.setPeriodLabel(req.getPeriodLabel());
+        if (req.getCycleId() != null) okr.setCycleId(req.getCycleId());
+        if (req.getDepartmentId() != null) okr.setDepartmentId(req.getDepartmentId());
+        if (req.getOrgId() != null) okr.setOrgId(req.getOrgId());
+        if (req.getParentOkrId() != null) okr.setParentOkrId(req.getParentOkrId());
+        if (req.getScopeType() != null) okr.setScopeType(normalizeScopeType(req.getScopeType()));
+        if (req.getObjectiveType() != null) okr.setObjectiveType(normalizeObjectiveType(req.getObjectiveType()));
+        if (req.getCrossLinkIds() != null) okr.setCrossLinkIds(join(req.getCrossLinkIds()));
         if (req.getStartDate() != null) okr.setStartDate(req.getStartDate());
         if (req.getEndDate() != null) okr.setEndDate(req.getEndDate());
         if (req.getStatus() != null) okr.setStatus(req.getStatus());
@@ -143,6 +165,9 @@ public class OkrServiceImpl implements OkrService {
                     .forEach(kr -> { kr.setIsDeleted(true); keyResultRepository.save(kr); });
             saveKeyResults(id, req.getKeyResults(), true);
             recalculateProgress(okr);
+        }
+        if (Boolean.TRUE.equals(req.getPublished()) && !Boolean.TRUE.equals(okr.getPublished())) {
+            publishInternal(okr);
         }
         return toResponse(okr);
     }
@@ -165,6 +190,9 @@ public class OkrServiceImpl implements OkrService {
             for (OkrKeyResultRequest krReq : req.getKeyResults()) {
                 if (krReq.getId() == null) continue;
                 keyResultRepository.findById(krReq.getId()).ifPresent(kr -> {
+                    if (!id.equals(kr.getOkrId()) || Boolean.TRUE.equals(kr.getIsDeleted())) {
+                        throw new AppException(CommonErrorCode.FORBIDDEN, "Key Result không thuộc OKR này");
+                    }
                     if (krReq.getCurrentValue() != null) kr.setCurrentValue(krReq.getCurrentValue());
                     kr.setProgress(calcKrProgress(kr.getCurrentValue(), kr.getTargetValue()));
                     keyResultRepository.save(kr);
@@ -173,6 +201,23 @@ public class OkrServiceImpl implements OkrService {
         }
         recalculateProgress(okr);
         return toResponse(okr);
+    }
+
+    @Override
+    @Transactional
+    public OkrResponse publish(String id) {
+        Okr okr = find(id);
+        publishInternal(okr);
+        return toResponse(okr);
+    }
+
+    private void publishInternal(Okr okr) {
+        scopeResolver.assertCanPublish(okr.getScopeType(), okr.getOwnerPersonId(), okr.getDepartmentId());
+        okr.setPublished(true);
+        okr.setPublishedAt(LocalDateTime.now());
+        okr.setPublishedBy(SystemUtils.getCurrentUsername());
+        if ("DRAFT".equalsIgnoreCase(okr.getStatus())) okr.setStatus("ACTIVE");
+        okrRepository.save(okr);
     }
 
     private void saveKeyResults(String okrId, List<OkrKeyResultRequest> list, boolean createNew) {
@@ -238,6 +283,14 @@ public class OkrServiceImpl implements OkrService {
                 .description(okr.getDescription())
                 .ownerPersonId(okr.getOwnerPersonId())
                 .periodLabel(okr.getPeriodLabel())
+                .cycleId(okr.getCycleId())
+                .departmentId(okr.getDepartmentId())
+                .orgId(okr.getOrgId())
+                .parentOkrId(okr.getParentOkrId())
+                .scopeType(okr.getScopeType())
+                .objectiveType(okr.getObjectiveType())
+                .crossLinkIds(split(okr.getCrossLinkIds()))
+                .published(Boolean.TRUE.equals(okr.getPublished()))
                 .startDate(okr.getStartDate())
                 .endDate(okr.getEndDate())
                 .status(okr.getStatus())
@@ -245,5 +298,43 @@ public class OkrServiceImpl implements OkrService {
                 .progressPct(okr.getProgress())
                 .keyResults(krs)
                 .build();
+    }
+
+    private void validateRequest(OkrRequest req, boolean creating) {
+        if (creating && (req.getTitle() == null || req.getTitle().isBlank())) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, "Mục tiêu là bắt buộc");
+        }
+        if (req.getStartDate() != null && req.getEndDate() != null
+                && req.getStartDate().isAfter(req.getEndDate())) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc");
+        }
+        if (req.getParentOkrId() != null && req.getCrossLinkIds() != null
+                && req.getCrossLinkIds().contains(req.getParentOkrId())) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, "OKR cha không được trùng liên kết chéo");
+        }
+    }
+
+    private String normalizeObjectiveType(String value) {
+        String normalized = value == null ? "COMMITTED" : value.trim().toUpperCase();
+        if (!List.of("COMMITTED", "STRETCH").contains(normalized)) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, "Loại OKR không hợp lệ");
+        }
+        return normalized;
+    }
+
+    private String normalizeScopeType(String value) {
+        String normalized = value == null ? "PERSONAL" : value.trim().toUpperCase();
+        if (!List.of("PERSONAL", "TEAM", "DEPARTMENT", "COMPANY").contains(normalized)) {
+            throw new AppException(CommonErrorCode.VALIDATION_FAILED, "Phạm vi OKR không hợp lệ");
+        }
+        return normalized;
+    }
+
+    private String join(List<String> values) {
+        return values == null || values.isEmpty() ? null : String.join(",", values);
+    }
+
+    private List<String> split(String value) {
+        return value == null || value.isBlank() ? List.of() : Arrays.asList(value.split(","));
     }
 }

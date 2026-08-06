@@ -90,4 +90,18 @@ public class PersonController {
         String tempUrl = personService.uploadAvatarTemp(userName, file);
         return ApiResponse.ok(tempUrl);
     }
+
+    @PostMapping("/import")
+    @Operation(summary = "Nhập hàng loạt nhân sự (JSON rows từ CSV/Excel)")
+    @CheckPermission(api = "/qlns/person/import", action = "CREATE")
+    public ApiResponse<?> importBatch(@RequestBody com.frezo.qtht.dto.request.PersonImportBatchRequest request) {
+        return ApiResponse.ok(personService.importBatch(request));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Xuất danh sách nhân sự")
+    @CheckPermission(api = "/qlns/person/export", action = "VIEW")
+    public ApiResponse<?> export(@ModelAttribute PersonFilterRequest filter) {
+        return ApiResponse.ok(personService.exportAll(filter));
+    }
 }

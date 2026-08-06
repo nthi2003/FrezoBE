@@ -31,9 +31,10 @@ public interface ArticleRepository extends JpaRepository<Article, String>,
                         "AND (a.isDeleted = false OR a.isDeleted IS NULL)")
         List<Article> findPublishedArticles();
 
-        /** Intranet home: all published (INTERNAL + PUBLIC), newest first. */
+        /** Intranet home: published + displayOnNews, newest first. */
         @Query("SELECT a FROM Article a WHERE a.status = 'PUBLISHED' " +
                         "AND a.isActive = true " +
+                        "AND (a.displayOnNews = true OR a.displayOnNews IS NULL) " +
                         "AND (a.isDeleted = false OR a.isDeleted IS NULL) " +
                         "ORDER BY a.publishedAt DESC")
         List<Article> findIntranetHomeFeed();

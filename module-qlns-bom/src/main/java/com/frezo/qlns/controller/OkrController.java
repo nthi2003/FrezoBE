@@ -65,4 +65,10 @@ public class OkrController {
     public ApiResponse<OkrResponse> checkIn(@PathVariable String id, @RequestBody OkrCheckInRequest req) {
         return ApiResponse.ok(okrService.checkIn(id, req));
     }
+
+    @PostMapping("/{id}/publish")
+    @CheckPermission(api = "/qlns/okrs/{id}/publish", action = "UPDATE")
+    public ApiResponse<OkrResponse> publish(@PathVariable String id) {
+        return ApiResponse.ok(okrService.publish(id));
+    }
 }

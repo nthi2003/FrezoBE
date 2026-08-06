@@ -303,6 +303,8 @@ public class DataInitializer implements CommandLineRunner {
         // Do NOT load menu_tree_v2.sql / menu_tree_restructure.sql (DEPRECATED archive).
         // See PLAN_LINKAGE_USABILITY.md LNK-07 · docs/BE_MENU_REGROUP_PLAN.md
         safeExecute("classpath:data/menu_tree_v3.sql", "menu_tree_v3");
+        safeExecute("classpath:data/menu_news_utilities.sql", "menu_news_utilities");
+        safeExecute("classpath:data/menu_hr_setup.sql", "menu_hr_setup");
 
         log.info("=== SEEDING ROLE DATA ===");
         safeExecute("classpath:data/role_data.sql", "role_data");

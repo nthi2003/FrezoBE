@@ -394,7 +394,7 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM email_templates e WHERE e.code = v.code);
 
 -- ============================================================
--- 13b) EMAIL CONFIG — MailHog local (dev) — activated=true
+-- 13b) EMAIL CONFIG — MailHog local (dev), chỉ là fallback
 --     Host/port placeholder; không hardcode SMTP password thật.
 --     Cần MailHog (hoặc SMTP tương đương) listen localhost:1025 để gửi được.
 --     Bulk send lấy config qua findByActivatedTrue() — thiếu row activated → 400
@@ -402,23 +402,33 @@ WHERE NOT EXISTS (SELECT 1 FROM email_templates e WHERE e.code = v.code);
 -- ============================================================
 INSERT INTO email_configs (id, code, name, api_key, smtp, port, name_email, org_id, activated,
                            is_deleted, created_date, created_by, updated_date, updated_by)
-SELECT gen_random_uuid(), v.code, v.name, v.api_key, v.smtp, v.port, v.name_email, NULL, true,
+SELECT gen_random_uuid(), v.code, v.name, v.api_key, v.smtp, v.port, v.name_email, NULL, false,
        false, NOW(), 'system', NOW(), 'system'
 FROM (VALUES
     ('MAILHOG_LOCAL', 'MailHog Local (dev)', 'unused', 'localhost', 1025::smallint, 'noreply@frezo.local')
 ) AS v(code, name, api_key, smtp, port, name_email)
 WHERE NOT EXISTS (SELECT 1 FROM email_configs e WHERE e.code = v.code);
 
--- LNK-09: upsert — nếu row đã có (activated=false / sai host) → ép activated + MailHog local
+-- LNK-09: chuẩn hoá host/port cho row MailHog, KHÔNG tự bật activated —
+-- ép activated ở đây từng ghi đè config SMTP thật của môi trường dev.
 UPDATE email_configs
-SET activated = true,
-    smtp = 'localhost',
+SET smtp = 'localhost',
     port = 1025,
     name_email = COALESCE(NULLIF(name_email, ''), 'noreply@frezo.local'),
     is_deleted = false,
     updated_date = NOW(),
     updated_by = 'system'
 WHERE code = 'MAILHOG_LOCAL';
+
+-- Chỉ bật MailHog khi không còn config nào activated (tránh email_configs rỗng → CONFIG_NOT_FOUND).
+UPDATE email_configs
+SET activated = true,
+    updated_date = NOW(),
+    updated_by = 'system'
+WHERE code = 'MAILHOG_LOCAL'
+  AND NOT EXISTS (
+      SELECT 1 FROM email_configs e
+      WHERE e.activated AND NOT e.is_deleted AND e.code <> 'MAILHOG_LOCAL');
 
 -- ============================================================
 -- 14) CATEGORY GROUP 'LoaiSanPham' + 8 loại sản phẩm cho trang /loai-san-pham

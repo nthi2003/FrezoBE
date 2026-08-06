@@ -1,9 +1,12 @@
 package com.frezo.email.controller;
 
 import com.frezo.common.response.ApiResponse;
+import com.frezo.common.response.PageResponse;
 import com.frezo.common.security.CheckPermission;
 import com.frezo.email.dto.request.BulkEmailRequest;
+import com.frezo.email.dto.request.SendEmailLogFilter;
 import com.frezo.email.dto.response.BulkEmailResponse;
+import com.frezo.email.dto.response.SendEmailLogResponse;
 import com.frezo.email.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -42,5 +45,13 @@ public class EmailSendController {
         BulkEmailResponse response = emailService.sendBulkByCategoryCodes(
                 templateCode, subject, body, categoryCodes, description);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "Lịch sử gửi email",
+            description = "Danh sách lần gửi email kèm trạng thái SUCCESS/FAILED và lý do lỗi SMTP")
+    @GetMapping("/log")
+    @CheckPermission(api = "/email/send/log", action = "VIEW")
+    public ResponseEntity<ApiResponse<PageResponse<SendEmailLogResponse>>> getSendLogs(SendEmailLogFilter filter) {
+        return ResponseEntity.ok(ApiResponse.success(emailService.getSendLogs(filter)));
     }
 }

@@ -604,6 +604,7 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('EMAIL_INBOX_ID_ID_READ_UPDATE', '/email/inbox/{configId}/{uid}/read - UPDATE', 'PUT', '/email/inbox/{configId}/{uid}/read', 'UPDATE'),
         ('EMAIL_SEND_BULK_UPDATE', '/email/send/bulk - UPDATE', 'POST', '/email/send/bulk', 'UPDATE'),
         ('EMAIL_SEND_BY_GROUP_UPDATE', '/email/send/by-group - UPDATE', 'POST', '/email/send/by-group', 'UPDATE'),
+        ('EMAIL_SEND_LOG_VIEW', '/email/send/log - VIEW', 'GET', '/email/send/log', 'VIEW'),
         ('EMAIL_TEMPLATE_VIEW', '/email/template - VIEW', 'GET', '/email/template', 'VIEW'),
         ('EMAIL_TEMPLATE_CREATE', '/email/template - CREATE', 'POST', '/email/template', 'CREATE'),
         ('EMAIL_TEMPLATE_ID_UPDATE', '/email/template/{id} - UPDATE', 'PUT', '/email/template/{id}', 'UPDATE'),

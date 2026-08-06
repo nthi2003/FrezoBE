@@ -1,11 +1,15 @@
 package com.frezo.email.service.impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.common.helper.ServiceHelper;
+import com.frezo.common.response.PageResponse;
 import com.frezo.email.common.EmailErrorCode;
 import com.frezo.customer.entity.Customer;
 import com.frezo.customer.repository.CustomerRepository;
 import com.frezo.email.dto.request.BulkEmailRequest;
+import com.frezo.email.dto.request.SendEmailLogFilter;
 import com.frezo.email.dto.response.BulkEmailResponse;
+import com.frezo.email.dto.response.SendEmailLogResponse;
 import com.frezo.email.entity.EmailConfig;
 import com.frezo.email.entity.EmailTemplate;
 import com.frezo.email.entity.SendEmail;
@@ -15,13 +19,24 @@ import com.frezo.email.repository.SendEmailRepository;
 import com.frezo.email.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -30,6 +45,11 @@ import java.util.Properties;
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
+
+    private static final String TYPE_EMAIL = "EMAIL";
+    private static final String STATUS_SUCCESS = "SUCCESS";
+    private static final String STATUS_FAILED = "FAILED";
+    private static final int MAX_ERROR_LENGTH = 1000;
 
     private final EmailConfigRepository emailConfigRepository;
     private final EmailTemplateRepository emailTemplateRepository;
@@ -51,9 +71,10 @@ public class EmailServiceImpl implements EmailService {
 
             mailSender.send(message);
             log.info("Email sent successfully to {}", to);
-        } catch (MessagingException e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw new AppException(EmailErrorCode.SEND_FAILED);
+        } catch (MessagingException | MailException e) {
+            log.error("Failed to send email to {} via {}:{} (config {}): {}",
+                    to, mailSender.getHost(), mailSender.getPort(), config.getCode(), e.getMessage());
+            throw new AppException(EmailErrorCode.SEND_FAILED, e);
         }
     }
 
@@ -62,38 +83,65 @@ public class EmailServiceImpl implements EmailService {
         EmailTemplate template = emailTemplateRepository.findByCode(templateCode)
                 .orElseThrow(() -> new AppException(EmailErrorCode.EMAIL_TEMPLATE_NOT_FOUND));
 
-        EmailConfig config = emailConfigRepository.findByActivatedTrue()
-                .stream().findFirst()
-                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
+        EmailConfig config = resolveActiveConfig();
 
         String processedContent = processTemplate(template.getContent(), params);
         String processedSubject = processTemplate(template.getSubject(), params);
 
+        List<String> sent = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+        String firstError = null;
         for (String recipient : recipients) {
             try {
                 sendEmail(config, recipient, processedSubject, processedContent);
+                sent.add(recipient);
             } catch (Exception e) {
                 log.error("Failed to send to {}: {}", recipient, e.getMessage());
+                failed.add(recipient);
+                if (firstError == null) firstError = describeFailure(config, e);
             }
         }
 
-        logSendEmail(template.getId(), processedSubject, recipients, params.toString());
+        // Log tách SUCCESS / FAILED để admin thấy được lần gửi thất bại trong lịch sử.
+        if (!sent.isEmpty()) {
+            logSendEmail(template.getId(), processedSubject, sent, params.toString(), STATUS_SUCCESS, null);
+        }
+        if (!failed.isEmpty()) {
+            logSendEmail(template.getId(), processedSubject, failed, params.toString(), STATUS_FAILED, firstError);
+        }
+        // Không ai nhận được → báo lỗi để caller không tưởng đã gửi.
+        if (sent.isEmpty()) {
+            throw new AppException(EmailErrorCode.SEND_FAILED);
+        }
     }
 
     @Override
     public void sendSimple(String to, String subject, String htmlBody) {
-        EmailConfig config = emailConfigRepository.findByActivatedTrue()
-                .stream().findFirst()
+        EmailConfig config = resolveActiveConfig();
+        try {
+            sendEmail(config, to, subject, htmlBody);
+        } catch (Exception e) {
+            logSendEmail(null, subject, List.of(to), "sendSimple", STATUS_FAILED, describeFailure(config, e));
+            throw e;
+        }
+        logSendEmail(null, subject, List.of(to), "sendSimple", STATUS_SUCCESS, null);
+    }
+
+    /**
+     * Config SMTP đang dùng. Nhiều row {@code activated} thì lấy row cập nhật gần nhất
+     * (thứ tự của {@code findByActivatedTrue} không xác định — từng chọn nhầm MailHog).
+     */
+    private EmailConfig resolveActiveConfig() {
+        return emailConfigRepository.findByActivatedTrue().stream()
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .max(Comparator.comparing(EmailConfig::getUpdatedDate,
+                        Comparator.nullsFirst(Comparator.naturalOrder())))
                 .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
-        sendEmail(config, to, subject, htmlBody);
-        logSendEmail(null, subject, List.of(to), "sendSimple");
     }
 
     @Override
     public BulkEmailResponse sendBulk(BulkEmailRequest request) {
-        EmailConfig config = emailConfigRepository.findByActivatedTrue()
-                .stream().findFirst()
-                .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
+        EmailConfig config = resolveActiveConfig();
 
         List<String> recipients = request.getRecipients() != null ? request.getRecipients() : new ArrayList<>();
         List<Customer> customers = new ArrayList<>();
@@ -117,6 +165,8 @@ public class EmailServiceImpl implements EmailService {
 
         long success = 0;
         List<String> failedEmails = new ArrayList<>();
+        List<String> sentEmails = new ArrayList<>();
+        String firstError = null;
 
         // Gửi đến danh sách email trực tiếp (không personalize)
         for (String recipient : recipients) {
@@ -127,9 +177,11 @@ public class EmailServiceImpl implements EmailService {
                         : (template != null ? template.getContent() : "");
                 sendEmail(config, recipient, subj, body);
                 success++;
+                sentEmails.add(recipient);
             } catch (Exception e) {
                 log.error("Failed to send to {}: {}", recipient, e.getMessage());
                 failedEmails.add(recipient);
+                if (firstError == null) firstError = describeFailure(config, e);
             }
         }
 
@@ -157,15 +209,23 @@ public class EmailServiceImpl implements EmailService {
 
                 sendEmail(config, customer.getEmail(), subj, body);
                 success++;
+                sentEmails.add(customer.getEmail());
             } catch (Exception e) {
                 log.error("Failed to send to {}: {}", customer.getEmail(), e.getMessage());
                 failedEmails.add(customer.getEmail());
+                if (firstError == null) firstError = describeFailure(config, e);
             }
         }
 
-        logSendEmail(template != null ? template.getId() : null,
-                request.getSubject(), customers.stream().map(Customer::getEmail).toList(),
-                request.getDescription());
+        String templateId = template != null ? template.getId() : null;
+        if (!sentEmails.isEmpty()) {
+            logSendEmail(templateId, request.getSubject(), sentEmails,
+                    request.getDescription(), STATUS_SUCCESS, null);
+        }
+        if (!failedEmails.isEmpty()) {
+            logSendEmail(templateId, request.getSubject(), failedEmails,
+                    request.getDescription(), STATUS_FAILED, firstError);
+        }
 
         return BulkEmailResponse.builder()
                 .totalRecipients(recipients.size() + customers.size())
@@ -188,6 +248,61 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PageResponse<SendEmailLogResponse> getSendLogs(SendEmailLogFilter filter) {
+        Pageable pageable = ServiceHelper.createPageable(filter.getPageNumber(), filter.getPageSize(),
+                Sort.by(Sort.Direction.DESC, "createdDate"));
+        Page<SendEmail> page = sendEmailRepository.findAll(buildSendLogSpec(filter), pageable);
+        return PageResponse.from(page, EmailServiceImpl::toSendLogResponse);
+    }
+
+    private static Specification<SendEmail> buildSendLogSpec(SendEmailLogFilter filter) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.or(cb.isFalse(root.get("isDeleted")), cb.isNull(root.get("isDeleted"))));
+
+            if (StringUtils.hasText(filter.getStatus())) {
+                predicates.add(cb.equal(cb.upper(root.get("status")), filter.getStatus().trim().toUpperCase()));
+            }
+            if (StringUtils.hasText(filter.getType())) {
+                predicates.add(cb.equal(cb.upper(root.get("type")), filter.getType().trim().toUpperCase()));
+            }
+            if (filter.getFromDate() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdDate"), filter.getFromDate()));
+            }
+            if (filter.getToDate() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdDate"), filter.getToDate()));
+            }
+            if (StringUtils.hasText(filter.getKeyword())) {
+                String like = "%" + filter.getKeyword().trim().toLowerCase() + "%";
+                // Người nhận nằm ở bảng con → join, và distinct để không nhân dòng.
+                Join<Object, Object> recipientJoin = root.join("recipients", JoinType.LEFT);
+                if (query != null) query.distinct(true);
+                predicates.add(cb.or(
+                        cb.like(cb.lower(cb.coalesce(root.get("topic"), "")), like),
+                        cb.like(cb.lower(cb.coalesce(root.get("errorMessage"), "")), like),
+                        cb.like(cb.lower(recipientJoin.as(String.class)), like)));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
+    }
+
+    private static SendEmailLogResponse toSendLogResponse(SendEmail entity) {
+        return SendEmailLogResponse.builder()
+                .id(entity.getId())
+                .topic(entity.getTopic())
+                .recipients(entity.getRecipients() == null ? List.of() : List.copyOf(entity.getRecipients()))
+                .type(entity.getType() != null ? entity.getType() : TYPE_EMAIL)
+                .status(entity.getStatus() != null ? entity.getStatus() : STATUS_SUCCESS)
+                .errorMessage(entity.getErrorMessage())
+                .description(entity.getDescription())
+                .emailTemplateId(entity.getEmailTemplateId())
+                .createdDate(entity.getCreatedDate())
+                .createdBy(entity.getCreatedBy())
+                .build();
+    }
+
+    @Override
     public void testConnection(String configId) {
         EmailConfig config = emailConfigRepository.findById(configId)
                 .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
@@ -202,13 +317,17 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    private void logSendEmail(String templateId, String topic, List<String> recipients, String description) {
+    private void logSendEmail(String templateId, String topic, List<String> recipients,
+                              String description, String status, String errorMessage) {
         try {
             SendEmail logEntry = SendEmail.builder()
                     .emailTemplateId(templateId)
                     .topic(topic)
                     .recipients(recipients)
                     .description(description)
+                    .type(TYPE_EMAIL)
+                    .status(status)
+                    .errorMessage(truncate(errorMessage, MAX_ERROR_LENGTH))
                     .build();
             sendEmailRepository.save(logEntry);
         } catch (Exception e) {
@@ -216,17 +335,44 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /** Lý do thất bại đủ cụ thể để admin sửa được cấu hình (host/port + root cause). */
+    private static String describeFailure(EmailConfig config, Throwable e) {
+        Throwable root = e;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        String target = config == null ? "?" : config.getSmtp() + ":" + config.getPort();
+        return target + " — " + root.getClass().getSimpleName() + ": " + root.getMessage();
+    }
+
+    private static String truncate(String value, int max) {
+        if (value == null) return null;
+        return value.length() <= max ? value : value.substring(0, max);
+    }
+
     private JavaMailSenderImpl createMailSender(EmailConfig config) {
+        String host = config.getSmtp() == null ? "" : config.getSmtp().trim();
+        // Nhập email vào ô SMTP là lỗi cấu hình hay gặp → UnknownHostException khó hiểu.
+        if (host.isEmpty() || host.contains("@")) {
+            log.error("Email config {} có SMTP host không hợp lệ: '{}' (cần dạng smtp.gmail.com)",
+                    config.getCode(), host);
+            throw new AppException(EmailErrorCode.CONFIG_NOT_FOUND);
+        }
+
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost(config.getSmtp());
+        mailSender.setHost(host);
         mailSender.setPort(config.getPort());
-        mailSender.setUsername(config.getNameEmail());
-        mailSender.setPassword(config.getApiKey());
+        mailSender.setUsername(config.getNameEmail() == null ? null : config.getNameEmail().trim());
+        // App password Gmail thường được dán kèm khoảng trắng → auth fail.
+        mailSender.setPassword(config.getApiKey() == null ? null : config.getApiKey().replace(" ", ""));
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
         props.put("mail.debug", "false");
 
         return mailSender;

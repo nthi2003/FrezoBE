@@ -10,7 +10,9 @@ import com.frezo.common.constant.TimeBlock;
 import com.frezo.qtht.entity.BlockIP;
 import com.frezo.qtht.repository.BlockIPRepository;
 import com.frezo.common.service.IpBlockService;
+import com.frezo.qtht.service.IpBlacklistService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,11 +20,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class IpBlockServiceImpl implements IpBlockService {
     private final BlockIPRepository blockIPRepository;
     private final UserRepository userRepository;
+    private final IpBlacklistService ipBlacklistService;
 
     private static final int THRESHOLD_BLOCK_START = 6;
     private static final int THRESHOLD_LOCK_ACCOUNT = 11;
@@ -101,6 +105,21 @@ public class IpBlockServiceImpl implements IpBlockService {
             return;
         }
         blockIPRepository.deleteByIpAddressAndTargetUserName(ipAddress, userName);
+    }
+
+    @Override
+    @Transactional
+    public void lockUserAndBlacklistIp(String ipAddress, String userName, BlockReason reason, Integer banMinutes) {
+        if (SystemUtils.isNullOrEmpty(userName)) {
+            return;
+        }
+        lockUserAccount(userName, 0);
+
+        if (!SystemUtils.isNullOrEmpty(ipAddress)) {
+            String note = (reason != null ? reason.name() : "SECURITY") + " — user " + userName;
+            ipBlacklistService.addBanMinutes(ipAddress, note, "SYSTEM", banMinutes);
+        }
+        log.warn("Locked account {} and blacklisted IP {} (reason {})", userName, ipAddress, reason);
     }
 
     private void lockUserAccount(String userName, int attempts) {

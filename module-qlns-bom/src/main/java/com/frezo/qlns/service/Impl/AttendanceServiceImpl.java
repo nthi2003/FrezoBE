@@ -13,7 +13,10 @@ import com.frezo.qlns.dto.request.AttendanceCheckOutRequest;
 import com.frezo.qlns.dto.request.AttendanceFilter;
 import com.frezo.qlns.dto.response.AttendanceResponse;
 import com.frezo.qlns.dto.response.AttendanceStatsResponse;
+import com.frezo.qlns.dto.response.MyAttendanceDayResponse;
+import com.frezo.qlns.dto.response.MyAttendanceMonthResponse;
 import com.frezo.qlns.entity.Attendance;
+import com.frezo.qlns.entity.LeaveRequest;
 import com.frezo.qlns.mapper.AttendanceMapper;
 import com.frezo.qlns.repository.AttendanceRepository;
 import com.frezo.qlns.repository.LeaveRequestRepository;
@@ -33,14 +36,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 
@@ -54,6 +61,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final PersonRepository personRepository;
     private final ObjectMapper objectMapper;
     private final LeaveRequestRepository leaveRequestRepository;
+    private final LeaveApprovalResolver leaveApprovalResolver;
 
     // Số ngày phép năm mặc định — TODO: sau này đọc từ Contract/HR policy.
     private static final double DEFAULT_ANNUAL_LEAVE_DAYS = 12.0;
@@ -232,11 +240,6 @@ public class AttendanceServiceImpl implements AttendanceService {
         Attendance attendance = attendanceRepository.findByPersonIdAndAttendanceDate(
                 request.getPersonId(), request.getAttendanceDate())
                 .orElseThrow(() -> new AppException(QlnsErrorCode.ATTENDANCE_NOT_CHECKED_IN));
-
-        // Idempotent guard: đã check-out rồi thì trả lại record cũ, không ghi đè giờ.
-        if (attendance.getCheckOutTime() != null) {
-            return attendanceMapper.toResponse(attendance);
-        }
 
         String orgId = resolveOrgId(request.getPersonId());
         GeoAttendanceConfig geo = getGeoConfig(orgId);
@@ -523,5 +526,191 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .leaveBalance(leaveBalance)
                 .lastAttendanceDate(lastDate != null ? lastDate.toString() : null)
                 .build();
+    }
+
+    // ---- SELF: lịch tháng / hôm nay của user đăng nhập ----
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyAttendanceMonthResponse getMyMonth(Integer month, Integer year) {
+        Person person = requireCurrentPerson();
+        LocalDate today = LocalDate.now();
+        int m = month != null ? month : today.getMonthValue();
+        int y = year != null ? year : today.getYear();
+        if (m < 1 || m > 12) {
+            throw new AppException("attendance.month.invalid", HttpStatus.BAD_REQUEST);
+        }
+
+        LocalDate from = LocalDate.of(y, m, 1);
+        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        String orgId = person.getOrgId();
+        MyAttendanceMonthResponse.ShiftInfo defaultShift = buildDefaultShift(orgId);
+
+        Map<LocalDate, Attendance> byDate = new HashMap<>();
+        for (Attendance a : attendanceRepository.findByPersonIdAndAttendanceDateBetween(person.getId(), from, to)) {
+            if (a.getAttendanceDate() != null) byDate.put(a.getAttendanceDate(), a);
+        }
+
+        Map<LocalDate, LeaveRequest> leaveByDate = indexApprovedLeaves(
+                leaveRequestRepository.findApprovedOverlapping(person.getId(), from, to), from, to);
+
+        List<MyAttendanceDayResponse> days = new ArrayList<>();
+        MyAttendanceDayResponse todayDto = null;
+        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
+            MyAttendanceDayResponse day = buildDay(d, today, byDate.get(d), leaveByDate.get(d), defaultShift);
+            days.add(day);
+            if (d.equals(today)) todayDto = day;
+        }
+
+        return MyAttendanceMonthResponse.builder()
+                .person(toPersonSummary(person))
+                .month(m)
+                .year(y)
+                .daysInMonth(from.lengthOfMonth())
+                .today(todayDto)
+                .days(days)
+                .defaultShift(defaultShift)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyAttendanceDayResponse getMyToday() {
+        Person person = requireCurrentPerson();
+        LocalDate today = LocalDate.now();
+        MyAttendanceMonthResponse.ShiftInfo shift = buildDefaultShift(person.getOrgId());
+        Attendance att = attendanceRepository
+                .findByPersonIdAndAttendanceDate(person.getId(), today).orElse(null);
+        LeaveRequest leave = leaveRequestRepository
+                .findApprovedOverlapping(person.getId(), today, today).stream().findFirst().orElse(null);
+        return buildDay(today, today, att, leave, shift);
+    }
+
+    private Person requireCurrentPerson() {
+        String personId = leaveApprovalResolver.currentPersonId();
+        if (personId == null || personId.isBlank()) {
+            throw new AppException(QlnsErrorCode.PERSON_NOT_FOUND);
+        }
+        return personRepository.findByIdAndIsDeletedFalse(personId)
+                .orElseThrow(() -> new AppException(QlnsErrorCode.PERSON_NOT_FOUND));
+    }
+
+    private MyAttendanceMonthResponse.PersonSummary toPersonSummary(Person person) {
+        String deptName = person.getDepartment() != null ? person.getDepartment().getName() : null;
+        return MyAttendanceMonthResponse.PersonSummary.builder()
+                .personId(person.getId())
+                .personName(person.getName())
+                .personCode(person.getCode())
+                .departmentId(person.getDepartmentId())
+                .departmentName(deptName)
+                .orgId(person.getOrgId())
+                .build();
+    }
+
+    private MyAttendanceMonthResponse.ShiftInfo buildDefaultShift(String orgId) {
+        LocalTime start = getMorningStart(orgId);
+        LocalTime end = getAfternoonEnd(orgId);
+        return MyAttendanceMonthResponse.ShiftInfo.builder()
+                .start(start.format(TIME_FMT))
+                .end(end.format(TIME_FMT))
+                .label("Ca hành chính")
+                .build();
+    }
+
+    private Map<LocalDate, LeaveRequest> indexApprovedLeaves(List<LeaveRequest> leaves, LocalDate from, LocalDate to) {
+        Map<LocalDate, LeaveRequest> map = new HashMap<>();
+        if (leaves == null) return map;
+        for (LeaveRequest lr : leaves) {
+            if (lr.getStartDate() == null || lr.getEndDate() == null) continue;
+            LocalDate s = lr.getStartDate().isBefore(from) ? from : lr.getStartDate();
+            LocalDate e = lr.getEndDate().isAfter(to) ? to : lr.getEndDate();
+            for (LocalDate d = s; !d.isAfter(e); d = d.plusDays(1)) {
+                map.putIfAbsent(d, lr);
+            }
+        }
+        return map;
+    }
+
+    private MyAttendanceDayResponse buildDay(LocalDate date,
+                                             LocalDate today,
+                                             Attendance att,
+                                             LeaveRequest leave,
+                                             MyAttendanceMonthResponse.ShiftInfo shift) {
+        DayOfWeek dow = date.getDayOfWeek();
+        boolean weekend = dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY;
+        boolean onLeave = leave != null;
+        boolean holiday = att != null && att.getStatus() == AttendanceStatus.HOLIDAY;
+        boolean workDay = !weekend && !onLeave && !holiday;
+
+        MyAttendanceDayResponse.DayAttendance dayAtt = null;
+        String displayStatus;
+        if (att != null) {
+            dayAtt = MyAttendanceDayResponse.DayAttendance.builder()
+                    .id(att.getId())
+                    .checkIn(att.getCheckInTime() != null ? att.getCheckInTime().format(TIME_FMT) : null)
+                    .checkOut(att.getCheckOutTime() != null ? att.getCheckOutTime().format(TIME_FMT) : null)
+                    .status(att.getStatus() != null ? att.getStatus().name() : null)
+                    .lateMinutes(att.getLateMinutes())
+                    .workMinutes(att.getWorkMinutes())
+                    .overtimeMinutes(att.getOvertimeMinutes())
+                    .shiftType(att.getShiftType())
+                    .note(att.getNote())
+                    .build();
+            displayStatus = resolveDisplayStatusFromEntity(att);
+            dayAtt.setDisplayStatus(displayStatus);
+        } else if (onLeave) {
+            displayStatus = "LEAVE";
+        } else if (holiday) {
+            displayStatus = "HOLIDAY";
+        } else if (weekend) {
+            displayStatus = "WEEKEND";
+        } else {
+            displayStatus = "NOT_CHECKED_IN";
+        }
+
+        boolean isToday = date.equals(today);
+        boolean canCheckIn = isToday && workDay && (att == null || att.getCheckInTime() == null);
+        // Cho phép ghi nhận lại check-out trong ngày; record lưu mốc checkout gần nhất.
+        boolean canCheckOut = isToday && workDay && att != null && att.getCheckInTime() != null;
+
+        return MyAttendanceDayResponse.builder()
+                .date(date.toString())
+                .dayOfWeek(dow.getValue())
+                .workDay(workDay)
+                .weekend(weekend)
+                .holiday(holiday)
+                .onLeave(onLeave)
+                .leaveType(leave != null ? leave.getLeaveType() : null)
+                .leaveLabel(leave != null ? leaveLabel(leave.getLeaveType()) : null)
+                .shift(workDay || isToday ? shift : null)
+                .attendance(dayAtt)
+                .actions(MyAttendanceDayResponse.DayActions.builder()
+                        .canCheckIn(canCheckIn)
+                        .canCheckOut(canCheckOut)
+                        .build())
+                .build();
+    }
+
+    private String resolveDisplayStatusFromEntity(Attendance att) {
+        if (att.getStatus() == AttendanceStatus.HOLIDAY) return "HOLIDAY";
+        if (att.getStatus() == AttendanceStatus.LEAVE) return "LEAVE";
+        if (att.getStatus() == AttendanceStatus.ABSENT) return "ABSENT";
+        if (att.getCheckInTime() == null) return "NOT_CHECKED_IN";
+        boolean late = (att.getLateMinutes() != null && att.getLateMinutes() > 0)
+                || att.getStatus() == AttendanceStatus.LATE;
+        if (late) return "LATE";
+        if (att.getCheckOutTime() != null) return "CHECKED_OUT";
+        if (att.getStatus() == AttendanceStatus.HALF_DAY) return "HALF_DAY";
+        return "OK";
+    }
+
+    private String leaveLabel(String leaveType) {
+        if (leaveType == null) return "Nghỉ phép";
+        return switch (leaveType.trim().toUpperCase()) {
+            case "ANNUAL" -> "Nghỉ phép năm";
+            case "SICK" -> "Nghỉ ốm";
+            case "UNPAID" -> "Nghỉ không lương";
+            default -> "Nghỉ phép";
+        };
     }
 }

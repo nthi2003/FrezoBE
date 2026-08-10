@@ -717,6 +717,8 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('QLNS_ATTENDANCE_VIEW', '/qlns/attendance - VIEW', 'GET', '/qlns/attendance', 'VIEW'),
         ('QLNS_ATTENDANCE_DAILY_VIEW', '/qlns/attendance/daily - VIEW', 'GET', '/qlns/attendance/daily', 'VIEW'),
         ('QLNS_ATTENDANCE_STATS_VIEW', '/qlns/attendance/stats - VIEW', 'GET', '/qlns/attendance/stats', 'VIEW'),
+        ('QLNS_ATTENDANCE_ME_MONTH_VIEW', '/qlns/attendance/me/month - VIEW', 'GET', '/qlns/attendance/me/month', 'VIEW'),
+        ('QLNS_ATTENDANCE_ME_TODAY_VIEW', '/qlns/attendance/me/today - VIEW', 'GET', '/qlns/attendance/me/today', 'VIEW'),
         ('QLNS_ATTENDANCE_ID_VIEW', '/qlns/attendance/{id} - VIEW', 'GET', '/qlns/attendance/{id}', 'VIEW'),
         ('QLNS_RECRUITMENT_CANDIDATES_CREATE', '/qlns/recruitment/candidates - CREATE', 'POST', '/qlns/recruitment/candidates', 'CREATE'),
         ('QLNS_RECRUITMENT_CANDIDATES_VIEW', '/qlns/recruitment/candidates - VIEW', 'GET', '/qlns/recruitment/candidates', 'VIEW'),

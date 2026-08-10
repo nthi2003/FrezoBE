@@ -20,11 +20,19 @@ public class GrnResponse {
     private String invoiceNo;
     private LocalDate invoiceDate;
     private String approvedBy;
+    /** Display name người duyệt — enrich từ users/person. */
+    private String approvedByName;
     private LocalDateTime approvedAt;
     private Double totalValue;
     private String receivedBy;
+    /** Display name người nhập — enrich từ users/person. */
+    private String receivedByName;
     private LocalDateTime receivedAt;
     private String note;
+    /** User id/username người tạo (audit BaseEntity). */
+    private String createdBy;
+    /** Display name người tạo — enrich từ users/person. */
+    private String createdByName;
     private LocalDateTime createdDate;
     private List<GrnItemResponse> items;
 

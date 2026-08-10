@@ -1,9 +1,11 @@
 package com.frezo.warehouse.service.impl;
 
 import com.frezo.common.exception.AppException;
-import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
+import com.frezo.product.entity.Product;
+import com.frezo.product.repository.ProductRepository;
+import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.warehouse.dto.request.GinConfirmRequest;
 import com.frezo.warehouse.dto.request.GinCreateRequest;
 import com.frezo.warehouse.dto.response.GinResponse;
@@ -23,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +42,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     private final GoodsIssueNoteMapper ginMapper;
     private final StockBatchRepository stockBatchRepository;
     private final WarehouseRepository warehouseRepository;
+    private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -80,6 +85,8 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     @Override
     @Transactional
     public GinResponse create(GinCreateRequest request) {
+        assertSufficientStockForCreate(request);
+
         GoodsIssueNote gin = ginMapper.toEntity(request);
         gin.setGinCode(SecureCodeGenerator.generateCode("GIN"));
         gin = ginRepository.save(gin);
@@ -113,6 +120,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         if (!"DRAFT".equals(gin.getStatus())) {
             throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
         }
+        assertSufficientStockForGinItems(gin.getWarehouseId(), ginItemRepository.findByGinId(id), true);
         gin.setStatus("PENDING_APPROVAL");
         ginRepository.save(gin);
         return buildResponse(gin);
@@ -127,6 +135,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         if (!"PENDING_APPROVAL".equals(st) && !"DRAFT".equals(st)) {
             throw new AppException(WarehouseErrorCode.GIN_INVALID_STATUS);
         }
+        assertSufficientStockForGinItems(gin.getWarehouseId(), ginItemRepository.findByGinId(id), true);
         gin.setStatus("APPROVED");
         gin.setApprovedBy(gin.getCreatedBy());
         gin.setApprovedAt(LocalDateTime.now());
@@ -146,42 +155,54 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
 
         List<GoodsIssueNoteItem> items = ginItemRepository.findByGinId(id);
+
+        // Resolve qty/batch trước — validate toàn bộ rồi mới trừ tồn
+        List<ResolvedIssueLine> resolved = new ArrayList<>();
+        for (GoodsIssueNoteItem item : items) {
+            GinConfirmRequest.GinConfirmItem confirmItem = findConfirmItem(request, item.getId());
+            double qtyIssued = confirmItem != null && confirmItem.getQtyIssued() != null
+                    ? confirmItem.getQtyIssued()
+                    : (item.getQtyIssued() != null ? item.getQtyIssued() : 0);
+            String batchId = confirmItem != null && confirmItem.getBatchId() != null
+                    ? confirmItem.getBatchId()
+                    : item.getBatchId();
+            String locationId = confirmItem != null && confirmItem.getLocationId() != null
+                    ? confirmItem.getLocationId()
+                    : item.getLocationId();
+            resolved.add(new ResolvedIssueLine(item, qtyIssued, batchId, locationId));
+        }
+        assertSufficientStockForConfirm(gin.getWarehouseId(), resolved);
+
         List<StockLedger> ledgerEntries = new ArrayList<>();
         double totalValue = 0;
 
-        for (GoodsIssueNoteItem item : items) {
-            GinConfirmRequest.GinConfirmItem confirmItem = findConfirmItem(request, item.getId());
-            double qtyIssued = confirmItem != null ? confirmItem.getQtyIssued() : item.getQtyIssued();
-
-            if (confirmItem != null && confirmItem.getBatchId() != null) {
-                item.setBatchId(confirmItem.getBatchId());
-            }
-            if (confirmItem != null && confirmItem.getLocationId() != null) {
-                item.setLocationId(confirmItem.getLocationId());
-            }
-            item.setQtyIssued(qtyIssued);
+        for (ResolvedIssueLine line : resolved) {
+            GoodsIssueNoteItem item = line.item();
+            item.setBatchId(line.batchId());
+            item.setLocationId(line.locationId());
+            item.setQtyIssued(line.qtyIssued());
             ginItemRepository.save(item);
 
-            if (qtyIssued > 0) {
-                deductBatchQty(item.getBatchId(), qtyIssued);
+            if (line.qtyIssued() > 0) {
+                deductBatchQty(line.batchId(), line.qtyIssued(), item.getProductId());
 
                 StockLedger ledger = StockLedger.builder()
                         .productId(item.getProductId())
-                        .batchId(item.getBatchId())
-                        .locationId(item.getLocationId())
+                        .batchId(line.batchId())
+                        .locationId(line.locationId())
                         .transactionType("OUT")
-                        .quantity(-qtyIssued)
+                        .quantity(-line.qtyIssued())
                         .unitCost(item.getUnitCost())
-                        .totalValue(-qtyIssued * (item.getUnitCost() != null ? item.getUnitCost() : 0))
+                        .totalValue(-line.qtyIssued() * (item.getUnitCost() != null ? item.getUnitCost() : 0))
                         .referenceType("GIN")
                         .referenceId(gin.getId())
                         .note("Xuất kho từ phiếu " + gin.getGinCode())
                         .build();
                 ledgerEntries.add(ledger);
-                totalValue += qtyIssued * (item.getUnitCost() != null ? item.getUnitCost() : 0);
+                totalValue += line.qtyIssued() * (item.getUnitCost() != null ? item.getUnitCost() : 0);
 
                 deductStockBalance(item.getProductId(), gin.getWarehouseId(),
-                        item.getLocationId(), item.getBatchId(), qtyIssued);
+                        line.locationId(), line.batchId(), line.qtyIssued());
             }
         }
 
@@ -259,6 +280,136 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         ginRepository.delete(gin);
     }
 
+    // -------------------- Stock validation --------------------
+
+    private void assertSufficientStockForCreate(GinCreateRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            return;
+        }
+        // Gộp SL theo product (+ batch nếu có) — nhiều dòng cùng SP
+        Map<String, Double> requestedByKey = new LinkedHashMap<>();
+        Map<String, String> productIdByKey = new LinkedHashMap<>();
+        Map<String, String> batchIdByKey = new LinkedHashMap<>();
+        for (GinCreateRequest.GinItemRequest item : request.getItems()) {
+            if (item.getProductId() == null || item.getProductId().isBlank()) continue;
+            double qty = item.getQtyRequested() != null ? item.getQtyRequested() : 0;
+            if (qty <= 0) continue;
+            String batch = item.getBatchId() != null && !item.getBatchId().isBlank() ? item.getBatchId() : null;
+            String key = item.getProductId() + "|" + (batch != null ? batch : "");
+            requestedByKey.merge(key, qty, Double::sum);
+            productIdByKey.put(key, item.getProductId());
+            batchIdByKey.put(key, batch);
+        }
+        List<String> shortages = new ArrayList<>();
+        for (Map.Entry<String, Double> e : requestedByKey.entrySet()) {
+            String productId = productIdByKey.get(e.getKey());
+            String batchId = batchIdByKey.get(e.getKey());
+            double available = resolveAvailable(productId, request.getWarehouseId(), batchId);
+            if (e.getValue() > available) {
+                shortages.add(formatShortage(productId, batchId, e.getValue(), available));
+            }
+        }
+        throwIfShortages(shortages);
+    }
+
+    private void assertSufficientStockForGinItems(String warehouseId, List<GoodsIssueNoteItem> items, boolean useRequested) {
+        Map<String, Double> requestedByKey = new LinkedHashMap<>();
+        Map<String, String> productIdByKey = new LinkedHashMap<>();
+        Map<String, String> batchIdByKey = new LinkedHashMap<>();
+        for (GoodsIssueNoteItem item : items) {
+            if (item.getProductId() == null) continue;
+            double qty = useRequested
+                    ? (item.getQtyRequested() != null ? item.getQtyRequested() : 0)
+                    : (item.getQtyIssued() != null ? item.getQtyIssued() : 0);
+            if (qty <= 0) continue;
+            String batch = item.getBatchId() != null && !item.getBatchId().isBlank() ? item.getBatchId() : null;
+            String key = item.getProductId() + "|" + (batch != null ? batch : "");
+            requestedByKey.merge(key, qty, Double::sum);
+            productIdByKey.put(key, item.getProductId());
+            batchIdByKey.put(key, batch);
+        }
+        List<String> shortages = new ArrayList<>();
+        for (Map.Entry<String, Double> e : requestedByKey.entrySet()) {
+            String productId = productIdByKey.get(e.getKey());
+            String batchId = batchIdByKey.get(e.getKey());
+            double available = resolveAvailable(productId, warehouseId, batchId);
+            if (e.getValue() > available) {
+                shortages.add(formatShortage(productId, batchId, e.getValue(), available));
+            }
+        }
+        throwIfShortages(shortages);
+    }
+
+    private void assertSufficientStockForConfirm(String warehouseId, List<ResolvedIssueLine> lines) {
+        Map<String, Double> requestedByKey = new LinkedHashMap<>();
+        Map<String, String> productIdByKey = new LinkedHashMap<>();
+        Map<String, String> batchIdByKey = new LinkedHashMap<>();
+        for (ResolvedIssueLine line : lines) {
+            if (line.qtyIssued() <= 0) continue;
+            String productId = line.item().getProductId();
+            String batch = line.batchId() != null && !line.batchId().isBlank() ? line.batchId() : null;
+            String key = productId + "|" + (batch != null ? batch : "");
+            requestedByKey.merge(key, line.qtyIssued(), Double::sum);
+            productIdByKey.put(key, productId);
+            batchIdByKey.put(key, batch);
+        }
+        List<String> shortages = new ArrayList<>();
+        for (Map.Entry<String, Double> e : requestedByKey.entrySet()) {
+            String productId = productIdByKey.get(e.getKey());
+            String batchId = batchIdByKey.get(e.getKey());
+            double available = resolveAvailable(productId, warehouseId, batchId);
+            if (e.getValue() > available) {
+                shortages.add(formatShortage(productId, batchId, e.getValue(), available));
+            }
+        }
+        throwIfShortages(shortages);
+    }
+
+    private double resolveAvailable(String productId, String warehouseId, String batchId) {
+        Double sum;
+        if (batchId != null && !batchId.isBlank()) {
+            sum = stockBalanceRepository.sumAvailableByProductWarehouseAndBatch(productId, warehouseId, batchId);
+            if (sum == null || sum <= 0) {
+                Double onHand = stockBalanceRepository.sumOnHandByProductWarehouseAndBatch(productId, warehouseId, batchId);
+                Double reserved = stockBalanceRepository.sumReservedByProductWarehouseAndBatch(productId, warehouseId, batchId);
+                return Math.max(0, nz(onHand) - nz(reserved));
+            }
+            return sum;
+        }
+        sum = stockBalanceRepository.sumAvailableByProductAndWarehouse(productId, warehouseId);
+        if (sum == null || sum <= 0) {
+            Double onHand = stockBalanceRepository.sumOnHandByProductAndWarehouse(productId, warehouseId);
+            Double reserved = stockBalanceRepository.sumReservedByProductAndWarehouse(productId, warehouseId);
+            return Math.max(0, nz(onHand) - nz(reserved));
+        }
+        return sum;
+    }
+
+    private String formatShortage(String productId, String batchId, double requested, double available) {
+        Product p = productRepository.findById(productId).orElse(null);
+        String code = p != null && p.getCode() != null ? p.getCode() : productId;
+        String name = p != null && p.getName() != null ? p.getName() : "";
+        String label = name.isBlank() ? code : code + " (" + name + ")";
+        String batchPart = batchId != null && !batchId.isBlank() ? ", lô " + batchId : "";
+        double shortfall = requested - available;
+        return String.format("%s%s: yêu cầu %s, khả dụng %s (thiếu %s)",
+                label, batchPart, trimQty(requested), trimQty(available), trimQty(shortfall));
+    }
+
+    private void throwIfShortages(List<String> shortages) {
+        if (shortages == null || shortages.isEmpty()) return;
+        throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT, String.join("; ", shortages));
+    }
+
+    private static String trimQty(double v) {
+        if (Math.rint(v) == v) return String.valueOf((long) v);
+        return String.valueOf(v);
+    }
+
+    private static double nz(Double v) {
+        return v != null ? v : 0.0;
+    }
+
     private GinResponse buildResponse(GoodsIssueNote gin) {
         GinResponse response = ginMapper.toResponse(gin);
         if (gin.getWarehouseId() != null) {
@@ -272,9 +423,45 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
                     response.setTransferWarehouseName(wh.getName()));
         }
         response.setCustomerName(resolveCustomerName(gin.getCustomerId()));
+        response.setCreatedByName(resolveUserDisplayName(gin.getCreatedBy()));
+        response.setApprovedByName(resolveUserDisplayName(gin.getApprovedBy()));
+        response.setIssuedByName(resolveUserDisplayName(gin.getIssuedBy()));
         List<GoodsIssueNoteItem> items = ginItemRepository.findByGinId(gin.getId());
         response.setItems(items.stream().map(ginMapper::toItemResponse).toList());
         return response;
+    }
+
+    /**
+     * Display name: person.name → users.name → username.
+     * Audit stores user id (UUID); legacy rows may store username — match both.
+     */
+    private String resolveUserDisplayName(String userRef) {
+        if (userRef == null || userRef.isBlank()) {
+            return null;
+        }
+        try {
+            String name = jdbcTemplate.queryForObject(
+                    """
+                    SELECT COALESCE(
+                        NULLIF(TRIM(p.name), ''),
+                        NULLIF(TRIM(u.name), ''),
+                        u.user_name
+                    )
+                    FROM users u
+                    LEFT JOIN person p ON p.id = u.person_id
+                        AND COALESCE(p.is_deleted, false) = false
+                    WHERE (u.id = ? OR u.user_name = ?)
+                      AND COALESCE(u.is_deleted, false) = false
+                    LIMIT 1
+                    """,
+                    String.class, userRef, userRef);
+            return name != null && !name.isBlank() ? name : userRef;
+        } catch (EmptyResultDataAccessException ex) {
+            return userRef;
+        } catch (Exception ex) {
+            log.debug("User display name enrich skip for {}: {}", userRef, ex.getMessage());
+            return userRef;
+        }
     }
 
     private String resolveCustomerName(String customerId) {
@@ -297,9 +484,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     }
 
     private GinConfirmRequest.GinConfirmItem findConfirmItem(GinConfirmRequest request, String itemId) {
-        if (request.getItems() == null) return null;
+        if (request == null || request.getItems() == null) return null;
         return request.getItems().stream()
-                .filter(i -> i.getItemId().equals(itemId))
+                .filter(i -> i.getItemId() != null && i.getItemId().equals(itemId))
                 .findFirst().orElse(null);
     }
 
@@ -309,22 +496,30 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
                         productId, warehouseId, locationId, batchId)
                 .orElseThrow(() -> new AppException(WarehouseErrorCode.STOCK_BALANCE_NOT_FOUND));
 
-        if (balance.getQuantityOnHand() < qty) {
-            throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT);
+        double onHand = balance.getQuantityOnHand() != null ? balance.getQuantityOnHand() : 0;
+        double reserved = balance.getQuantityReserved() != null ? balance.getQuantityReserved() : 0;
+        double available = balance.getQuantityAvailable() != null
+                ? balance.getQuantityAvailable()
+                : Math.max(0, onHand - reserved);
+
+        if (available < qty || onHand < qty) {
+            throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT,
+                    formatShortage(productId, batchId, qty, available));
         }
 
-        balance.setQuantityOnHand(balance.getQuantityOnHand() - qty);
-        balance.setQuantityAvailable(balance.getQuantityOnHand() - balance.getQuantityReserved());
+        balance.setQuantityOnHand(onHand - qty);
+        balance.setQuantityAvailable(balance.getQuantityOnHand() - reserved);
         stockBalanceRepository.save(balance);
     }
 
-    private void deductBatchQty(String batchId, double qty) {
+    private void deductBatchQty(String batchId, double qty, String productId) {
         if (batchId == null || batchId.isBlank()) return;
         StockBatch batch = stockBatchRepository.findById(batchId)
                 .orElseThrow(() -> new AppException(WarehouseErrorCode.BATCH_NOT_FOUND));
         double onHand = batch.getQtyOnHand() != null ? batch.getQtyOnHand() : 0;
         if (onHand < qty) {
-            throw new AppException(WarehouseErrorCode.BATCH_INSUFFICIENT);
+            throw new AppException(WarehouseErrorCode.BATCH_INSUFFICIENT,
+                    formatShortage(productId != null ? productId : batch.getProductId(), batchId, qty, onHand));
         }
         batch.setQtyOnHand(onHand - qty);
         if (batch.getQtyOnHand() <= 0) {
@@ -332,4 +527,11 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
         stockBatchRepository.save(batch);
     }
+
+    private record ResolvedIssueLine(
+            GoodsIssueNoteItem item,
+            double qtyIssued,
+            String batchId,
+            String locationId
+    ) {}
 }

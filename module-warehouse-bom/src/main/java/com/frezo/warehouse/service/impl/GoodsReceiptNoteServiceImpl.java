@@ -337,6 +337,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
             });
         }
         response.setSupplierName(resolveSupplierName(grn.getSupplierId()));
+        response.setCreatedByName(resolveUserDisplayName(grn.getCreatedBy()));
+        response.setApprovedByName(resolveUserDisplayName(grn.getApprovedBy()));
+        response.setReceivedByName(resolveUserDisplayName(grn.getReceivedBy()));
         if (grn.getPurchaseOrderId() != null) {
             purchaseOrderRepository.findById(grn.getPurchaseOrderId())
                     .ifPresent(po -> response.setPurchaseOrderCode(po.getCode()));
@@ -377,6 +380,39 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
                     String.class, supplierId);
         } catch (EmptyResultDataAccessException ex) {
             return null;
+        }
+    }
+
+    /**
+     * Display name: person.name → users.name → username.
+     * Audit stores user id (UUID); legacy rows may store username — match both.
+     */
+    private String resolveUserDisplayName(String userRef) {
+        if (userRef == null || userRef.isBlank()) {
+            return null;
+        }
+        try {
+            String name = jdbcTemplate.queryForObject(
+                    """
+                    SELECT COALESCE(
+                        NULLIF(TRIM(p.name), ''),
+                        NULLIF(TRIM(u.name), ''),
+                        u.user_name
+                    )
+                    FROM users u
+                    LEFT JOIN person p ON p.id = u.person_id
+                        AND COALESCE(p.is_deleted, false) = false
+                    WHERE (u.id = ? OR u.user_name = ?)
+                      AND COALESCE(u.is_deleted, false) = false
+                    LIMIT 1
+                    """,
+                    String.class, userRef, userRef);
+            return name != null && !name.isBlank() ? name : userRef;
+        } catch (EmptyResultDataAccessException ex) {
+            return userRef;
+        } catch (Exception ex) {
+            log.debug("User display name enrich skip for {}: {}", userRef, ex.getMessage());
+            return userRef;
         }
     }
 

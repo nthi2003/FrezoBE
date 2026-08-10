@@ -6,6 +6,8 @@ import com.frezo.qlns.dto.request.AttendanceCheckOutRequest;
 import com.frezo.qlns.dto.request.AttendanceFilter;
 import com.frezo.qlns.dto.response.AttendanceResponse;
 import com.frezo.qlns.dto.response.AttendanceStatsResponse;
+import com.frezo.qlns.dto.response.MyAttendanceDayResponse;
+import com.frezo.qlns.dto.response.MyAttendanceMonthResponse;
 
 public interface AttendanceService {
     AttendanceResponse checkIn(AttendanceCheckInRequest request);
@@ -26,4 +28,13 @@ public interface AttendanceService {
      * Nếu personId null → fallback current user's personId.
      */
     AttendanceStatsResponse getStats(String personId, String contractId, Integer month, Integer year);
+
+    /**
+     * Lịch làm + chấm công tháng của user đăng nhập (principal → personId).
+     * Không nhận personId từ client.
+     */
+    MyAttendanceMonthResponse getMyMonth(Integer month, Integer year);
+
+    /** Ngày hôm nay của user đăng nhập (cùng shape một phần tử trong {@link #getMyMonth}). */
+    MyAttendanceDayResponse getMyToday();
 }

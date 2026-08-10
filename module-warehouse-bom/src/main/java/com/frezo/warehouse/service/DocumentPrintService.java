@@ -60,7 +60,13 @@ public class DocumentPrintService {
         html.append("<tr><td class='label'>Nhà cung cấp:</td><td>").append(nullSafe(grn.getSupplierId())).append("</td></tr>");
         html.append("<tr><td class='label'>PO:</td><td>").append(nullSafe(grn.getPurchaseOrderId())).append("</td></tr>");
         html.append("<tr><td class='label'>Trạng thái:</td><td>").append(nullSafe(grn.getStatus())).append("</td></tr>");
-        html.append("<tr><td class='label'>Người nhập:</td><td>").append(nullSafe(grn.getReceivedBy())).append("</td></tr>");
+        String preparer = firstNonBlank(grn.getCreatedByName(), grn.getReceivedByName(),
+                grn.getReceivedBy(), grn.getCreatedBy());
+        html.append("<tr><td class='label'>Người lập phiếu:</td><td>").append(nullSafe(preparer)).append("</td></tr>");
+        String approver = firstNonBlank(grn.getApprovedByName(), grn.getApprovedBy());
+        if (approver != null) {
+            html.append("<tr><td class='label'>Người duyệt:</td><td>").append(approver).append("</td></tr>");
+        }
         html.append("<tr><td class='label'>Ghi chú:</td><td>").append(nullSafe(grn.getNote())).append("</td></tr>");
         html.append("</table>");
 
@@ -141,7 +147,13 @@ public class DocumentPrintService {
         html.append("<tr><td class='label'>Đơn hàng:</td><td>").append(nullSafe(gin.getOrderId())).append("</td></tr>");
         html.append("<tr><td class='label'>Loại xuất:</td><td>").append(nullSafe(gin.getIssueType())).append("</td></tr>");
         html.append("<tr><td class='label'>Trạng thái:</td><td>").append(nullSafe(gin.getStatus())).append("</td></tr>");
-        html.append("<tr><td class='label'>Người xuất:</td><td>").append(nullSafe(gin.getIssuedBy())).append("</td></tr>");
+        String issuer = firstNonBlank(gin.getIssuedByName(), gin.getCreatedByName(),
+                gin.getIssuedBy(), gin.getCreatedBy());
+        html.append("<tr><td class='label'>Người xuất:</td><td>").append(nullSafe(issuer)).append("</td></tr>");
+        String ginApprover = firstNonBlank(gin.getApprovedByName(), gin.getApprovedBy());
+        if (ginApprover != null) {
+            html.append("<tr><td class='label'>Người duyệt:</td><td>").append(ginApprover).append("</td></tr>");
+        }
         html.append("<tr><td class='label'>Ghi chú:</td><td>").append(nullSafe(gin.getNote())).append("</td></tr>");
         html.append("</table>");
 
@@ -296,7 +308,13 @@ public class DocumentPrintService {
             sheet.createRow(r++).createCell(0).setCellValue("Kho: " + nullSafe(grn.getWarehouseId()));
             sheet.createRow(r++).createCell(0).setCellValue("Nhà cung cấp: " + nullSafe(grn.getSupplierId()));
             sheet.createRow(r++).createCell(0).setCellValue("Ngày: " + (grn.getCreatedDate() != null ? grn.getCreatedDate().format(DTF) : ""));
-            sheet.createRow(r++).createCell(0).setCellValue("Người nhập: " + nullSafe(grn.getReceivedBy()));
+            sheet.createRow(r++).createCell(0).setCellValue("Người nhập: " + nullSafe(
+                    firstNonBlank(grn.getReceivedByName(), grn.getCreatedByName(),
+                            grn.getReceivedBy(), grn.getCreatedBy())));
+            String excelApprover = firstNonBlank(grn.getApprovedByName(), grn.getApprovedBy());
+            if (excelApprover != null) {
+                sheet.createRow(r++).createCell(0).setCellValue("Người duyệt: " + excelApprover);
+            }
             sheet.createRow(r++).createCell(0).setCellValue("Ghi chú: " + nullSafe(grn.getNote()));
             r++;
 
@@ -363,7 +381,13 @@ public class DocumentPrintService {
             sheet.createRow(r++).createCell(0).setCellValue("Kho: " + nullSafe(gin.getWarehouseId()));
             sheet.createRow(r++).createCell(0).setCellValue("Khách hàng: " + nullSafe(gin.getCustomerId()));
             sheet.createRow(r++).createCell(0).setCellValue("Ngày: " + (gin.getCreatedDate() != null ? gin.getCreatedDate().format(DTF) : ""));
-            sheet.createRow(r++).createCell(0).setCellValue("Người xuất: " + nullSafe(gin.getIssuedBy()));
+            sheet.createRow(r++).createCell(0).setCellValue("Người xuất: " + nullSafe(
+                    firstNonBlank(gin.getIssuedByName(), gin.getCreatedByName(),
+                            gin.getIssuedBy(), gin.getCreatedBy())));
+            String ginExcelApprover = firstNonBlank(gin.getApprovedByName(), gin.getApprovedBy());
+            if (ginExcelApprover != null) {
+                sheet.createRow(r++).createCell(0).setCellValue("Người duyệt: " + ginExcelApprover);
+            }
             sheet.createRow(r++).createCell(0).setCellValue("Ghi chú: " + nullSafe(gin.getNote()));
             r++;
 
@@ -407,6 +431,14 @@ public class DocumentPrintService {
 
     private String nullSafe(String s) {
         return s != null ? s : "";
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) return null;
+        for (String v : values) {
+            if (v != null && !v.isBlank()) return v;
+        }
+        return null;
     }
 
     private String formatQty(Double qty) {

@@ -23,6 +23,16 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Stri
     /** Alternate lookup theo personId (khi FE không có contractId trong tay). */
     List<LeaveRequest> findByPersonIdOrderByCreatedDateDesc(String personId);
 
+    /** Phép đã duyệt giao với khoảng [from, to] — dùng cho lịch tháng / reminder. */
+    @Query("SELECT lr FROM LeaveRequest lr " +
+           "WHERE lr.personId = :personId " +
+           "AND lr.status = 'APPROVED' " +
+           "AND lr.startDate <= :to AND lr.endDate >= :from")
+    List<LeaveRequest> findApprovedOverlapping(
+            @Param("personId") String personId,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
     @Query("SELECT COALESCE(SUM(lr.durationDays), 0) FROM LeaveRequest lr " +
            "WHERE lr.contractId = :contractId " +
            "AND lr.status = 'APPROVED' " +

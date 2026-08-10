@@ -50,6 +50,22 @@ public class AttendanceController {
         return ApiResponse.success(attendanceService.daily(filter));
     }
 
+    @Operation(summary = "Lịch làm và chấm công tháng của user đăng nhập",
+            description = "Principal-scoped; client không truyền personId. Trả person, today và days[] tối ưu web/mobile.")
+    @GetMapping("/me/month")
+    @CheckPermission(api = "/qlns/attendance/me/month", action = "VIEW")
+    public ApiResponse<?> myMonth(@RequestParam(required = false) Integer month,
+                                  @RequestParam(required = false) Integer year) {
+        return ApiResponse.success(attendanceService.getMyMonth(month, year));
+    }
+
+    @Operation(summary = "Lịch làm và chấm công hôm nay của user đăng nhập")
+    @GetMapping("/me/today")
+    @CheckPermission(api = "/qlns/attendance/me/today", action = "VIEW")
+    public ApiResponse<?> myToday() {
+        return ApiResponse.success(attendanceService.getMyToday());
+    }
+
     @Operation(summary = "KPI tháng cho Home dashboard Mobile",
                description = "Trả về workingDays, presentDays, lateDays, tổng phút OT, số phép còn lại...")
     @GetMapping("/stats")

@@ -34,4 +34,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     long countByUsernameAndEntityTypeAndCreatedAtGreaterThanEqual(
             String username, String entityType, LocalDateTime createdAt);
+
+    /** Dedup bền vững cho reminder / domain events (username + type + entityId). */
+    boolean existsByUsernameAndTypeAndEntityId(String username, String type, String entityId);
 }

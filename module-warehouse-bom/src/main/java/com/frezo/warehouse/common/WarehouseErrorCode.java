@@ -17,7 +17,8 @@ public enum WarehouseErrorCode implements ErrorCode {
 
     // -------------------- STOCK BALANCE --------------------
     STOCK_BALANCE_NOT_FOUND("stock.balance.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy tồn kho"),
-    STOCK_BALANCE_INSUFFICIENT("stock.balance.insufficient", HttpStatus.BAD_REQUEST, "Tồn kho không đủ"),
+    STOCK_BALANCE_INSUFFICIENT("stock.balance.insufficient", HttpStatus.BAD_REQUEST,
+            "Tồn kho không đủ: {0}"),
     STOCK_EXPORT_FAILED("stock.export.failed", HttpStatus.INTERNAL_SERVER_ERROR, "Xuất báo cáo kho thất bại"),
 
     // -------------------- TRANSFER --------------------
@@ -64,7 +65,7 @@ public enum WarehouseErrorCode implements ErrorCode {
 
     // -------------------- BATCH / LOT --------------------
     BATCH_NOT_FOUND("stock.batch.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy lô hàng"),
-    BATCH_INSUFFICIENT("stock.batch.insufficient", HttpStatus.BAD_REQUEST, "Tồn lô không đủ"),
+    BATCH_INSUFFICIENT("stock.batch.insufficient", HttpStatus.BAD_REQUEST, "Tồn lô không đủ: {0}"),
     GRN_LOCATION_REQUIRED("goods.receipt.note.location.required", HttpStatus.BAD_REQUEST,
             "Mỗi dòng GRN cần vị trí kho trước khi xác nhận nhập"),
 

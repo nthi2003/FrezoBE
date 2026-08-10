@@ -22,11 +22,19 @@ public class GinResponse {
     private String transferWarehouseId;
     private String transferWarehouseName;
     private String approvedBy;
+    /** Display name người duyệt — enrich từ users/person. */
+    private String approvedByName;
     private LocalDateTime approvedAt;
     private Double totalValue;
     private String issuedBy;
+    /** Display name người xuất — enrich từ users/person. */
+    private String issuedByName;
     private LocalDateTime issuedAt;
     private String note;
+    /** User id/username người tạo (audit BaseEntity). */
+    private String createdBy;
+    /** Display name người tạo — enrich từ users/person. */
+    private String createdByName;
     private LocalDateTime createdDate;
     private List<GinItemResponse> items;
 

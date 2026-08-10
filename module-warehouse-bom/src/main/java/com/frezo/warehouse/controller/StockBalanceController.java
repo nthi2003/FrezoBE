@@ -31,6 +31,18 @@ public class StockBalanceController {
         return ApiResponse.success(stockBalanceService.filter(warehouseId, productId, keyword, page, size));
     }
 
+    @Operation(summary = "Tồn khả dụng theo sản phẩm + kho",
+            description = "available = onHand − reserved. Truyền productId hoặc productIds (csv). batchId tùy chọn.")
+    @GetMapping("/available")
+    @CheckPermission(api = "/warehouse/stock", action = "VIEW")
+    public ApiResponse<?> getAvailable(
+            @RequestParam String warehouseId,
+            @RequestParam(required = false) String productId,
+            @RequestParam(required = false) String productIds,
+            @RequestParam(required = false) String batchId) {
+        return ApiResponse.success(stockBalanceService.getAvailable(warehouseId, productId, productIds, batchId));
+    }
+
     @Operation(summary = "Chi tiết tồn kho")
     @GetMapping("/{id}")
     @CheckPermission(api = "/warehouse/stock/{id}", action = "VIEW")

@@ -6,9 +6,11 @@ import com.frezo.common.response.PageResponse;
 import com.frezo.product.entity.Product;
 import com.frezo.product.repository.ProductRepository;
 import com.frezo.warehouse.dto.response.LowStockAlertResponse;
+import com.frezo.warehouse.dto.response.StockAvailableResponse;
 import com.frezo.warehouse.dto.response.StockBalanceResponse;
 import com.frezo.warehouse.dto.response.WarehouseStatsResponse;
 import com.frezo.warehouse.entity.StockBalance;
+import com.frezo.warehouse.entity.Warehouse;
 import com.frezo.warehouse.repository.*;
 import com.frezo.warehouse.service.StockBalanceService;
 import jakarta.persistence.criteria.Predicate;
@@ -24,6 +26,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -158,6 +161,72 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         } catch (Exception e) {
             throw new AppException(WarehouseErrorCode.STOCK_EXPORT_FAILED);
         }
+    }
+
+    @Override
+    public List<StockAvailableResponse> getAvailable(String warehouseId, String productId, String productIds, String batchId) {
+        if (warehouseId == null || warehouseId.isBlank()) {
+            throw new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND);
+        }
+        List<String> ids = new ArrayList<>();
+        if (productIds != null && !productIds.isBlank()) {
+            Arrays.stream(productIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(ids::add);
+        } else if (productId != null && !productId.isBlank()) {
+            ids.add(productId.trim());
+        }
+        if (ids.isEmpty()) {
+            throw new AppException(WarehouseErrorCode.STOCK_BALANCE_NOT_FOUND);
+        }
+
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new AppException(WarehouseErrorCode.WAREHOUSE_NOT_FOUND));
+        Map<String, Product> products = productRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
+
+        String batch = (batchId != null && !batchId.isBlank()) ? batchId.trim() : null;
+        List<StockAvailableResponse> result = new ArrayList<>();
+        for (String pid : ids) {
+            double onHand;
+            double reserved;
+            double available;
+            if (batch != null) {
+                onHand = nz(stockBalanceRepository.sumOnHandByProductWarehouseAndBatch(pid, warehouseId, batch));
+                reserved = nz(stockBalanceRepository.sumReservedByProductWarehouseAndBatch(pid, warehouseId, batch));
+                available = nz(stockBalanceRepository.sumAvailableByProductWarehouseAndBatch(pid, warehouseId, batch));
+            } else {
+                onHand = nz(stockBalanceRepository.sumOnHandByProductAndWarehouse(pid, warehouseId));
+                reserved = nz(stockBalanceRepository.sumReservedByProductAndWarehouse(pid, warehouseId));
+                available = nz(stockBalanceRepository.sumAvailableByProductAndWarehouse(pid, warehouseId));
+            }
+            // Fallback: available = onHand - reserved nếu cột available chưa đồng bộ
+            if (available <= 0 && onHand > reserved) {
+                available = onHand - reserved;
+            } else if (available < 0) {
+                available = Math.max(0, onHand - reserved);
+            }
+
+            Product p = products.get(pid);
+            result.add(StockAvailableResponse.builder()
+                    .productId(pid)
+                    .productCode(p != null ? p.getCode() : null)
+                    .productName(p != null ? p.getName() : null)
+                    .warehouseId(warehouseId)
+                    .warehouseCode(warehouse.getCode())
+                    .warehouseName(warehouse.getName())
+                    .batchId(batch)
+                    .quantityOnHand(onHand)
+                    .quantityReserved(reserved)
+                    .quantityAvailable(available)
+                    .build());
+        }
+        return result;
+    }
+
+    private static double nz(Double v) {
+        return v != null ? v : 0.0;
     }
 
     private StockBalanceResponse toResponse(StockBalance balance) {

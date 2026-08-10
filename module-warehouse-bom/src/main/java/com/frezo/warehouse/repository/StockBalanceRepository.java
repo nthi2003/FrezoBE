@@ -32,4 +32,55 @@ public interface StockBalanceRepository extends JpaRepository<StockBalance, Stri
     Double sumAvailableByProductAndWarehouse(
             @org.springframework.data.repository.query.Param("productId") String productId,
             @org.springframework.data.repository.query.Param("warehouseId") String warehouseId);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityOnHand), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumOnHandByProductAndWarehouse(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityReserved), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumReservedByProductAndWarehouse(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityAvailable), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND s.batchId = :batchId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumAvailableByProductWarehouseAndBatch(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId,
+            @org.springframework.data.repository.query.Param("batchId") String batchId);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityOnHand), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND s.batchId = :batchId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumOnHandByProductWarehouseAndBatch(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId,
+            @org.springframework.data.repository.query.Param("batchId") String batchId);
+
+    @Query("""
+            SELECT COALESCE(SUM(s.quantityReserved), 0) FROM StockBalance s
+            WHERE s.productId = :productId AND s.warehouseId = :warehouseId
+              AND s.batchId = :batchId
+              AND (s.isDeleted = false OR s.isDeleted IS NULL)
+            """)
+    Double sumReservedByProductWarehouseAndBatch(
+            @org.springframework.data.repository.query.Param("productId") String productId,
+            @org.springframework.data.repository.query.Param("warehouseId") String warehouseId,
+            @org.springframework.data.repository.query.Param("batchId") String batchId);
 }

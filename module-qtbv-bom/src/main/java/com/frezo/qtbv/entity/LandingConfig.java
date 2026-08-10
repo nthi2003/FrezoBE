@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.time.LocalDate;
+
 /** Tính năng 7: Landing page control (bài viết, logo, brand) **/
 @Getter
 @Setter
@@ -31,8 +33,34 @@ public class LandingConfig extends BaseEntity {
     @Column(name = "contact_phone")
     private String contactPhone;
 
+    @Column(name = "contact_title", length = 200)
+    private String contactTitle;
+
+    @Column(name = "contact_subtitle", length = 500)
+    private String contactSubtitle;
+
     @Column(name = "about_us", length = 3000)
     private String aboutUs;
+
+    /** Tiêu đề trang /about (Về chúng tôi). */
+    @Column(name = "about_title", length = 200)
+    private String aboutTitle;
+
+    /** Phụ đề / eyebrow trang /about. */
+    @Column(name = "about_subtitle", length = 500)
+    private String aboutSubtitle;
+
+    /** Ảnh hero trang /about. */
+    @Column(name = "about_image_url", length = 1000)
+    private String aboutImageUrl;
+
+    /** Tiêu đề khối "Câu chuyện" trên trang chủ. */
+    @Column(name = "story_title", length = 200)
+    private String storyTitle;
+
+    /** Phụ đề khối "Câu chuyện" trên trang chủ. */
+    @Column(name = "story_subtitle", length = 500)
+    private String storySubtitle;
 
     @Column(name = "footer_text", length = 1000)
     private String footerText;
@@ -100,9 +128,37 @@ public class LandingConfig extends BaseEntity {
     @Column(name = "favicon_url", length = 1000)
     private String faviconUrl;
 
-    /** Ảnh nền hero (background chính của trang) — thay vì hardcode /assets/hero-bg.png. */
+    /** Ảnh nền hero dự phòng khi chưa có banner ACTIVE vị trí hero. */
     @Column(name = "hero_image_url", length = 1000)
     private String heroImageUrl;
+
+    /** SLIDER = nhiều banner hero; VIDEO = dùng hero_video_url. */
+    @Column(name = "hero_media_type", length = 20)
+    @Builder.Default
+    private String heroMediaType = "SLIDER";
+
+    /** Video nền hero (mp4/webm) khi heroMediaType = VIDEO. */
+    @Column(name = "hero_video_url", length = 1000)
+    private String heroVideoUrl;
+
+    /** Tên chiến dịch / dịp lễ đang áp dụng (Tết, Trung thu…). */
+    @Column(name = "campaign_name", length = 200)
+    private String campaignName;
+
+    @Column(name = "campaign_start_date")
+    private LocalDate campaignStartDate;
+
+    @Column(name = "campaign_end_date")
+    private LocalDate campaignEndDate;
+
+    @Column(name = "loading_title", length = 200)
+    private String loadingTitle;
+
+    @Column(name = "loading_subtitle", length = 500)
+    private String loadingSubtitle;
+
+    @Column(name = "loading_image_url", length = 1000)
+    private String loadingImageUrl;
 
     /** URL canonical — cần thiết khi có nhiều domain trỏ về (frezo.vn / www.frezo.vn / frezo.com.vn). */
     @Column(name = "canonical_url", length = 500)

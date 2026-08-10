@@ -25,6 +25,12 @@ public class BannerServiceImpl implements BannerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<Banner> findActive() {
+        return bannerRepository.findByStatusAndIsDeletedFalseOrderByPositionAscOrderIndexAsc("ACTIVE");
+    }
+
+    @Override
     public Banner findById(String id) {
         return bannerRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, id));

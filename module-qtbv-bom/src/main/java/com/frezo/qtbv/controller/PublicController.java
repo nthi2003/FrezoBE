@@ -6,6 +6,8 @@ import com.frezo.qtbv.service.PublicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +22,20 @@ public class PublicController {
     @GetMapping("/landing/config")
     public ApiResponse<?> getLandingConfig() {
         return ApiResponse.success(publicService.getLandingConfig());
+    }
+
+    @Operation(summary = "Lấy banner đang hoạt động", description = "Chỉ trả banner ACTIVE do ERP quản lý, sắp xếp theo vị trí và thứ tự")
+    @GetMapping("/landing/banners")
+    public ApiResponse<?> getActiveBanners() {
+        return ApiResponse.success(publicService.getActiveBanners());
+    }
+
+    @Operation(summary = "Sitemap SEO động", description = "Sinh từ sản phẩm đang hoạt động và bài viết public trong DB")
+    @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> getSitemap() {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_XML)
+                .body(publicService.getSitemapXml());
     }
 
     @Operation(summary = "Lấy danh sách sản phẩm", description = "Lọc danh sách sản phẩm cho khách hàng")

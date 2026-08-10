@@ -71,6 +71,8 @@ app:
     allowed-origins:
       - https://app.frezo.vn
       - https://admin.frezo.vn
+      - https://frezo.vn
+      - https://www.frezo.vn
     allowed-methods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
     allow-credentials: true
     max-age: 3600

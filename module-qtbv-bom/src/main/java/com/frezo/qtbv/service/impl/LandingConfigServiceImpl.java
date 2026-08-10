@@ -27,7 +27,14 @@ public class LandingConfigServiceImpl implements LandingConfigService {
         current.setPrimaryColor(config.getPrimaryColor());
         current.setContactEmail(config.getContactEmail());
         current.setContactPhone(config.getContactPhone());
+        current.setContactTitle(config.getContactTitle());
+        current.setContactSubtitle(config.getContactSubtitle());
         current.setAboutUs(config.getAboutUs());
+        current.setAboutTitle(config.getAboutTitle());
+        current.setAboutSubtitle(config.getAboutSubtitle());
+        current.setAboutImageUrl(config.getAboutImageUrl());
+        current.setStoryTitle(config.getStoryTitle());
+        current.setStorySubtitle(config.getStorySubtitle());
         current.setFooterText(config.getFooterText());
         current.setHeroTitle(config.getHeroTitle());
         current.setHeroSubtitle(config.getHeroSubtitle());
@@ -50,6 +57,14 @@ public class LandingConfigServiceImpl implements LandingConfigService {
         current.setOgImageUrl(config.getOgImageUrl());
         current.setFaviconUrl(config.getFaviconUrl());
         current.setHeroImageUrl(config.getHeroImageUrl());
+        current.setHeroMediaType(config.getHeroMediaType() != null ? config.getHeroMediaType() : "SLIDER");
+        current.setHeroVideoUrl(config.getHeroVideoUrl());
+        current.setCampaignName(config.getCampaignName());
+        current.setCampaignStartDate(config.getCampaignStartDate());
+        current.setCampaignEndDate(config.getCampaignEndDate());
+        current.setLoadingTitle(config.getLoadingTitle());
+        current.setLoadingSubtitle(config.getLoadingSubtitle());
+        current.setLoadingImageUrl(config.getLoadingImageUrl());
         current.setCanonicalUrl(config.getCanonicalUrl());
 
         // ---- Social links ----
@@ -63,6 +78,7 @@ public class LandingConfigServiceImpl implements LandingConfigService {
         current.setGtmId(config.getGtmId());
         current.setGa4Id(config.getGa4Id());
         current.setFbPixelId(config.getFbPixelId());
+        current.setIsActive(true);
 
         return landingConfigRepository.save(current);
     }

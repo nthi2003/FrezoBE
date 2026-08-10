@@ -7,6 +7,8 @@ import java.util.List;
 public interface BannerService {
     List<Banner> findAll();
 
+    List<Banner> findActive();
+
     Banner findById(String id);
 
     Banner create(Banner request);

@@ -7,10 +7,12 @@ import com.frezo.product.dto.request.ProductCreateRequest;
 import com.frezo.product.dto.request.ProductFilterRequest;
 import com.frezo.product.dto.request.ProductUpdateRequest;
 import com.frezo.product.dto.response.ProductDashboardStats;
+import com.frezo.product.dto.response.ProductImportResultResponse;
 import com.frezo.product.dto.response.ProductResponse;
 import com.frezo.product.service.ProductService;
 import com.frezo.product.service.impl.product.ProductCommandService;
 import com.frezo.product.service.impl.product.ProductDashboardService;
+import com.frezo.product.service.impl.product.ProductExcelImportService;
 import com.frezo.product.service.impl.product.ProductImageService;
 import com.frezo.product.service.impl.product.ProductInventoryService;
 import com.frezo.product.service.impl.product.ProductPricingService;
@@ -25,15 +27,15 @@ import java.util.Map;
 /**
  * Façade cho toàn bộ Product API.
  * <p>
- * Sau refactor Batch B (2026-07): giảm từ 9 deps → 5 deps bằng cách tách theo concern:
+ * Sau refactor Batch B (2026-07): tách theo concern:
  * <ul>
  *   <li>{@link ProductCommandService} — CRUD sản phẩm</li>
  *   <li>{@link ProductPricingService} — bulk update giá + tính giá theo unit/group</li>
  *   <li>{@link ProductInventoryService} — nhập kho theo chuyến (batch + inventory log)</li>
  *   <li>{@link ProductDashboardService} — KPI + biểu đồ dashboard</li>
  *   <li>{@link ProductImageService} — upload ảnh MinIO</li>
+ *   <li>{@link ProductExcelImportService} — import catalog Excel</li>
  * </ul>
- * Interface {@link ProductService} public không đổi để không phá controller.
  */
 @Slf4j
 @Service
@@ -45,6 +47,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductInventoryService inventoryService;
     private final ProductDashboardService dashboardService;
     private final ProductImageService imageService;
+    private final ProductExcelImportService excelImportService;
 
     @Override
     public PageResponse<ProductResponse> filter(ProductFilterRequest filterRequest) {
@@ -79,6 +82,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void importBatch(BatchImportRequest request) {
         inventoryService.importBatch(request);
+    }
+
+    @Override
+    public ProductImportResultResponse importFromExcel(MultipartFile file) {
+        return excelImportService.importFromExcel(file);
     }
 
     @Override

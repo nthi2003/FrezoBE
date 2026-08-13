@@ -4,12 +4,14 @@ import com.frezo.common.response.ApiResponse;
 import com.frezo.product.dto.request.ProductCreateRequest;
 import com.frezo.product.dto.request.ProductFilterRequest;
 import com.frezo.product.dto.request.ProductUpdateRequest;
+import com.frezo.product.dto.response.ProductImportResultResponse;
 import com.frezo.product.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import com.frezo.common.security.CheckPermission;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -81,6 +83,21 @@ public class ProductController {
     public ApiResponse<?> importBatch(@RequestBody com.frezo.product.dto.request.BatchImportRequest request) {
         productService.importBatch(request);
         return ApiResponse.success("Nhập kho thành công");
+    }
+
+    @Operation(
+            summary = "Import sản phẩm từ Excel",
+            description = "Multipart .xlsx/.xls — upsert theo mã mặt hàng. Bỏ qua cột % lợi nhuận. "
+                    + "Map: mã, tên, loại, giá bán lẻ / giá gồm ship, giá sỉ, giá siêu sỉ, trạng thái."
+    )
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @CheckPermission(api = "/product/import", action = "UPDATE")
+    public ApiResponse<ProductImportResultResponse> importExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            return ApiResponse.success(productService.importFromExcel(file));
+        } catch (IllegalArgumentException ex) {
+            throw new com.frezo.common.exception.AppException(ex.getMessage(), org.springframework.http.HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Operation(summary = "Tính giá bán tự động", description = "Tính giá dựa trên sản phẩm, đơn vị và nhóm khách")

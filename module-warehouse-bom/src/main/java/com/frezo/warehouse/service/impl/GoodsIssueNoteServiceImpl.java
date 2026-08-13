@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
 import com.frezo.product.entity.Product;
@@ -137,7 +138,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
         assertSufficientStockForGinItems(gin.getWarehouseId(), ginItemRepository.findByGinId(id), true);
         gin.setStatus("APPROVED");
-        gin.setApprovedBy(gin.getCreatedBy());
+        gin.setApprovedBy(SystemUtils.getCurrentUsername());
         gin.setApprovedAt(LocalDateTime.now());
         ginRepository.save(gin);
         return buildResponse(gin);

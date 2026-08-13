@@ -3,6 +3,7 @@ package com.frezo.product.service;
 import com.frezo.common.response.PageResponse;
 import com.frezo.product.dto.request.*;
 import com.frezo.product.dto.response.ProductDashboardStats;
+import com.frezo.product.dto.response.ProductImportResultResponse;
 import com.frezo.product.dto.response.ProductResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,8 @@ public interface ProductService {
 
     void bulkUpdatePrices(List<PriceUpdateRequest> requests);
     void importBatch(BatchImportRequest request);
+    /** Import catalog từ Excel (.xlsx/.xls); upsert theo mã; bỏ qua cột %. */
+    ProductImportResultResponse importFromExcel(MultipartFile file);
     Double calculatePrice(String productCode, String unitName, String priceGroupCode);
     ProductDashboardStats getDashboardStats();
     List<Map<String, Object>> getProfitChart(int days);

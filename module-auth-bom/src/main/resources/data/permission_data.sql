@@ -706,6 +706,7 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('PRODUCT_ID_DELETE', '/product/{id} - DELETE', 'DELETE', '/product/{id}', 'DELETE'),
         ('PRODUCT_BULK_UPDATE_PRICES_UPDATE', '/product/bulk-update-prices - UPDATE', 'POST', '/product/bulk-update-prices', 'UPDATE'),
         ('PRODUCT_IMPORT_BATCH_CREATE', '/product/import-batch - CREATE', 'POST', '/product/import-batch', 'CREATE'),
+        ('PRODUCT_IMPORT_UPDATE', '/product/import - UPDATE', 'POST', '/product/import', 'UPDATE'),
         ('PRODUCT_CALCULATE_PRICE_VIEW', '/product/calculate-price - VIEW', 'GET', '/product/calculate-price', 'VIEW'),
         ('PRODUCT_ID_COST_HISTORY_VIEW', '/product/{id}/cost-history - VIEW', 'GET', '/product/{id}/cost-history', 'VIEW'),
         ('PRODUCT_DASHBOARD_PROFIT_CHART_VIEW', '/product/dashboard/profit-chart - VIEW', 'GET', '/product/dashboard/profit-chart', 'VIEW'),

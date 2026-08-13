@@ -1,6 +1,7 @@
 package com.frezo.warehouse.service.impl;
 
 import com.frezo.common.exception.AppException;
+import com.frezo.common.helper.SystemUtils;
 import com.frezo.warehouse.common.WarehouseErrorCode;
 import com.frezo.common.response.PageResponse;
 import com.frezo.common.utils.SecureCodeGenerator;
@@ -160,7 +161,7 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
             throw new AppException(WarehouseErrorCode.GRN_INVALID_STATUS);
         }
         grn.setStatus("APPROVED");
-        grn.setApprovedBy(grn.getCreatedBy());
+        grn.setApprovedBy(SystemUtils.getCurrentUsername());
         grn.setApprovedAt(LocalDateTime.now());
         grnRepository.save(grn);
         return buildResponse(grn);

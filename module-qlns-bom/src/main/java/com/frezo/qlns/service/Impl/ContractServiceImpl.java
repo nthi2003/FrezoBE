@@ -80,6 +80,7 @@ public class ContractServiceImpl implements ContractService {
     public ApiResponse<com.frezo.qlns.dto.response.ContractResponse> add(ContractAddRequest request) {
         validateRequest(request);
         Contract contract = contractMapper.toEntity(request);
+        normalizeSalary3P(contract);
         contract.setIsDeleted(false);
         Contract savedContract = contractRepository.save(contract);
 
@@ -104,6 +105,7 @@ public class ContractServiceImpl implements ContractService {
         Contract exist = findEntityById(id);
         validateRequest(request);
         contractMapper.updateEntity(request, exist);
+        normalizeSalary3P(exist);
         Contract saveContract = contractRepository.save(exist);
         contractVersionService.createVersion(saveContract, "CONTRACT_UPDATE", "Hồ sơ đã được cập nhật thành công");
         return ApiResponse.ok(contractMapper.toResponse(saveContract));
@@ -249,5 +251,24 @@ public class ContractServiceImpl implements ContractService {
         Contract contract = findEntityById(id);
         contract.setHtmlContract(html);
         contractRepository.save(contract);
+    }
+
+    /**
+     * Chuẩn hóa lương 3P: value (lương cơ bản payroll) = P1 + P2.
+     * FE có thể gửi basicSalary → positionSalary, kpiAmount → kpiBonus.
+     */
+    private void normalizeSalary3P(Contract contract) {
+        if (contract.getPositionSalary() == null && contract.getValue() != null) {
+            contract.setPositionSalary(contract.getValue());
+        }
+        if (contract.getPersonAllowance() == null) {
+            contract.setPersonAllowance(0);
+        }
+        if (contract.getKpiBonus() == null) {
+            contract.setKpiBonus(0);
+        }
+        int p1 = contract.getPositionSalary() != null ? contract.getPositionSalary() : 0;
+        int p2 = contract.getPersonAllowance() != null ? contract.getPersonAllowance() : 0;
+        contract.setValue(p1 + p2);
     }
 }

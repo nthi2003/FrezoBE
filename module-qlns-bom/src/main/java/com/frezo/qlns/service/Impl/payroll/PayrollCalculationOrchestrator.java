@@ -36,6 +36,7 @@ public class PayrollCalculationOrchestrator {
     public static final String REASON_NO_ACTIVE_CONTRACT = "NO_ACTIVE_CONTRACT";
 
     private final PayrollRepository payrollRepository;
+    private final PayrollRecordResolver payrollRecordResolver;
     private final PayrollEngine payrollEngine;
     private final PayrollDataCollector dataCollector;
     private final PayrollConfigLoader configLoader;
@@ -104,7 +105,7 @@ public class PayrollCalculationOrchestrator {
                 success++;
             } catch (Exception e) {
                 failed++;
-                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                String reason = resolveBatchErrorReason(e);
                 log.error("Error calculating payroll for person {} (month={}, year={}): {}",
                         personId, month, year, reason, e);
                 errors.add(itemError(person, personId, reason));
@@ -170,13 +171,7 @@ public class PayrollCalculationOrchestrator {
         PayrollConfigLoader.ConfigBundle cfg = configLoader.load(person.getOrgId(), year);
         PayrollDataCollector.CollectedInput input = dataCollector.collect(person, month, year, cfg);
 
-        Payroll payroll = payrollRepository
-                .findByPersonIdAndMonthAndYear(personId, month, year)
-                .orElse(Payroll.builder()
-                        .personId(personId)
-                        .month(month)
-                        .year(year)
-                        .build());
+        Payroll payroll = payrollRecordResolver.resolveForCalculation(personId, month, year);
 
         // Phiếu đã confirm/pay hoặc kỳ khoá → lỗi nghiệp vụ (batch bắt vào errors[], không 500)
         lifecycleService.assertNotLocked(payroll);
@@ -218,5 +213,16 @@ public class PayrollCalculationOrchestrator {
         if (year == null || year < 2000 || year > 2100) {
             throw new AppException(QlnsErrorCode.PAYROLL_YEAR_INVALID);
         }
+    }
+
+    /** Batch summary: ưu tiên message nghiệp vụ (AppException) thay vì stack Hibernate. */
+    private static String resolveBatchErrorReason(Exception e) {
+        if (e instanceof AppException appEx && appEx.getErrorCode() != null) {
+            return appEx.getErrorCode().getDefaultMessage();
+        }
+        if (e.getMessage() != null && !e.getMessage().isBlank()) {
+            return e.getMessage();
+        }
+        return e.getClass().getSimpleName();
     }
 }

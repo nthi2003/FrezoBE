@@ -16,5 +16,16 @@ public enum AccountType {
     /** Chi phí — Debit tăng. Số hiệu bắt đầu bằng 6, 8. */
     EXPENSE,
     /** Tài khoản trung gian (xác định KQKD 911). */
-    CLEARING
+    CLEARING;
+
+    public String getDisplayName() {
+        return switch (this) {
+            case ASSET -> "Tài sản";
+            case LIABILITY -> "Nợ phải trả";
+            case EQUITY -> "Vốn chủ sở hữu";
+            case REVENUE -> "Doanh thu";
+            case EXPENSE -> "Chi phí";
+            case CLEARING -> "Trung gian";
+        };
+    }
 }

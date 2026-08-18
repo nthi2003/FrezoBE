@@ -12,6 +12,7 @@ import com.frezo.warehouse.entity.PurchaseRequest;
 import com.frezo.warehouse.entity.PurchaseRequestLine;
 import com.frezo.warehouse.entity.StockBalance;
 import com.frezo.warehouse.entity.Warehouse;
+import com.frezo.warehouse.repository.GoodsReceiptNoteRepository;
 import com.frezo.warehouse.repository.PurchaseOrderLineRepository;
 import com.frezo.warehouse.repository.PurchaseOrderRepository;
 import com.frezo.warehouse.repository.PurchaseRequestLineRepository;
@@ -30,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,6 +39,7 @@ import java.util.UUID;
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final PurchaseOrderRepository poRepository;
     private final PurchaseOrderLineRepository poLineRepository;
@@ -44,6 +47,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final PurchaseRequestLineRepository prLineRepository;
     private final StockBalanceRepository stockBalanceRepository;
     private final WarehouseRepository warehouseRepository;
+    private final GoodsReceiptNoteRepository grnRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -238,20 +242,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private PurchaseOrderDto toDto(PurchaseOrder po) {
         List<PurchaseOrderLineDto> lines = poLineRepository
                 .findByPurchaseOrderIdAndIsDeletedFalse(po.getId()).stream()
-                .map(l -> PurchaseOrderLineDto.builder()
-                        .id(l.getId())
-                        .prLineId(l.getPrLineId())
-                        .productId(l.getProductId())
-                        .warehouseId(l.getWarehouseId())
-                        .qty(l.getQty())
-                        .receivedQty(l.getReceivedQty())
-                        .note(l.getNote())
-                        .build())
+                .map(this::toLineDto)
                 .toList();
+        String created = po.getCreatedDate() != null ? po.getCreatedDate().format(ISO) : null;
         return PurchaseOrderDto.builder()
                 .id(po.getId())
                 .code(po.getCode())
                 .prId(po.getPrId())
+                .purchaseRequestId(po.getPrId())
                 .supplierId(po.getSupplierId())
                 .supplierName(resolveSupplierName(po.getSupplierId()))
                 .warehouseId(po.getWarehouseId())
@@ -260,9 +258,89 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .note(po.getNote())
                 .confirmedAt(po.getConfirmedAt() != null ? po.getConfirmedAt().format(ISO) : null)
                 .receivedAt(po.getReceivedAt() != null ? po.getReceivedAt().format(ISO) : null)
-                .createdDate(po.getCreatedDate() != null ? po.getCreatedDate().format(ISO) : null)
+                .createdDate(created)
+                .createdAt(created)
                 .lines(lines)
+                .linkedGrns(resolveLinkedGrns(po.getId()))
                 .build();
+    }
+
+    private PurchaseOrderLineDto toLineDto(PurchaseOrderLine l) {
+        PurchaseOrderLineDto dto = PurchaseOrderLineDto.builder()
+                .id(l.getId())
+                .prLineId(l.getPrLineId())
+                .productId(l.getProductId())
+                .warehouseId(l.getWarehouseId())
+                .qty(l.getQty())
+                .qtyOrdered(l.getQty())
+                .receivedQty(l.getReceivedQty())
+                .qtyReceived(l.getReceivedQty())
+                .note(l.getNote())
+                .build();
+        enrichProductFields(dto);
+        enrichUnitPriceFromGrn(dto, l.getPurchaseOrderId(), l.getProductId());
+        return dto;
+    }
+
+    private void enrichProductFields(PurchaseOrderLineDto item) {
+        if (item.getProductId() == null || item.getProductId().isBlank()) {
+            return;
+        }
+        try {
+            jdbcTemplate.query(
+                    "SELECT code, name FROM products WHERE id = ? LIMIT 1",
+                    rs -> {
+                        item.setProductCode(rs.getString("code"));
+                        item.setProductName(rs.getString("name"));
+                    },
+                    item.getProductId());
+        } catch (Exception ex) {
+            log.debug("Product enrich skip for {}", item.getProductId());
+        }
+    }
+
+    /** Lấy đơn giá từ dòng GRN gắn PO (nếu đã nhập kho). */
+    private void enrichUnitPriceFromGrn(PurchaseOrderLineDto item, String poId, String productId) {
+        if (poId == null || productId == null) {
+            return;
+        }
+        try {
+            Double unitCost = jdbcTemplate.queryForObject(
+                    """
+                    SELECT gi.unit_cost
+                    FROM goods_receipt_note_items gi
+                    JOIN goods_receipt_notes g ON g.id = gi.grn_id
+                    WHERE g.purchase_order_id = ?
+                      AND gi.product_id = ?
+                      AND gi.unit_cost IS NOT NULL
+                      AND COALESCE(gi.is_deleted, false) = false
+                      AND COALESCE(g.is_deleted, false) = false
+                    ORDER BY g.created_date DESC
+                    LIMIT 1
+                    """,
+                    Double.class, poId, productId);
+            item.setUnitPrice(unitCost);
+        } catch (EmptyResultDataAccessException ex) {
+            // PO chưa có GRN — không có đơn giá
+        } catch (Exception ex) {
+            log.debug("Unit price enrich skip for PO {} product {}: {}", poId, productId, ex.getMessage());
+        }
+    }
+
+    private List<PurchaseOrderDto.LinkedGrnSummary> resolveLinkedGrns(String poId) {
+        if (poId == null || poId.isBlank()) {
+            return List.of();
+        }
+        return grnRepository.findByPurchaseOrderId(poId).stream()
+                .filter(g -> Boolean.FALSE.equals(g.getIsDeleted()) || g.getIsDeleted() == null)
+                .map(g -> PurchaseOrderDto.LinkedGrnSummary.builder()
+                        .id(g.getId())
+                        .grnCode(g.getGrnCode())
+                        .status(g.getStatus())
+                        .invoiceNo(g.getInvoiceNo())
+                        .invoiceDate(g.getInvoiceDate() != null ? g.getInvoiceDate().format(ISO_DATE) : null)
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private String resolveSupplierName(String supplierId) {

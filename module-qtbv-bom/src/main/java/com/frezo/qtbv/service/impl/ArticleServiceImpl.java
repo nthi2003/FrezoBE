@@ -232,6 +232,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ArticleResponse> getHomeFeed() {
         List<ArticleResponse> responses = articleRepository.findIntranetHomeFeed().stream()
                 .map(articleMapper::toDto)
@@ -242,6 +243,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ArticleResponse getHomeFeedById(String id) {
         Article article = getArticleByIdOrThrow(id);
         if (!ArticleStatus.PUBLISHED.equals(article.getStatus()) || !Boolean.TRUE.equals(article.getIsActive())) {
@@ -296,6 +298,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ArticleResponse getPublicArticleById(String id) {
         Article article = getArticleByIdOrThrow(id);
         boolean visible = ArticleStatus.PUBLISHED.equals(article.getStatus())
@@ -346,6 +349,7 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<ArticleResponse> getPublicArticles(Integer pageNumber, Integer pageSize) {
         Pageable pageable = PageRequest.of(
                 pageNumber == null ? 0 : pageNumber,
@@ -422,7 +426,7 @@ public class ArticleServiceImpl implements ArticleService {
         Map<String, Long> countMap = counts.stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
-                        row -> (Long) row[1],
+                        row -> ((Number) row[1]).longValue(),
                         (existing, replacement) -> existing));
 
         for (ArticleResponse response : responses) {

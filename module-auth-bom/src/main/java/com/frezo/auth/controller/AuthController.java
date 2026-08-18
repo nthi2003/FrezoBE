@@ -3,7 +3,9 @@ package com.frezo.auth.controller;
 import com.frezo.auth.dto.request.LoginRequest;
 import com.frezo.auth.dto.response.LoginResponse;
 import com.frezo.auth.entity.LoginHistory;
+import com.frezo.auth.entity.UserMeme;
 import com.frezo.auth.service.AuthService;
+import com.frezo.auth.service.UserMemeService;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +27,7 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserMemeService userMemeService;
 
     @Operation(summary = "Đăng nhập", description = "Xác thực người dùng bằng username và password")
     @PostMapping("/login")
@@ -87,6 +90,30 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
         String username = SystemUtils.getCurrentUsername();
         return ResponseEntity.ok(ApiResponse.success(authService.uploadAvatar(file, username)));
+    }
+
+    @Operation(summary = "Danh sách meme của tôi", description = "Thư viện meme cá nhân dùng trong bình luận")
+    @GetMapping("/memes")
+    public ResponseEntity<ApiResponse<List<UserMeme>>> listMemes() {
+        String username = SystemUtils.getCurrentUsername();
+        return ResponseEntity.ok(ApiResponse.success(userMemeService.listMine(username)));
+    }
+
+    @Operation(summary = "Upload meme", description = "Tải meme lên thư viện cá nhân (JPG/PNG/GIF/WebP, tối đa 2MB, tối đa 30 meme)")
+    @PostMapping(value = "/memes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<UserMeme>> uploadMeme(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "title", required = false) String title) {
+        String username = SystemUtils.getCurrentUsername();
+        return ResponseEntity.ok(ApiResponse.success(userMemeService.upload(username, file, title)));
+    }
+
+    @Operation(summary = "Xoá meme", description = "Xoá meme khỏi thư viện cá nhân")
+    @DeleteMapping("/memes/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteMeme(@PathVariable String id) {
+        String username = SystemUtils.getCurrentUsername();
+        userMemeService.delete(username, id);
+        return ResponseEntity.ok(ApiResponse.success(null, "Đã xoá meme"));
     }
 
     @Operation(summary = "Đăng xuất", description = "Đăng xuất tài khoản hiện tại")

@@ -29,6 +29,10 @@ public class ContractResponse {
 
     private Integer value;
 
+    private Integer positionSalary;
+    private Integer personAllowance;
+    private Integer kpiBonus;
+
     private StatusContarct status;
 
     private Boolean activated;

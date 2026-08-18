@@ -28,6 +28,15 @@ public class ContractAddRequest {
 
     private Integer value;
 
+    /** P1 — lương vị trí */
+    private Integer positionSalary;
+
+    /** P2 — phụ cấp năng lực */
+    private Integer personAllowance;
+
+    /** P3 — thưởng KPI mục tiêu */
+    private Integer kpiBonus;
+
     private StatusContarct status;
 
     private Boolean activated;

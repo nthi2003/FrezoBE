@@ -57,6 +57,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.frezo.crm.entity",
         "com.frezo.approval.entity",
         "com.frezo.event.entity",
+        "com.frezo.profit.entity",
         "com.frezo.common.domain",
         "com.frezo.common.entity",
         "com.frezo.common.audit",
@@ -80,6 +81,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.frezo.crm.repository",
         "com.frezo.approval.repository",
         "com.frezo.event.repository",
+        "com.frezo.profit.repository",
         "com.frezo.common.repository",
         "com.frezo.common.audit",
         "com.frezo.common.workflow.repository"

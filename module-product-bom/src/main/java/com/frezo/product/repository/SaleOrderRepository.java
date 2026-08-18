@@ -16,4 +16,7 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, String> {
 
     @Query("SELECT SUM(s.totalAmount) FROM SaleOrder s WHERE s.createdDate BETWEEN :from AND :to")
     Double sumTotalAmountByCreatedDateBetween(LocalDateTime from, LocalDateTime to);
+
+    @Query("SELECT SUM(s.totalAmount) FROM SaleOrder s WHERE s.staffId = :staffId AND s.createdDate BETWEEN :from AND :to")
+    Double sumTotalAmountByStaffIdAndCreatedDateBetween(String staffId, LocalDateTime from, LocalDateTime to);
 }

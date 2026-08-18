@@ -10,7 +10,17 @@ import java.util.Optional;
 
 @Repository
 public interface PayrollRepository extends JpaRepository<Payroll, String>, JpaSpecificationExecutor<Payroll> {
+
+    /**
+     * @deprecated Dùng {@link #findByPersonIdAndMonthAndYearAndIsDeletedFalseOrderByUpdatedDateDescIdDesc}
+     *             + {@link com.frezo.qlns.service.impl.payroll.PayrollRecordResolver} — method này không lọc
+     *             {@code isDeleted} và ném NonUniqueResultException khi có bản trùng.
+     */
+    @Deprecated
     Optional<Payroll> findByPersonIdAndMonthAndYear(String personId, Integer month, Integer year);
+
+    List<Payroll> findByPersonIdAndMonthAndYearAndIsDeletedFalseOrderByUpdatedDateDescIdDesc(
+            String personId, Integer month, Integer year);
 
     List<Payroll> findByMonthAndYearAndIsDeletedFalse(Integer month, Integer year);
 

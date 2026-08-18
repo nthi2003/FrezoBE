@@ -5,6 +5,7 @@ import com.frezo.product.dto.request.*;
 import com.frezo.product.dto.response.ProductDashboardStats;
 import com.frezo.product.dto.response.ProductImportResultResponse;
 import com.frezo.product.dto.response.ProductResponse;
+import com.frezo.product.dto.response.ProductSalePriceHistoryResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -28,6 +29,10 @@ public interface ProductService {
     List<Map<String, Object>> getMarketComparison();
     /** Lịch sử giá vốn theo lô nhập (product_batches.cost_price). */
     List<Map<String, Object>> getCostHistory(String productId);
+
+    ProductResponse updateSalePrice(String productId, ProductSalePriceUpdateRequest request);
+
+    List<ProductSalePriceHistoryResponse> getSalePriceHistory(String productId);
 
     Map<String, Object> uploadImage(MultipartFile file);
 }

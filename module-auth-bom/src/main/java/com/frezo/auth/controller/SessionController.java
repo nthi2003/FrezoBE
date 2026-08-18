@@ -98,6 +98,15 @@ public class SessionController {
         return ResponseEntity.ok(ApiResponse.success(userSessionService.getAllActiveSessions(pageRequest)));
     }
 
+    @Operation(summary = "Thu hồi nhiều phiên (admin)", description = "Vô hiệu hóa danh sách phiên đăng nhập")
+    @PostMapping("/admin/revoke-bulk")
+    @CheckPermission(api = "/auth/session/admin/active", action = "VIEW")
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> revokeBulkSessions(@RequestBody List<String> ids) {
+        String revokedBy = SystemUtils.getCurrentUsername();
+        int revoked = userSessionService.revokeSessions(ids, revokedBy);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("revoked", revoked)));
+    }
+
     private static String extractBearer(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {

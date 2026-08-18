@@ -26,6 +26,7 @@
         <module>module-warehouse-bom</module>
         <module>module-fbautomation-bom</module>
         <module>module-accounting-bom</module>
+        <module>module-profit-bom</module>
         <module>module-crm-bom</module>
         <module>module-approval-bom</module>
         <module>module-event-bom</module>

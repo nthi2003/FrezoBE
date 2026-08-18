@@ -9,6 +9,7 @@ import com.frezo.product.dto.request.ProductUpdateRequest;
 import com.frezo.product.dto.response.ProductDashboardStats;
 import com.frezo.product.dto.response.ProductImportResultResponse;
 import com.frezo.product.dto.response.ProductResponse;
+import com.frezo.product.dto.response.ProductSalePriceHistoryResponse;
 import com.frezo.product.service.ProductService;
 import com.frezo.product.service.impl.product.ProductCommandService;
 import com.frezo.product.service.impl.product.ProductDashboardService;
@@ -117,6 +118,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<Map<String, Object>> getCostHistory(String productId) {
         return inventoryService.getCostHistory(productId);
+    }
+
+    @Override
+    public ProductResponse updateSalePrice(String productId, com.frezo.product.dto.request.ProductSalePriceUpdateRequest request) {
+        return pricingService.updateSalePrice(productId, request);
+    }
+
+    @Override
+    public List<ProductSalePriceHistoryResponse> getSalePriceHistory(String productId) {
+        return pricingService.getSalePriceHistory(productId);
     }
 
     @Override

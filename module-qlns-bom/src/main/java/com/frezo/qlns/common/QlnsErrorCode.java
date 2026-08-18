@@ -62,7 +62,12 @@ public enum QlnsErrorCode implements ErrorCode {
 
     // -------------------- PAYROLL --------------------
     PAYROLL_NOT_FOUND("error.payroll.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy bảng lương"),
-    PAYROLL_CANNOT_UPDATE("error.payroll.cannot.update", HttpStatus.CONFLICT, "Không thể cập nhật bảng lương"),
+    PAYROLL_CANNOT_UPDATE("error.payroll.cannot.update", HttpStatus.CONFLICT,
+            "Không thể cập nhật bảng lương — chỉ bản nháp (draft) mới được tính lại"),
+    PAYROLL_CANNOT_UPDATE_CONFIRMED("error.payroll.cannot.update.confirmed", HttpStatus.CONFLICT,
+            "Không thể tính lại — bảng lương đã xác nhận (confirmed). Hãy mở khóa kỳ hoặc tạo kỳ mới."),
+    PAYROLL_CANNOT_UPDATE_PAID("error.payroll.cannot.update.paid", HttpStatus.CONFLICT,
+            "Không thể tính lại — bảng lương đã thanh toán (paid)."),
     PAYROLL_LOCKED_PERIOD("qlns.payroll.locked.period", HttpStatus.CONFLICT,
             "Không thể thay đổi bảng lương trong kỳ đã khóa"),
     PAYROLL_PAY_REQUIRES_CONFIRMED("qlns.payroll.pay.requires.confirmed", HttpStatus.BAD_REQUEST,
@@ -91,7 +96,7 @@ public enum QlnsErrorCode implements ErrorCode {
     RESIGNATION_PERSON_INACTIVE("qlns.resignation.person.inactive", HttpStatus.BAD_REQUEST,
             "Nhân viên đã ngừng hoạt động — không thể tạo đơn nghỉ việc"),
     RESIGNATION_HANDOVER_INCOMPLETE("qlns.resignation.handover.incomplete", HttpStatus.BAD_REQUEST,
-            "Vui lòng xác nhận đủ checklist bàn giao (laptop, thẻ, tài liệu)"),
+            "Vui lòng chọn đầy đủ các mục bàn giao (laptop, thẻ, tài liệu) trước khi xác nhận"),
 
     // -------------------- RECOGNITION / TOKEN --------------------
     TOKEN_INSUFFICIENT_BALANCE("qlns.recognition.insufficient.balance", HttpStatus.BAD_REQUEST,

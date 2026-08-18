@@ -107,9 +107,16 @@ public class PayrollDataCollector {
             }
         }
 
-        BigDecimal basicSalary = contract.getValue() != null
-                ? BigDecimal.valueOf(contract.getValue())
-                : BigDecimal.ZERO;
+        BigDecimal basicSalary;
+        if (contract.getPositionSalary() != null || contract.getPersonAllowance() != null) {
+            int p1 = contract.getPositionSalary() != null ? contract.getPositionSalary() : 0;
+            int p2 = contract.getPersonAllowance() != null ? contract.getPersonAllowance() : 0;
+            basicSalary = BigDecimal.valueOf(p1 + p2);
+        } else {
+            basicSalary = contract.getValue() != null
+                    ? BigDecimal.valueOf(contract.getValue())
+                    : BigDecimal.ZERO;
+        }
 
         int dependentCount = employeeDependentRepository.findByPersonIdAndIsActiveTrue(personId).size();
 

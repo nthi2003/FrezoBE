@@ -36,8 +36,18 @@ public class PayrollLifecycleService {
             });
         }
         if (payroll.getStatus() != null && payroll.getStatus() > 0) {
-            throw new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE);
+            throw cannotRecalculate(payroll.getStatus());
         }
+    }
+
+    private static AppException cannotRecalculate(Integer status) {
+        if (status == 1) {
+            return new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE_CONFIRMED);
+        }
+        if (status >= 2) {
+            return new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE_PAID);
+        }
+        return new AppException(QlnsErrorCode.PAYROLL_CANNOT_UPDATE);
     }
 
     @Transactional

@@ -1,5 +1,6 @@
 package com.frezo.accounting.repository;
 
+import com.frezo.accounting.common.JournalStatus;
 import com.frezo.accounting.common.PostingSource;
 import com.frezo.accounting.entity.JournalEntry;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +22,8 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Stri
     List<JournalEntry> findBySourceTypeAndSourceIdOrderByPostingDateDesc(PostingSource sourceType, String sourceId);
 
     List<JournalEntry> findByPostingDateBetweenOrderByPostingDateAsc(LocalDate from, LocalDate to);
+
+    List<JournalEntry> findByStatusOrderByPostingDateDesc(JournalStatus status, org.springframework.data.domain.Pageable pageable);
+
+    long countByStatus(JournalStatus status);
 }

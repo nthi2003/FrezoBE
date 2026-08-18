@@ -14,6 +14,8 @@ public interface StockBalanceRepository extends JpaRepository<StockBalance, Stri
     Optional<StockBalance> findByProductIdAndWarehouseIdAndLocationIdAndBatchId(
             String productId, String warehouseId, String locationId, String batchId);
 
+    List<StockBalance> findByProductIdAndIsDeletedFalse(String productId);
+
     @Query(value = """
             SELECT sb.id FROM stock_balances sb
             JOIN products p ON p.id = sb.product_id

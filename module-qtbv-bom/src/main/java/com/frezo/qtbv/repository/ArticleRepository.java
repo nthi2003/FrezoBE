@@ -32,7 +32,10 @@ public interface ArticleRepository extends JpaRepository<Article, String>,
         List<Article> findPublishedArticles();
 
         /** Intranet home: published + displayOnNews, newest first. */
-        @Query("SELECT a FROM Article a WHERE a.status = 'PUBLISHED' " +
+        @Query("SELECT DISTINCT a FROM Article a " +
+                        "LEFT JOIN FETCH a.author " +
+                        "LEFT JOIN FETCH a.organization " +
+                        "WHERE a.status = 'PUBLISHED' " +
                         "AND a.isActive = true " +
                         "AND (a.displayOnNews = true OR a.displayOnNews IS NULL) " +
                         "AND (a.isDeleted = false OR a.isDeleted IS NULL) " +

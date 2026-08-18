@@ -1,7 +1,6 @@
 package com.frezo.accounting.common;
 
-/**
- * Nguồn gốc chứng từ ghi sổ — giúp trace audit ngược lại subledger gốc.
+/** * Nguồn gốc chứng từ ghi sổ — giúp trace audit ngược lại subledger gốc.
  */
 public enum PostingSource {
     /** Nhập tay từ FE (Accountant). */
@@ -19,5 +18,19 @@ public enum PostingSource {
     /** Post từ Cash & Bank (phiếu thu/chi, giao dịch NH). */
     CASH_BANK,
     /** Post từ Inventory (giá vốn 632). */
-    INVENTORY
+    INVENTORY;
+
+    /** Nhãn hiển thị — dùng chung BE/FE mapping. */
+    public String getDisplayName() {
+        return switch (this) {
+            case MANUAL -> "Nhập tay";
+            case PAYROLL -> "Lương";
+            case SALES_INVOICE -> "Hoá đơn bán";
+            case PURCHASE -> "Mua hàng";
+            case DEPRECIATION -> "Khấu hao";
+            case REVERSAL -> "Đảo chứng từ";
+            case CASH_BANK -> "Tiền / ngân hàng";
+            case INVENTORY -> "Kho";
+        };
+    }
 }

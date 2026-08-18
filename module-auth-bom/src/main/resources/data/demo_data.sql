@@ -663,8 +663,31 @@ WHERE NOT EXISTS (
 );
 
 -- ============================================================
--- 18) PAYROLL — 10 nhân viên x 2 tháng gần nhất (tháng trước = Paid, tháng này = Draft)
+-- 18) PAYROLL — NV demo x 2 tháng gần nhất (tháng trước = Paid, tháng này = Draft)
+--     Status: 0=draft, 1=confirmed, 2=paid (khớp PayrollLifecycleService)
 -- ============================================================
+
+-- 18a) Sửa dữ liệu demo cũ (status sai + bản trùng do JOIN nhiều HĐ / person)
+UPDATE payroll SET status = 2, updated_date = NOW(), updated_by = 'system'
+WHERE COALESCE(is_deleted, false) = false AND status = 3;
+
+UPDATE payroll SET status = 0, updated_date = NOW(), updated_by = 'system'
+WHERE COALESCE(is_deleted, false) = false AND status = 1
+  AND note ILIKE '%draft%';
+
+UPDATE payroll AS dup
+SET is_deleted = true, updated_date = NOW(), updated_by = 'system'
+FROM (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               PARTITION BY person_id, month, year
+               ORDER BY updated_date DESC NULLS LAST, created_date DESC NULLS LAST, id DESC
+           ) AS rn
+    FROM payroll
+    WHERE COALESCE(is_deleted, false) = false
+) ranked
+WHERE dup.id = ranked.id AND ranked.rn > 1;
+
 INSERT INTO payroll (id, person_id, contract_id, month, year,
                      basic_salary, insurance_salary,
                      standard_days, working_days, actual_working_days,
@@ -676,32 +699,41 @@ INSERT INTO payroll (id, person_id, contract_id, month, year,
                      net_salary, status, paid_at, note,
                      is_deleted, created_date, created_by, updated_date, updated_by)
 SELECT gen_random_uuid(),
-       p.id,
-       c.id,
+       pc.pid,
+       pc.cid,
        v.month, v.year,
-       (c.value)::numeric, (c.value * 0.8)::numeric,
+       (pc.base)::numeric, (pc.base * 0.8)::numeric,
        22, 22, 22.0,
        0, 0, 30, 100000::numeric,
        4.0, 2.0, 0.0, 800000::numeric,
        2000000::numeric, v.bonus::numeric,
-       (c.value + 2000000 + v.bonus + 800000)::numeric,
-       (c.value * 0.08)::numeric, (c.value * 0.015)::numeric, (c.value * 0.01)::numeric, (c.value * 0.105)::numeric,
-       (c.value * 0.895 + 800000)::numeric, (c.value * 0.0)::numeric, 50000::numeric, 0::numeric, 100000::numeric, (c.value * 0.105 + 250000)::numeric,
-       (c.value * 0.895 + 2000000 + v.bonus + 800000 - 250000)::numeric,
+       (pc.base + 2000000 + v.bonus + 800000)::numeric,
+       (pc.base * 0.08)::numeric, (pc.base * 0.015)::numeric, (pc.base * 0.01)::numeric, (pc.base * 0.105)::numeric,
+       (pc.base * 0.895 + 800000)::numeric, (pc.base * 0.0)::numeric, 50000::numeric, 0::numeric, 100000::numeric, (pc.base * 0.105 + 250000)::numeric,
+       (pc.base * 0.895 + 2000000 + v.bonus + 800000 - 250000)::numeric,
        v.status, v.paid_at::date, v.note,
        false, NOW() - '30 days'::interval, 'system', NOW(), 'system'
-FROM person p
-JOIN contract c ON c.person_id = p.id AND c.is_deleted = false
+FROM (
+    SELECT DISTINCT ON (p.id)
+           p.id AS pid, c.id AS cid, c.value AS base
+    FROM person p
+    JOIN contract c ON c.person_id = p.id AND COALESCE(c.is_deleted, false) = false
+    WHERE p.code LIKE 'EMP%'
+      AND c.status IN ('ACTIVE', 'PENDING_APPROVAL')
+    ORDER BY p.id,
+             CASE WHEN c.activated = true AND c.status = 'ACTIVE' THEN 0 ELSE 1 END,
+             c.updated_date DESC NULLS LAST,
+             c.created_date DESC NULLS LAST
+) AS pc
 CROSS JOIN (VALUES
     -- month | year | bonus     | status | paid_at        | note
-    (EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month')::int, EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')::int, 1500000, 3, TO_CHAR(CURRENT_DATE - INTERVAL '15 days', 'YYYY-MM-DD'), 'Đã trả lương tháng trước.'),
-    (EXTRACT(MONTH FROM CURRENT_DATE)::int,                       EXTRACT(YEAR FROM CURRENT_DATE)::int,                       0,       1, NULL,                                                    'Bảng lương tháng hiện tại - đang draft.')
+    (EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month')::int, EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')::int, 1500000, 2, TO_CHAR(CURRENT_DATE - INTERVAL '15 days', 'YYYY-MM-DD'), 'Đã trả lương tháng trước.'),
+    (EXTRACT(MONTH FROM CURRENT_DATE)::int,                       EXTRACT(YEAR FROM CURRENT_DATE)::int,                       0,       0, NULL,                                                    'Bảng lương tháng hiện tại - đang draft.')
 ) AS v(month, year, bonus, status, paid_at, note)
-WHERE p.code LIKE 'EMP%'
-  AND c.status IN ('ACTIVE', 'PENDING_APPROVAL')
-  AND NOT EXISTS (
+WHERE NOT EXISTS (
       SELECT 1 FROM payroll pr
-      WHERE pr.person_id = p.id AND pr.month = v.month AND pr.year = v.year
+      WHERE pr.person_id = pc.pid AND pr.month = v.month AND pr.year = v.year
+        AND COALESCE(pr.is_deleted, false) = false
   );
 
 -- ============================================================

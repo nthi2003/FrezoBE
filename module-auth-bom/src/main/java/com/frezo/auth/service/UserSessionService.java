@@ -14,6 +14,9 @@ public interface UserSessionService {
 
     void revokeSession(String sessionId, String revokedBy);
 
+    /** Thu hồi nhiều phiên (admin / bulk) — bỏ qua id không tồn tại. */
+    int revokeSessions(List<String> sessionIds, String revokedBy);
+
     void revokeAllOtherSessions(String username, String currentSessionId, String revokedBy);
 
     long countActiveSessions(String username);

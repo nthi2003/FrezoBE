@@ -12,6 +12,7 @@ import com.frezo.product.dto.response.ProductResponse;
 import com.frezo.product.entity.Product;
 import com.frezo.product.mapper.ProductMapper;
 import com.frezo.product.repository.ProductRepository;
+import com.frezo.product.service.impl.product.ProductPricingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +31,7 @@ public class ProductCommandService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final ProductPricingService pricingService;
 
     public PageResponse<ProductResponse> filter(ProductFilterRequest request) {
         int pageNum = request.getPage() != null ? request.getPage() : 0;
@@ -61,7 +63,11 @@ public class ProductCommandService {
         product.setCode(code);
         if (productRepository.findByCode(code).isPresent()) {
         }
-        return productMapper.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        if (saved.getPrice() != null) {
+            pricingService.recordSalePriceChangeIfDifferent(saved.getId(), null, saved.getPrice(), "Thiết lập giá ban đầu");
+        }
+        return productMapper.toResponse(saved);
     }
 
     @Transactional
@@ -69,6 +75,7 @@ public class ProductCommandService {
     public ProductResponse update(String id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("product.not.found"));
+        Double oldPrice = product.getPrice();
         if (request.getCode() != null) {
             String code = normalizeRequiredCode(request.getCode());
             request.setCode(code);
@@ -79,7 +86,11 @@ public class ProductCommandService {
                     });
         }
         productMapper.updateEntity(request, product);
-        return productMapper.toResponse(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        if (request.getPrice() != null) {
+            pricingService.recordSalePriceChangeIfDifferent(saved.getId(), oldPrice, saved.getPrice(), null);
+        }
+        return productMapper.toResponse(saved);
     }
 
     @Transactional

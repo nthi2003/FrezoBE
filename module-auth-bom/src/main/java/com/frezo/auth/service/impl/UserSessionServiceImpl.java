@@ -44,6 +44,27 @@ public class UserSessionServiceImpl implements UserSessionService {
 
     @Override
     @Transactional
+    public int revokeSessions(List<String> sessionIds, String revokedBy) {
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return 0;
+        }
+        int revoked = 0;
+        for (String sessionId : sessionIds) {
+            if (!StringUtils.hasText(sessionId)) {
+                continue;
+            }
+            var sessionOpt = userSessionRepository.findById(sessionId.trim());
+            if (sessionOpt.isPresent()) {
+                authSessionService.revokeSessionRecord(sessionOpt.get(), revokedBy);
+                revoked++;
+            }
+        }
+        log.info("Bulk revoked {} sessions by {}", revoked, revokedBy);
+        return revoked;
+    }
+
+    @Override
+    @Transactional
     public void revokeAllOtherSessions(String username, String currentSessionId, String revokedBy) {
         List<UserSession> otherSessions = userSessionRepository.findByUsernameAndIsActiveTrueAndIdNot(username, currentSessionId);
 

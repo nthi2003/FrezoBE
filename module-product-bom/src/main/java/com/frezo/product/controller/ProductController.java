@@ -114,6 +114,22 @@ public class ProductController {
         return ApiResponse.success(productService.getCostHistory(id));
     }
 
+    @Operation(summary = "Cập nhật giá bán sản phẩm", description = "Đổi giá catalog (products.price) và ghi lịch sử biến động")
+    @PostMapping("/{id}/sale-price")
+    @CheckPermission(api = "/product/{id}/sale-price", action = "UPDATE")
+    public ApiResponse<?> updateSalePrice(
+            @PathVariable String id,
+            @Valid @RequestBody com.frezo.product.dto.request.ProductSalePriceUpdateRequest request) {
+        return ApiResponse.success(productService.updateSalePrice(id, request));
+    }
+
+    @Operation(summary = "Lịch sử giá bán sản phẩm", description = "Danh sách thay đổi giá bán theo thời gian")
+    @GetMapping("/{id}/sale-price-history")
+    @CheckPermission(api = "/product/{id}/sale-price-history", action = "VIEW")
+    public ApiResponse<?> getSalePriceHistory(@PathVariable String id) {
+        return ApiResponse.success(productService.getSalePriceHistory(id));
+    }
+
     @Operation(summary = "Lấy dữ liệu biểu đồ lợi nhuận", description = "Lấy doanh thu và giá vốn N ngày gần nhất")
     @GetMapping("/dashboard/profit-chart")
     @CheckPermission(api = "/product/dashboard/profit-chart", action = "VIEW")

@@ -37,6 +37,18 @@ public class Contract extends BaseEntity {
 
     private Integer value;
 
+    /** P1 — Pay for Position: lương theo vị trí */
+    @Column(name = "position_salary")
+    private Integer positionSalary;
+
+    /** P2 — Pay for Person: phụ cấp năng lực */
+    @Column(name = "person_allowance")
+    private Integer personAllowance;
+
+    /** P3 — Pay for Performance: thưởng KPI mục tiêu (khi đạt 100% doanh thu) */
+    @Column(name = "kpi_bonus")
+    private Integer kpiBonus;
+
     /** Persist as VARCHAR (not ORDINAL/smallint). See ContractStatusSchemaFixer for legacy repair. */
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "status", length = 32)

@@ -15,4 +15,6 @@ public interface ReorderRuleRepository extends JpaRepository<ReorderRule, String
     List<ReorderRule> findByActiveTrueAndIsDeletedFalse();
 
     Optional<ReorderRule> findByProductIdAndWarehouseIdAndIsDeletedFalse(String productId, String warehouseId);
+
+    List<ReorderRule> findByProductIdAndIsDeletedFalseOrderByUpdatedDateDesc(String productId);
 }

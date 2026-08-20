@@ -34,7 +34,7 @@ public class AttendanceRegularization extends BaseEntity {
     @Column(name = "attendance_date", nullable = false)
     private LocalDate attendanceDate;
 
-    /** Giờ check-in được xin ghi nhận (nullable — nếu chỉ giải trình checkout). */
+    /** Giờ check-in được xin ghi nhận */
     @Column(name = "requested_check_in")
     private LocalTime requestedCheckIn;
 

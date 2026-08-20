@@ -24,7 +24,7 @@ public interface ReorderService {
 
     Map<String, Integer> importExcel(MultipartFile file);
 
-    FePage<StockAlertDto> listAlerts(String status, String alertType);
+    FePage<StockAlertDto> listAlerts(String status, String alertType, int page, int size);
 
     StockAlertDto dismiss(String id);
 

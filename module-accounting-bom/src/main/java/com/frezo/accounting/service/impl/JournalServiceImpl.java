@@ -151,16 +151,16 @@ public class JournalServiceImpl implements JournalService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<JournalEntryResponse> listByPeriod(String periodId) {
-        return entryRepo.findByPeriodIdOrderByPostingDateDesc(periodId).stream()
-                .map(this::withLines).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<JournalEntryResponse> listBySource(PostingSource source, String sourceId) {
-        return entryRepo.findBySourceTypeAndSourceIdOrderByPostingDateDesc(source, sourceId).stream()
-                .map(this::withLines).toList();
+    public List<JournalEntryResponse> list(String periodId, PostingSource source, String sourceId) {
+        if (source != null && sourceId != null) {
+            return entryRepo.findBySourceTypeAndSourceIdOrderByPostingDateDesc(source, sourceId).stream()
+                    .map(this::withLines).toList();
+        }
+        if (periodId != null) {
+            return entryRepo.findByPeriodIdOrderByPostingDateDesc(periodId).stream()
+                    .map(this::withLines).toList();
+        }
+        return java.util.List.of();
     }
 
     // ------------------------ Helpers ------------------------

@@ -18,9 +18,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Auto-match exact + fuzzy suggestions (amount50 + date30 + desc20).
- */
 @Component
 @RequiredArgsConstructor
 public class BankMatchEngine {
@@ -86,8 +83,6 @@ public class BankMatchEngine {
         }
         return out;
     }
-
-    /** amount50 + date30 + desc20 */
     public static int scoreFuzzy(BigDecimal bankAmt, LocalDate bankDate, String bankDesc,
                                  BigDecimal jeAmt, LocalDate jeDate, String jeDesc) {
         int amountScore = 0;

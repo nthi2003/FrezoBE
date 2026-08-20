@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/accounting/setting")
 @RequiredArgsConstructor
-@Tag(name = "Accounting - Setting", description = "Cấu hình kế toán (chuẩn TT133/TT99, mapping TK)")
+@Tag(name = "Accounting - Setting", description = "Cấu hình kế toán")
 public class AccountingSettingController {
 
     private final AccountingSettingService svc;

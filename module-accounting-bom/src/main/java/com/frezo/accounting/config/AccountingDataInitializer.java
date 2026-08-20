@@ -113,23 +113,20 @@ public class AccountingDataInitializer implements ApplicationRunner {
     private void seedPosted(String idempotencyKey, LocalDate date, String description,
                             JournalLineRequest... lines) {
         if (journalEntryRepository.findByIdempotencyKey(idempotencyKey).isPresent()) {
-            log.debug("[acc-seed] journal {} already exists — skip", idempotencyKey);
             return;
         }
         JournalEntryRequest req = buildRequest(idempotencyKey, date, description, lines);
         journalService.createAndPost(req);
-        log.info("[acc-seed] POSTED journal {}", idempotencyKey);
+
     }
 
     private void seedDraft(String idempotencyKey, LocalDate date, String description,
                            JournalLineRequest... lines) {
         if (journalEntryRepository.findByIdempotencyKey(idempotencyKey).isPresent()) {
-            log.debug("[acc-seed] journal {} already exists — skip", idempotencyKey);
             return;
         }
         JournalEntryRequest req = buildRequest(idempotencyKey, date, description, lines);
         journalService.createDraft(req);
-        log.info("[acc-seed] DRAFT journal {}", idempotencyKey);
     }
 
     private JournalEntryRequest buildRequest(String key, LocalDate date, String description,
@@ -149,14 +146,12 @@ public class AccountingDataInitializer implements ApplicationRunner {
         boolean exists = bankStatementRepository.findByIsDeletedFalseOrderByImportedAtDesc().stream()
                 .anyMatch(s -> SEED_BANK_FILE.equals(s.getFileName()));
         if (exists) {
-            log.debug("[acc-seed] bank statement {} already exists — skip", SEED_BANK_FILE);
             return;
         }
 
         Account bank = accountRepository.findByCodeAndIsDeletedFalse("1121")
                 .orElse(null);
         if (bank == null) {
-            log.warn("[acc-seed] TK 1121 missing — skip bank statement");
             return;
         }
 

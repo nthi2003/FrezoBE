@@ -18,7 +18,6 @@ import com.frezo.warehouse.repository.StockAlertRepository;
 import com.frezo.warehouse.repository.StockBalanceRepository;
 import com.frezo.warehouse.repository.StockBatchRepository;
 import com.frezo.warehouse.repository.WarehouseRepository;
-import com.frezo.warehouse.service.ExpiryAlertService;
 import com.frezo.warehouse.service.ReorderService;
 import com.frezo.warehouse.service.StockAlertNotifier;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Reorder rules + stock alerts. Enrich product/warehouse inline (≤5 deps).
@@ -54,7 +55,6 @@ public class ReorderServiceImpl implements ReorderService {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final ExpiryAlertService expiryAlertService;
     private final StockAlertNotifier stockAlertNotifier;
 
     @Override
@@ -129,29 +129,33 @@ public class ReorderServiceImpl implements ReorderService {
     }
 
     @Override
-    public FePage<StockAlertDto> listAlerts(String status, String alertType) {
-        expiryAlertService.scanAndRaiseExpiryAlerts();
+    public FePage<StockAlertDto> listAlerts(String status, String alertType, int page, int size) {
+        String st = (status == null || status.isBlank() || "all".equalsIgnoreCase(status))
+                ? null : status.toUpperCase();
+        String at = (alertType == null || alertType.isBlank())
+                ? null : alertType.toUpperCase();
 
-        List<StockAlert> alerts;
-        if (status == null || status.isBlank() || "all".equalsIgnoreCase(status)) {
-            alerts = alertRepository.findByIsDeletedFalseOrderByTriggeredAtDesc();
-        } else {
-            String st = status.toUpperCase();
-            if ("OPEN".equals(st)) {
-                alerts = alertRepository.findByStatusAndIsDeletedFalseOrderByTriggeredAtDesc("OPEN");
-            } else {
-                alerts = alertRepository.findByIsDeletedFalseOrderByTriggeredAtDesc().stream()
-                        .filter(a -> !"OPEN".equals(a.getStatus()))
-                        .toList();
-            }
-        }
-        if (alertType != null && !alertType.isBlank()) {
-            String type = alertType.toUpperCase();
-            alerts = alerts.stream()
-                    .filter(a -> type.equals(a.getAlertType() != null ? a.getAlertType() : "LOW_STOCK"))
-                    .toList();
-        }
-        return FePage.all(alerts.stream().map(this::toAlertDto).toList());
+        List<StockAlert> alerts = alertRepository.findFiltered(st, at);
+
+        Set<String> whIds = alerts.stream().map(StockAlert::getWarehouseId).collect(Collectors.toSet());
+        Set<String> prIds = alerts.stream().map(StockAlert::getProductId).collect(Collectors.toSet());
+        Set<String> btIds = alerts.stream().map(StockAlert::getBatchId).filter(b -> b != null).collect(Collectors.toSet());
+
+        Map<String, Warehouse> whMap = whIds.isEmpty() ? Map.of()
+                : warehouseRepository.findAllById(whIds).stream()
+                .collect(Collectors.toMap(Warehouse::getId, w -> w));
+        Map<String, Product> prMap = prIds.isEmpty() ? Map.of()
+                : productRepository.findAllById(prIds).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+        Map<String, com.frezo.warehouse.entity.StockBatch> btMap = btIds.isEmpty() ? Map.of()
+                : stockBatchRepository.findAllById(btIds).stream()
+                .collect(Collectors.toMap(com.frezo.warehouse.entity.StockBatch::getId, b -> b));
+
+        List<StockAlertDto> dtos = alerts.stream()
+                .map(a -> toAlertDto(a, whMap, prMap, btMap))
+                .toList();
+
+        return FePage.of(dtos, page, size);
     }
 
     @Override
@@ -249,6 +253,24 @@ public class ReorderServiceImpl implements ReorderService {
                     .map(b -> b.getBatchCode())
                     .orElse(null);
         }
+        return buildAlertDto(a, wh, p, batchCode);
+    }
+
+    private StockAlertDto toAlertDto(StockAlert a,
+                                     Map<String, Warehouse> whMap,
+                                     Map<String, Product> prMap,
+                                     Map<String, com.frezo.warehouse.entity.StockBatch> btMap) {
+        Warehouse wh = whMap.get(a.getWarehouseId());
+        Product p = prMap.get(a.getProductId());
+        String batchCode = null;
+        if (a.getBatchId() != null) {
+            com.frezo.warehouse.entity.StockBatch bt = btMap.get(a.getBatchId());
+            batchCode = bt != null ? bt.getBatchCode() : null;
+        }
+        return buildAlertDto(a, wh, p, batchCode);
+    }
+
+    private StockAlertDto buildAlertDto(StockAlert a, Warehouse wh, Product p, String batchCode) {
         return StockAlertDto.builder()
                 .id(a.getId())
                 .warehouseId(a.getWarehouseId())

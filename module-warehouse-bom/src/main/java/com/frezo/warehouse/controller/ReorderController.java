@@ -82,8 +82,10 @@ public class ReorderController {
     @CheckPermission(api = "/warehouse/stock-alerts", action = "VIEW")
     public ApiResponse<FePage<StockAlertDto>> listAlerts(
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String alertType) {
-        return ApiResponse.ok(reorderService.listAlerts(status, alertType));
+            @RequestParam(required = false) String alertType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(reorderService.listAlerts(status, alertType, page, size));
     }
 
     @PostMapping("/stock-alerts/scan")

@@ -78,9 +78,7 @@ public class ContractDataInitializer implements ApplicationRunner {
         log.info("[contract-seed] template {} ({})", name, type);
     }
 
-    /**
-     * EMP* thiếu HĐ ACTIVE+activated → set cả hai trên 1 HĐ live, hoặc tạo/reuse {@code HD_ACTIVE_*}.
-     */
+
     private void ensureActivatedContracts() {
         List<Person> employees = new ArrayList<>();
         for (Person p : personRepository.findAll()) {
@@ -133,7 +131,6 @@ public class ContractDataInitializer implements ApplicationRunner {
                     hasOk.add(p.getId());
                     byCode.put(code, c);
                     created++;
-                    log.info("[contract-seed] created {} → {}", code, p.getCode());
                     i++;
                     continue;
                 }

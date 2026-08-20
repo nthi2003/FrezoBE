@@ -13,6 +13,16 @@ public interface StockAlertRepository extends JpaRepository<StockAlert, String> 
 
     List<StockAlert> findByStatusAndIsDeletedFalseOrderByTriggeredAtDesc(String status);
 
+    @Query("""
+            SELECT a FROM StockAlert a
+            WHERE (a.isDeleted = false OR a.isDeleted IS NULL)
+              AND (:status IS NULL OR a.status = :status)
+              AND (:alertType IS NULL OR COALESCE(a.alertType, 'LOW_STOCK') = :alertType)
+            ORDER BY a.triggeredAt DESC
+            """)
+    List<StockAlert> findFiltered(@Param("status") String status,
+                                  @Param("alertType") String alertType);
+
     boolean existsByIdempotencyKeyAndIsDeletedFalse(String key);
 
     /**

@@ -35,7 +35,5 @@ public interface JournalService {
 
     JournalEntryResponse getById(String id);
 
-    List<JournalEntryResponse> listByPeriod(String periodId);
-
-    List<JournalEntryResponse> listBySource(PostingSource source, String sourceId);
+    List<JournalEntryResponse> list(String periodId, PostingSource source, String sourceId);
 }

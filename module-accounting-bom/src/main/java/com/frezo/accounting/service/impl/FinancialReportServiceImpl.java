@@ -66,7 +66,6 @@ public class FinancialReportServiceImpl implements FinancialReportService {
                     equity.add(line);
                     totalEq = totalEq.add(amt);
                 }
-                default -> { /* skip P&L */ }
             }
         }
 

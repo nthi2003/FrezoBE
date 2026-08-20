@@ -709,6 +709,8 @@ WITH ep_perms(code, name, api_method, api_path, action) AS (
         ('PRODUCT_IMPORT_UPDATE', '/product/import - UPDATE', 'POST', '/product/import', 'UPDATE'),
         ('PRODUCT_CALCULATE_PRICE_VIEW', '/product/calculate-price - VIEW', 'GET', '/product/calculate-price', 'VIEW'),
         ('PRODUCT_ID_COST_HISTORY_VIEW', '/product/{id}/cost-history - VIEW', 'GET', '/product/{id}/cost-history', 'VIEW'),
+        ('PRODUCT_ID_SALE_PRICE_UPDATE', '/product/{id}/sale-price - UPDATE', 'POST', '/product/{id}/sale-price', 'UPDATE'),
+        ('PRODUCT_ID_SALE_PRICE_HISTORY_VIEW', '/product/{id}/sale-price-history - VIEW', 'GET', '/product/{id}/sale-price-history', 'VIEW'),
         ('PRODUCT_DASHBOARD_PROFIT_CHART_VIEW', '/product/dashboard/profit-chart - VIEW', 'GET', '/product/dashboard/profit-chart', 'VIEW'),
         ('PRODUCT_DASHBOARD_PRICE_FLUCTUATION_VIEW', '/product/dashboard/price-fluctuation - VIEW', 'GET', '/product/dashboard/price-fluctuation', 'VIEW'),
         ('PRODUCT_DASHBOARD_MARKET_COMPARISON_VIEW', '/product/dashboard/market-comparison - VIEW', 'GET', '/product/dashboard/market-comparison', 'VIEW'),

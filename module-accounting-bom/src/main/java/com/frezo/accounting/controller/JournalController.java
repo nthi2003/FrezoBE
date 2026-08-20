@@ -30,13 +30,7 @@ public class JournalController {
     public ApiResponse<?> list(@RequestParam(required = false) String periodId,
                                @RequestParam(required = false) PostingSource source,
                                @RequestParam(required = false) String sourceId) {
-        if (source != null && sourceId != null) {
-            return ApiResponse.ok(svc.listBySource(source, sourceId));
-        }
-        if (periodId != null) {
-            return ApiResponse.ok(svc.listByPeriod(periodId));
-        }
-        return ApiResponse.ok(java.util.List.of());
+        return ApiResponse.ok(svc.list(periodId, source, sourceId));
     }
 
     @PostMapping("/draft")

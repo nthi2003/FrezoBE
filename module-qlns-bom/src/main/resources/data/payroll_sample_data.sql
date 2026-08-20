@@ -57,14 +57,26 @@ WHERE NOT EXISTS (
 
 -- ============================================================
 -- 2) PAYROLL — 10 NV × 3 tháng M-3, M-2, M-1
---    Chiến lược data:
---      * M-3, M-2: đã PAID (status=2), paid_at trong quá khứ.
---      * M-1:      CONFIRMED (status=1), chưa paid_at.
---      * Bonus/OT thay đổi theo tháng để chart FE trông sinh động.
---      * baseSalary lấy từ contract.value, insuranceSalary = 80% base.
---      * Tính BHXH/BHYT/BHTN/TNCN đúng % (đơn giản hoá — engine sẽ
---        recalculate khi trigger, đây là snapshot demo).
+--    Status: 0=draft, 1=confirmed, 2=paid
 -- ============================================================
+
+-- Dedupe + normalize status trước khi insert (idempotent trên DB đã seed)
+UPDATE payroll SET status = 2, updated_date = NOW(), updated_by = 'system'
+WHERE COALESCE(is_deleted, false) = false AND status = 3;
+
+UPDATE payroll AS dup
+SET is_deleted = true, updated_date = NOW(), updated_by = 'system'
+FROM (
+    SELECT id,
+           ROW_NUMBER() OVER (
+               PARTITION BY person_id, month, year
+               ORDER BY updated_date DESC NULLS LAST, created_date DESC NULLS LAST, id DESC
+           ) AS rn
+    FROM payroll
+    WHERE COALESCE(is_deleted, false) = false
+) ranked
+WHERE dup.id = ranked.id AND ranked.rn > 1;
+
 WITH month_series AS (
     SELECT 1 AS ord,
            EXTRACT(MONTH FROM (CURRENT_DATE - INTERVAL '3 months'))::int AS m,
@@ -88,10 +100,15 @@ WITH month_series AS (
            'Bảng lương tháng trước — đã confirmed, chờ ngày trả.'
 ),
 person_contract AS (
-    SELECT p.id AS pid, c.id AS cid, c.value AS base
+    SELECT DISTINCT ON (p.id)
+           p.id AS pid, c.id AS cid, c.value AS base
     FROM person p
-    JOIN contract c ON c.person_id = p.id AND c.is_deleted = false
+    JOIN contract c ON c.person_id = p.id AND COALESCE(c.is_deleted, false) = false
     WHERE p.code LIKE 'EMP%' AND c.status IN ('ACTIVE','PENDING_APPROVAL')
+    ORDER BY p.id,
+             CASE WHEN c.activated = true AND c.status = 'ACTIVE' THEN 0 ELSE 1 END,
+             c.updated_date DESC NULLS LAST,
+             c.created_date DESC NULLS LAST
 )
 INSERT INTO payroll (id, person_id, contract_id, month, year, payroll_period_id,
                      basic_salary, insurance_salary,
@@ -150,6 +167,7 @@ CROSS JOIN month_series ms
 WHERE NOT EXISTS (
     SELECT 1 FROM payroll pr
     WHERE pr.person_id = pc.pid AND pr.month = ms.m AND pr.year = ms.y
+      AND COALESCE(pr.is_deleted, false) = false
 );
 
 -- Recompute total_deductions & net_salary từ các field đã insert (idempotent)

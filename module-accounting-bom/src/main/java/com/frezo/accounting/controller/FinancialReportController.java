@@ -26,7 +26,7 @@ public class FinancialReportController {
 
     @GetMapping("/balance-sheet")
     @CheckPermission(api = "/accounting/reports/balance-sheet", action = "VIEW")
-    @Operation(summary = "Bảng cân đối kế toán (stub từ AccountType + trial-balance)")
+    @Operation(summary = "Bảng cân đối kế toán")
     public ApiResponse<BalanceSheetResponse> balanceSheet(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {

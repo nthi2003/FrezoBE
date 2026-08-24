@@ -56,7 +56,7 @@ public class ProductDashboardService {
             List<Object[]> results = inventoryLogRepository.getProfitChartData(fromDate);
             return mapProfitRows(results);
         } catch (Exception e) {
-            log.warn("[dashboard] getProfitChart failed — trả empty list. Lý do: {}", e.getMessage());
+            log.error("[dashboard] getProfitChart failed — trả empty list. Lý do: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -66,7 +66,7 @@ public class ProductDashboardService {
             List<Object[]> results = priceConfigRepository.getPriceFluctuation();
             return mapFluctuationRows(results);
         } catch (Exception e) {
-            log.warn("[dashboard] getPriceFluctuation failed — trả empty list. Lý do: {}", e.getMessage());
+            log.error("[dashboard] getPriceFluctuation failed — trả empty list. Lý do: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -76,7 +76,7 @@ public class ProductDashboardService {
             List<Object[]> results = marketPriceRepository.getTodayMarketComparison();
             return mapMarketRows(results);
         } catch (Exception e) {
-            log.warn("[dashboard] getMarketComparison failed — trả empty list. Lý do: {}", e.getMessage());
+            log.error("[dashboard] getMarketComparison failed — trả empty list. Lý do: {}", e.getMessage(), e);
             return new ArrayList<>();
         }
     }
@@ -85,7 +85,7 @@ public class ProductDashboardService {
         try {
             return supplier.getAsLong();
         } catch (Exception e) {
-            log.warn("[dashboard] {} failed: {}", label, e.getMessage());
+            log.error("[dashboard] {} failed: {}", label, e.getMessage(), e);
             return 0L;
         }
     }

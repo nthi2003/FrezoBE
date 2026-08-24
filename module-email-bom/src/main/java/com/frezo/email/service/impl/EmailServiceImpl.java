@@ -70,10 +70,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setText(body, true);
 
             mailSender.send(message);
-            log.info("Email sent successfully to {}", to);
         } catch (MessagingException | MailException e) {
-            log.error("Failed to send email to {} via {}:{} (config {}): {}",
-                    to, mailSender.getHost(), mailSender.getPort(), config.getCode(), e.getMessage());
             throw new AppException(EmailErrorCode.SEND_FAILED, e);
         }
     }
@@ -96,20 +93,19 @@ public class EmailServiceImpl implements EmailService {
                 sendEmail(config, recipient, processedSubject, processedContent);
                 sent.add(recipient);
             } catch (Exception e) {
-                log.error("Failed to send to {}: {}", recipient, e.getMessage());
                 failed.add(recipient);
                 if (firstError == null) firstError = describeFailure(config, e);
             }
         }
 
-        // Log tách SUCCESS / FAILED để admin thấy được lần gửi thất bại trong lịch sử.
+
         if (!sent.isEmpty()) {
             logSendEmail(template.getId(), processedSubject, sent, params.toString(), STATUS_SUCCESS, null);
         }
         if (!failed.isEmpty()) {
             logSendEmail(template.getId(), processedSubject, failed, params.toString(), STATUS_FAILED, firstError);
         }
-        // Không ai nhận được → báo lỗi để caller không tưởng đã gửi.
+
         if (sent.isEmpty()) {
             throw new AppException(EmailErrorCode.SEND_FAILED);
         }
@@ -127,10 +123,7 @@ public class EmailServiceImpl implements EmailService {
         logSendEmail(null, subject, List.of(to), "sendSimple", STATUS_SUCCESS, null);
     }
 
-    /**
-     * Config SMTP đang dùng. Nhiều row {@code activated} thì lấy row cập nhật gần nhất
-     * (thứ tự của {@code findByActivatedTrue} không xác định — từng chọn nhầm MailHog).
-     */
+
     private EmailConfig resolveActiveConfig() {
         return emailConfigRepository.findByActivatedTrue().stream()
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
@@ -168,7 +161,7 @@ public class EmailServiceImpl implements EmailService {
         List<String> sentEmails = new ArrayList<>();
         String firstError = null;
 
-        // Gửi đến danh sách email trực tiếp (không personalize)
+
         for (String recipient : recipients) {
             try {
                 String subj = request.getSubject() != null ? request.getSubject()
@@ -185,7 +178,7 @@ public class EmailServiceImpl implements EmailService {
             }
         }
 
-        // Gửi đến khách hàng theo nhóm (personalize: thay {{name}}, {{email}},... tự động)
+
         for (Customer customer : customers) {
             if (customer.getEmail() == null || customer.getEmail().isBlank()) continue;
             try {
@@ -211,7 +204,6 @@ public class EmailServiceImpl implements EmailService {
                 success++;
                 sentEmails.add(customer.getEmail());
             } catch (Exception e) {
-                log.error("Failed to send to {}: {}", customer.getEmail(), e.getMessage());
                 failedEmails.add(customer.getEmail());
                 if (firstError == null) firstError = describeFailure(config, e);
             }
@@ -275,7 +267,6 @@ public class EmailServiceImpl implements EmailService {
             }
             if (StringUtils.hasText(filter.getKeyword())) {
                 String like = "%" + filter.getKeyword().trim().toLowerCase() + "%";
-                // Người nhận nằm ở bảng con → join, và distinct để không nhân dòng.
                 Join<Object, Object> recipientJoin = root.join("recipients", JoinType.LEFT);
                 if (query != null) query.distinct(true);
                 predicates.add(cb.or(
@@ -310,9 +301,7 @@ public class EmailServiceImpl implements EmailService {
         JavaMailSenderImpl mailSender = createMailSender(config);
         try {
             mailSender.testConnection();
-            log.info("Email connection test successful for config: {}", config.getName());
         } catch (MessagingException e) {
-            log.error("Email connection test failed for config {}: {}", config.getName(), e.getMessage());
             throw new AppException(EmailErrorCode.CONNECTION_FAILED);
         }
     }
@@ -335,7 +324,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    /** Lý do thất bại đủ cụ thể để admin sửa được cấu hình (host/port + root cause). */
+
     private static String describeFailure(EmailConfig config, Throwable e) {
         Throwable root = e;
         while (root.getCause() != null && root.getCause() != root) {
@@ -352,10 +341,7 @@ public class EmailServiceImpl implements EmailService {
 
     private JavaMailSenderImpl createMailSender(EmailConfig config) {
         String host = config.getSmtp() == null ? "" : config.getSmtp().trim();
-        // Nhập email vào ô SMTP là lỗi cấu hình hay gặp → UnknownHostException khó hiểu.
         if (host.isEmpty() || host.contains("@")) {
-            log.error("Email config {} có SMTP host không hợp lệ: '{}' (cần dạng smtp.gmail.com)",
-                    config.getCode(), host);
             throw new AppException(EmailErrorCode.CONFIG_NOT_FOUND);
         }
 

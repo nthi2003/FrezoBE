@@ -37,7 +37,7 @@ public class AssetController {
                                @RequestParam(required = false) String categoryCode,
                                @RequestParam(required = false) String assignedPersonId,
                                @RequestParam(defaultValue = "1") int page,
-                               @RequestParam(defaultValue = "20") int size) {
+                               @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success(assetService.list(keyword, status, categoryCode, assignedPersonId, page, size));
     }
 
@@ -168,7 +168,10 @@ public class AssetController {
         return ApiResponse.success(assetService.getTransferRequest(reqId));
     }
 
-    @Operation(summary = "Duyệt ticket (PENDING → APPROVED)")
+
+    // Note handle lại api sài chung
+
+    @Operation(summary = "Duyệt ticket ")
     @PostMapping("/transfer-requests/{reqId}/approve")
     @CheckPermission(api = "/qlts/asset/transfer-requests/{reqId}/approve", action = "UPDATE")
     public ApiResponse<?> approveTransferRequest(@PathVariable String reqId,
@@ -177,7 +180,7 @@ public class AssetController {
         return ApiResponse.success(assetService.approveTransferRequest(reqId, note));
     }
 
-    @Operation(summary = "Từ chối ticket (PENDING → REJECTED)")
+    @Operation(summary = "Từ chối ticket")
     @PostMapping("/transfer-requests/{reqId}/reject")
     @CheckPermission(api = "/qlts/asset/transfer-requests/{reqId}/reject", action = "UPDATE")
     public ApiResponse<?> rejectTransferRequest(@PathVariable String reqId,
@@ -186,14 +189,14 @@ public class AssetController {
         return ApiResponse.success(assetService.rejectTransferRequest(reqId, reason));
     }
 
-    @Operation(summary = "Huỷ ticket (requester hoặc admin, chỉ khi PENDING)")
+    @Operation(summary = "Huỷ ticket")
     @PostMapping("/transfer-requests/{reqId}/cancel")
     @CheckPermission(api = "/qlts/asset/transfer-requests/{reqId}/cancel", action = "UPDATE")
     public ApiResponse<?> cancelTransferRequest(@PathVariable String reqId) {
         return ApiResponse.success(assetService.cancelTransferRequest(reqId));
     }
 
-    @Operation(summary = "Xác nhận bàn giao (APPROVED → HANDED_OVER, update Asset)")
+    @Operation(summary = "Xác nhận bàn giao ")
     @PostMapping("/transfer-requests/{reqId}/handover")
     @CheckPermission(api = "/qlts/asset/transfer-requests/{reqId}/handover", action = "UPDATE")
     public ApiResponse<?> handoverTransferRequest(@PathVariable String reqId,
@@ -201,4 +204,5 @@ public class AssetController {
         String note = body != null ? body.getOrDefault("note", null) : null;
         return ApiResponse.success(assetService.handoverTransferRequest(reqId, note));
     }
+
 }

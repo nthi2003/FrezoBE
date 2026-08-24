@@ -41,21 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Quản lý tài sản — CRUD + workflow cấp phát / bảo trì / thanh lý.
- *
- * <h3>State transitions</h3>
- * <pre>
- *   AVAILABLE ──(assign)──▶ IN_USE ──(unassign)──▶ AVAILABLE
- *       │                     │
- *       │                     └──(startMaintenance)─▶ MAINTENANCE ──(endMaintenance)─▶ AVAILABLE
- *       │
- *       ├──(dispose)────▶ DISPOSED  [terminal]
- *       └──(reportLost)─▶ LOST      [terminal]
- * </pre>
- *
- * Mỗi transition ghi 1 record {@link AssetAssignment} → timeline drawer FE.
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -85,18 +71,9 @@ public class AssetServiceImpl implements AssetService {
     private final AssetAssignmentRepository assignmentRepository;
     private final AssetTransferRequestRepository transferRequestRepository;
     private final CategoryRepository categoryRepository;
-    /**
-     * Không inject {@code PersonRepository} vì {@code module-dmdc-bom} là upstream —
-     * nếu depend qtht-bom sẽ tạo cycle với customer-bom. Dùng {@link JdbcTemplate}
-     * để query trực tiếp bảng {@code person} khi cần enrich tên nhân viên.
-     */
+
     private final JdbcTemplate jdbcTemplate;
 
-    /**
-     * Workflow engine chung — nếu definition {@link #WF_DEF_CODE} tồn tại, ticket sẽ
-     * được lái bởi engine (approve/reject qua {@code WorkflowService}). Nếu không
-     * (VD DB chưa migrate seeder), fallback về flow hard-coded 3-status cũ.
-     */
     private final WorkflowService workflowService;
 
     // ============================================================
@@ -542,12 +519,9 @@ public class AssetServiceImpl implements AssetService {
     public AssetTransferRequestResponse approveTransferRequest(String requestId, String note) {
         AssetTransferRequest tr = findTransferOrThrow(requestId);
 
-        // ---- Path A: có workflow engine — route qua engine ----
         if (tr.getWorkflowInstanceId() != null) {
             return approveViaEngine(tr, note);
         }
-
-        // ---- Path B: legacy fallback ----
         requireApprover();
         if (!TR_PENDING.equals(tr.getStatus())) {
             throw new AppException(DmdcErrorCode.TRANSFER_NOT_PENDING);
@@ -601,7 +575,7 @@ public class AssetServiceImpl implements AssetService {
         if (!isRequester && !isAdmin()) {
             throw new AppException(DmdcErrorCode.TRANSFER_CANCEL_FORBIDDEN);
         }
-        // Chỉ huỷ khi chưa duyệt xong — kể cả engine mode
+
         if (!TR_PENDING.equals(tr.getStatus())) {
             throw new AppException(DmdcErrorCode.TRANSFER_CANNOT_CANCEL);
         }
@@ -625,15 +599,10 @@ public class AssetServiceImpl implements AssetService {
     public AssetTransferRequestResponse handoverTransferRequest(String requestId, String note) {
         AssetTransferRequest tr = findTransferOrThrow(requestId);
 
-        // Ở engine mode, "handover" thực chất chỉ là duyệt STEP CUỐI trong workflow.
-        // FE có thể vẫn call endpoint /handover cũ cho tương thích — ta redirect
-        // vào cùng logic approve. Nếu step cuối là "Bàn giao", engine sẽ COMPLETED
-        // và applyHandoverEffects() sẽ chuyển Asset → IN_USE / AVAILABLE.
         if (tr.getWorkflowInstanceId() != null) {
             return approveViaEngine(tr, note);
         }
 
-        // ---- Legacy path ----
         requireApprover();
         if (!TR_APPROVED.equals(tr.getStatus())) {
             throw new AppException(DmdcErrorCode.TRANSFER_NOT_APPROVED);
@@ -648,70 +617,46 @@ public class AssetServiceImpl implements AssetService {
         return enrichTransfer(tr, asset);
     }
 
-    // ============================================================
-    // Workflow engine glue
-    // ============================================================
 
-    /**
-     * Duyệt bước hiện tại của instance:
-     * <ul>
-     *   <li>Nếu còn bước tiếp theo → instance vẫn RUNNING, request.status stays PENDING
-     *       nhưng approvedBy/At/Note ghi lại cho step vừa duyệt (audit).</li>
-     *   <li>Nếu là bước cuối → instance COMPLETED → apply handover cho asset →
-     *       request.status = HANDED_OVER.</li>
-     * </ul>
-     * Engine tự check role/permission của user hiện tại nên không cần {@link #requireApprover()}.
-     */
     private AssetTransferRequestResponse approveViaEngine(AssetTransferRequest tr, String note) {
         WorkflowTaskDto task = findCurrentPendingTask(tr);
         if (task == null) {
-            // Có thể instance đã hoàn tất trước đó nhưng request chưa sync → force sync
             syncFromEngine(tr);
             return enrichTransfer(tr, null);
         }
         workflowService.approveTask(task.getId(), note);
 
-        // Fetch instance mới để biết đã completed chưa
         WorkflowInstanceDto instance = workflowService
                 .findInstanceByEntity(WF_ENTITY_TYPE, tr.getId())
                 .orElse(null);
 
         String me = SystemUtils.getCurrentUsername();
         if (instance != null && "COMPLETED".equals(instance.getStatus())) {
-            // Bước cuối — thực hiện side-effect cho asset
             Asset asset = findOrThrow(tr.getAssetId());
             applyHandoverEffects(tr, asset, note);
             tr.setStatus(TR_HANDED_OVER);
             tr.setHandedOverBy(me);
             tr.setHandedOverAt(LocalDateTime.now());
             tr.setHandoverNote(note);
-            // Cũng ghi field approvedBy nếu chưa có (audit legacy)
             if (tr.getApprovedBy() == null) {
                 tr.setApprovedBy(me);
                 tr.setApprovedAt(LocalDateTime.now());
                 tr.setApproveNote(note);
             }
             transferRequestRepository.save(tr);
-            log.info("[asset] Instance {} COMPLETED — asset {} chuyển IN_USE",
-                    instance.getId(), asset.getCode());
             return enrichTransfer(tr, asset);
         }
 
-        // Còn bước tiếp — chỉ ghi audit cho lần duyệt đầu (approvedBy chưa có)
         if (tr.getApprovedBy() == null) {
             tr.setApprovedBy(me);
             tr.setApprovedAt(LocalDateTime.now());
             tr.setApproveNote(note);
-            // Với flow N > 1 bước, giữ status PENDING để FE hiểu "vẫn còn bước tiếp"
             transferRequestRepository.save(tr);
         }
         return enrichTransfer(tr, null);
     }
 
-    /**
-     * Đồng bộ status của request theo state của workflow instance — dùng khi phát hiện
-     * mismatch (VD engine đã COMPLETED nhưng request.status vẫn PENDING do lỗi trước đó).
-     */
+
     private void syncFromEngine(AssetTransferRequest tr) {
         if (tr.getWorkflowInstanceId() == null) return;
         WorkflowInstanceDto inst = workflowService
@@ -746,10 +691,7 @@ public class AssetServiceImpl implements AssetService {
                 .findFirst().orElse(null);
     }
 
-    /**
-     * Cập nhật {@link Asset#status}, {@code assignedPersonId} và ghi 1 dòng {@link AssetAssignment}
-     * timeline. Được gọi bởi cả legacy path lẫn engine path khi ticket đến bước bàn giao cuối.
-     */
+
     private void applyHandoverEffects(AssetTransferRequest tr, Asset asset, String note) {
         if (TR_TYPE_ASSIGN.equals(tr.getRequestType())) {
             if (!STATUS_AVAILABLE.equals(asset.getStatus())) {
@@ -826,10 +768,7 @@ public class AssetServiceImpl implements AssetService {
                 .orElseThrow(() -> new AppException(DmdcErrorCode.TRANSFER_NOT_FOUND));
     }
 
-    /**
-     * Placeholder policy: hiện tại chỉ admin approve/handover. Sau khi có org tree +
-     * asset manager role → refactor thành strategy (AssetApprovalResolver).
-     */
+
     private void requireApprover() {
         if (!isAdmin()) {
             throw new AppException(DmdcErrorCode.TRANSFER_APPROVE_FORBIDDEN);

@@ -35,9 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Depreciation — schedule + post GL. Skip asset DISPOSED. Idempotent DEP-YYYY-MM.
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -140,12 +138,10 @@ public class DepreciationServiceImpl implements DepreciationService {
         var existing = postingRepository.findByPeriodYearAndPeriodMonth(year, month);
         if (existing.isPresent()
                 && DepreciationConstants.POSTING_POSTED.equals(existing.get().getStatus())) {
-            log.info("[Depreciation] Kỳ {}/{} đã post trước đó → trả về entry cũ {}",
-                    month, year, existing.get().getJournalEntryId());
             return toResponse(existing.get());
         }
 
-        // BE-DEP-002: chặn sớm khi kỳ CLOSED/LOCKED (trước khi đụng schedule / JE)
+
         assertPeriodOpen(year, month);
 
         List<DepreciationSchedule> eligible = eligibleSchedules(year, month);
@@ -179,11 +175,9 @@ public class DepreciationServiceImpl implements DepreciationService {
             posting.setJournalEntryId(response.getId());
             posting.setStatus(DepreciationConstants.POSTING_POSTED);
             posting.setErrorMessage(null);
-            log.info("[Depreciation] Kỳ {}/{} → post GL {} (total {}, {} schedule)",
-                    month, year, response.getCode(), total, eligible.size());
+
         } catch (Exception e) {
             posting.setErrorMessage(e.getMessage());
-            log.error("[Depreciation] Post GL kỳ {}/{} thất bại: {}", month, year, e.getMessage(), e);
             postingRepository.save(posting);
             throw e;
         }

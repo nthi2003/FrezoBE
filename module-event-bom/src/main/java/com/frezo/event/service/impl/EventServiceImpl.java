@@ -84,7 +84,7 @@ public class EventServiceImpl implements EventService {
     public EventDto update(String id, EventSaveRequest req) {
         Event e = find(id);
         if (STATUS_CANCELLED.equals(e.getStatus())) {
-            throw new AppException(CommonErrorCode.CONFLICT, "Không sửa event đã huỷ");
+            throw new AppException(CommonErrorCode.CONFLICT);
         }
         validateSave(req);
         e.setTitle(req.getTitle().trim());
@@ -110,7 +110,7 @@ public class EventServiceImpl implements EventService {
     public EventDto publish(String id) {
         Event e = find(id);
         if (STATUS_CANCELLED.equals(e.getStatus())) {
-            throw new AppException(CommonErrorCode.CONFLICT, "Event đã huỷ");
+            throw new AppException(CommonErrorCode.CONFLICT);
         }
         e.setStatus(STATUS_PUBLISHED);
         e.setPublishedAt(LocalDateTime.now());

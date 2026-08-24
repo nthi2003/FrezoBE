@@ -77,7 +77,6 @@ public class EmailInboxServiceImpl implements EmailInboxService {
 
             return result;
         } catch (MessagingException e) {
-            log.error("IMAP error fetchInbox config={} folder={}: {}", configId, folder, e.getMessage(), e);
             throw new AppException(EmailErrorCode.INBOX_FETCH_FAILED, e.getMessage());
         } finally {
             closeQuietly(imapFolder, store);

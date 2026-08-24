@@ -45,8 +45,6 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         validateRequest(request);
         EmailConfig emailConfig = emailConfigMapper.toEntity(request);
         emailConfig.setIsDeleted(false);
-        // Bulk/send dùng findByActivatedTrue() — tạo mới mặc định chưa active;
-        // user phải gọi PUT /email/config/{id}/activate (hoặc nút Activate trên UI).
         if (emailConfig.getActivated() == null) {
             emailConfig.setActivated(false);
         }
@@ -118,7 +116,6 @@ public class EmailConfigServiceImpl implements EmailConfigService {
     @Transactional
     public void activate(String id) {
         EmailConfig emailConfig = findEntityById(id);
-        // LNK-09: chỉ 1 config activated — deactivate các config khác trước
         for (EmailConfig other : emailConfigRepository.findByActivatedTrue()) {
             if (!id.equals(other.getId())) {
                 other.setActivated(false);

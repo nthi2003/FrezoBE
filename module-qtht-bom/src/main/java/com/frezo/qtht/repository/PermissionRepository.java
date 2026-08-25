@@ -12,27 +12,7 @@ import java.util.Optional;
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, String> {
 
-    Optional<Permission> findByCode(String code);
 
-    List<Permission> findByAppCodeAndIsDeletedFalseOrderByApiPathAscActionAsc(String appCode);
-
-    /**
-     * Check user có quyền thực hiện {@code action} trên {@code apiPath} không.
-     * <p>
-     * <b>v1.1 fixes (Batch H):</b>
-     * <ul>
-     *   <li>Filter {@code p.is_deleted = false} — permission đã xoá không được tính.</li>
-     *   <li>Filter {@code r.is_deleted = false AND r.status = 'A'} — role bị disable / xoá không được tính.</li>
-     *   <li>Filter {@code u.is_deleted = false AND u.status = 1} — user bị vô hiệu hoá không được tính.</li>
-     *   <li>Filter {@code ur.is_deleted = false} — user-role đã revoke không được tính.</li>
-     *   <li>KHÔNG filter theo {@code app_code} để giữ tương thích với cách gọi hiện tại của aspect
-     *       (aspect chưa truyền appCode). Nếu multi-tenant sau này, cần thêm.</li>
-     * </ul>
-     */
-    /**
-     * Match {@code api_path} với hoặc không leading slash — seed cũ dùng {@code qtht/x},
-     * {@code @CheckPermission} dùng {@code /qtht/x}.
-     */
     @Query(value = """
             SELECT COUNT(p.id) > 0
             FROM permission p
@@ -58,10 +38,7 @@ public interface PermissionRepository extends JpaRepository<Permission, String> 
                             @Param("apiPath") String apiPath,
                             @Param("action") String action);
 
-    /**
-     * Danh sách {@code permission.code} của user (qua role_permission).
-     * Dùng cho {@code GET /auth/profile} → FE button-level gating ({@code usePermission} / {@code <Can>}).
-     */
+
     @Query(value = """
             SELECT DISTINCT p.code
             FROM permission p

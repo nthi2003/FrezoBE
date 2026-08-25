@@ -26,15 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
-/**
- * Đăng ký {@link SchedulableJob} theo cron lưu trong bảng {@code system_job} — thay cho
- * {@code @Scheduled} cứng trong code.
- * <p>
- * Vòng đời: {@link ApplicationReadyEvent} → seed row còn thiếu → schedule job đang bật.
- * Mỗi lần admin sửa cron / bật tắt, {@code SystemJobService} gọi {@link #reschedule(String)}.
- * <p>
- * Một job không chạy chồng: cron trigger gặp lượt đang chạy sẽ ghi SKIPPED, chạy tay sẽ báo CONFLICT.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -58,9 +50,6 @@ public class DynamicJobScheduler {
     private final Map<String, ScheduledFuture<?>> futures = new ConcurrentHashMap<>();
     private final Set<String> running = ConcurrentHashMap.newKeySet();
 
-    // ------------------------------------------------------------
-    // Bootstrap
-    // ------------------------------------------------------------
 
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrap() {
@@ -71,7 +60,7 @@ public class DynamicJobScheduler {
         jobRepository.findByIsDeletedFalseOrderByModuleCodeAscJobNameAsc().forEach(this::applySchedule);
     }
 
-    /** Tạo row DB từ metadata bean nếu chưa có; nếu có rồi chỉ đồng bộ phần mô tả (giữ nguyên cron admin đã chỉnh). */
+
     private void syncCatalogRow(SchedulableJob bean) {
         SystemJob entity = jobRepository.findByJobCodeAndIsDeletedFalse(bean.getCode()).orElse(null);
         if (entity == null) {
@@ -92,9 +81,6 @@ public class DynamicJobScheduler {
         jobRepository.save(entity);
     }
 
-    // ------------------------------------------------------------
-    // Schedule control
-    // ------------------------------------------------------------
 
     /** Huỷ lịch cũ rồi đăng ký lại theo cấu hình hiện tại của row. */
     public void applySchedule(SystemJob job) {
@@ -137,11 +123,9 @@ public class DynamicJobScheduler {
         }
     }
 
-    // ------------------------------------------------------------
-    // Execution
-    // ------------------------------------------------------------
 
-    /** Chạy tay từ màn hình quản trị — async trên pool riêng, trả về ngay. */
+
+
     public void runNow(String code, String triggeredBy) {
         if (!catalog.containsKey(code)) {
             throw new AppException(CommonErrorCode.NOT_FOUND, code);
@@ -235,9 +219,7 @@ public class DynamicJobScheduler {
         });
     }
 
-    // ------------------------------------------------------------
-    // Query helpers cho service
-    // ------------------------------------------------------------
+
 
     public boolean isRunning(String code) {
         return running.contains(code);
@@ -247,10 +229,6 @@ public class DynamicJobScheduler {
         return catalog.containsKey(code);
     }
 
-    /**
-     * Lý do job chưa chạy được (thiếu công cụ / thiếu cấu hình), hoặc {@code null} nếu sẵn sàng.
-     * Lỗi khi tự kiểm tra cũng coi là chưa sẵn sàng để màn hình quản trị không im lặng.
-     */
     public String readinessMessage(String code) {
         SchedulableJob bean = catalog.get(code);
         if (bean == null) {

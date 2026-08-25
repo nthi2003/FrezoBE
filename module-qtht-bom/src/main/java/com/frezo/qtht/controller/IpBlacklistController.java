@@ -3,6 +3,7 @@ package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
 import com.frezo.common.security.CheckPermission;
+import com.frezo.qtht.dto.request.BanIpRequest;
 import com.frezo.qtht.entity.IpBlacklist;
 import com.frezo.qtht.service.IpBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/qtht/ip-blacklist")
@@ -23,12 +23,8 @@ public class IpBlacklistController {
     @PostMapping("/ban")
     @CheckPermission(api = "/qtht/ip-blacklist/ban", action = "CREATE")
     @Operation(summary = "Cấm truy cập một IP")
-    public ApiResponse<IpBlacklist> banIp(@RequestBody Map<String, Object> body) {
-        String ipAddress = (String) body.get("ipAddress");
-        String reason = (String) body.get("reason");
-        String bannedBy = (String) body.getOrDefault("bannedBy", "SYSTEM");
-        Integer hours = body.containsKey("hours") ? Integer.valueOf(body.get("hours").toString()) : null;
-        return ApiResponse.success(ipBlacklistService.addBan(ipAddress, reason, bannedBy, hours));
+    public ApiResponse<IpBlacklist> banIp(@RequestBody BanIpRequest request) {
+        return ApiResponse.success(ipBlacklistService.addBan(request));
     }
 
     @DeleteMapping("/unban/{id}")

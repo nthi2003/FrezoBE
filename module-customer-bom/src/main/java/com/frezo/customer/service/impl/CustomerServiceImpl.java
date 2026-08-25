@@ -40,7 +40,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerMapper customerMapper;
     private final com.frezo.common.service.MinioService minioService;
 
-    // ─────────────────── LIST / SEARCH ─────────────────────────────────────────
+
     @Override
     public PageResponse<CustomerResponse> getAll(CustomerFilterRequest filter) {
         Specification<Customer> spec = buildSpec(filter);
@@ -69,13 +69,13 @@ public class CustomerServiceImpl implements CustomerService {
         return spec;
     }
 
-    // ─────────────────── GET BY ID ──────────────────────────────────────────────
+
     @Override
     public CustomerResponse getById(String id) {
         return customerMapper.toResponse(findById(id));
     }
 
-    // ─────────────────── CREATE ─────────────────────────────────────────────────
+
     @Override
     @Transactional
     public CustomerResponse create(CustomerRequest request) {
@@ -93,7 +93,7 @@ public class CustomerServiceImpl implements CustomerService {
         return customerMapper.toResponse(customerRepository.save(entity));
     }
 
-    // ─────────────────── UPDATE ─────────────────────────────────────────────────
+
     @Override
     @Transactional
     public CustomerResponse update(String id, CustomerRequest request) {
@@ -108,7 +108,7 @@ public class CustomerServiceImpl implements CustomerService {
         return customerMapper.toResponse(customerRepository.save(entity));
     }
 
-    // ─────────────────── DELETE ─────────────────────────────────────────────────
+
     @Override
     @Transactional
     public void delete(String id) {
@@ -116,11 +116,7 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepository.deleteById(id);
     }
 
-    // ─────────────────── REVEAL PHONE (Audit) ───────────────────────────────────
-    /**
-     * Giải mã số điện thoại thật. Yêu cầu quyền cao.
-     * Mọi lần gọi API này phải được ghi vào Audit log.
-     */
+
     @Override
     public String revealPhone(String id) {
         Customer entity = findById(id);
@@ -129,7 +125,7 @@ public class CustomerServiceImpl implements CustomerService {
         return CryptoUtils.decryptAESGCM(entity.getPhoneEncrypted());
     }
 
-    // ─────────────────── IMPORT EXCEL ───────────────────────────────────────────
+
     @Override
     @Transactional
     public void importFromExcel(MultipartFile file) {
@@ -152,8 +148,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    // ─────────────────── EXPORT EXCEL ───────────────────────────────────────────
-    @Override
+
     public byte[] exportToExcel(CustomerFilterRequest filter) {
         filter.setPageNumber(null); // lấy toàn bộ
         filter.setPageSize(null);
@@ -189,7 +184,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    // ─────────────────── SYNC FROM AI ──────────────────────────────────────────
+
     private final org.springframework.web.client.RestTemplate restTemplate;
 
     @Override
@@ -211,11 +206,10 @@ public class CustomerServiceImpl implements CustomerService {
 
             int count = 0;
             for (AiScrapeResponse.AiLeadData lead : response.getData()) {
-                // Kiểm tra xem khách hàng đã tồn tại chưa (qua SĐT hoăc Tên + Địa chỉ)
-                // Đơn giản nhất là check empty Phone hoặc fake check
+
                 if (SystemUtils.isNullOrEmpty(lead.getPhone()) || "N/A".equals(lead.getPhone())) continue;
 
-                // Tạo mới nếu chưa có
+
                 CustomerRequest req = new CustomerRequest();
                 req.setName(lead.getName());
                 req.setPhone(lead.getPhone());

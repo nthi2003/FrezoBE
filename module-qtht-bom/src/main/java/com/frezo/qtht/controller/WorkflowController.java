@@ -29,7 +29,6 @@ public class WorkflowController {
 
     private final WorkflowService workflowService;
 
-    // ---- Definitions ----
 
     @Operation(summary = "Danh sách definition (filter theo moduleCode)")
     @GetMapping("/definitions")
@@ -67,7 +66,7 @@ public class WorkflowController {
         return ApiResponse.success(null);
     }
 
-    // ---- Instances ----
+
 
     @Operation(summary = "Trạng thái workflow của 1 entity (cho FE render progress)")
     @GetMapping("/instances/by-entity/{entityType}/{entityId}")

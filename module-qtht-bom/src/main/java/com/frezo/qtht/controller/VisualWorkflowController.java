@@ -23,7 +23,6 @@ public class VisualWorkflowController {
 
     private final WorkflowVisualService visualService;
 
-    // ---- Templates ----
 
     @Operation(summary = "Danh sách mẫu hệ thống (gallery)")
     @GetMapping("/templates")
@@ -46,7 +45,6 @@ public class VisualWorkflowController {
         return ApiResponse.success(visualService.cloneTemplate(code));
     }
 
-    // ---- Definitions (visual) ----
 
     @Operation(summary = "GET definition (kèm graphJson)")
     @GetMapping("/definitions/{id}")
@@ -68,8 +66,6 @@ public class VisualWorkflowController {
     public ApiResponse<?> validate(@PathVariable String id) {
         return ApiResponse.success(visualService.validate(id));
     }
-
-    // ---- Alias graph endpoints (FE hiện dùng /workflows/{id}/graph) ----
 
     @Operation(summary = "GET graph (alias)")
     @GetMapping("/{id}/graph")

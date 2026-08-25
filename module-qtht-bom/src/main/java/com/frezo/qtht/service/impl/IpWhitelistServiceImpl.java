@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +22,13 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
     @Override
     public List<IpWhitelist> getAllActive() {
         return ipWhitelistRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<String> getAllActiveWhitelistIps() {
+        return getAllActive().stream()
+                .map(IpWhitelist::getIpAddress)
+                .collect(Collectors.toList());
     }
 
     @Override

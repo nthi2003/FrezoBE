@@ -17,16 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Seed / sync EU guides vào bảng {@code guide} (FR-DOC-03/04).
- * <p>
- * Nguồn markdown: {@code classpath:guides/*.md} — đồng bộ từ FE
- * {@code packages/erp/src/docs/} (BA viết docs ở FE, copy vào đây rồi restart BE).
- * <p>
- * Idempotent: insert nếu thiếu slug; refresh body/meta nếu bản ghi vẫn do seed
- * ({@code created_by}/{@code updated_by} ∈ guide-seed|system|null) —
- * không ghi đè bài Admin đã sửa.
- */
+
 @Slf4j
 @Component
 @Order(55)
@@ -46,7 +37,7 @@ public class GuideDataInitializer implements ApplicationRunner {
             String resource
     ) {}
 
-    /** Khớp EU_DOCS trong FrezoFE {@code packages/erp/src/docs/index.ts}. */
+
     private static final List<Seed> SEEDS = List.of(
             new Seed("getting-started", "Bắt đầu", "Chung",
                     "Đăng nhập, tìm trang và biết hôm nay làm việc gì trước.", 1,

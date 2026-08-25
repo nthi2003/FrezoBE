@@ -8,6 +8,8 @@ public interface IpWhitelistService {
 
     List<IpWhitelist> getAllActive();
 
+    List<String> getAllActiveWhitelistIps();
+
     IpWhitelist addToWhitelist(String ipAddress, String description, String createdBy);
 
     void removeFromWhitelist(String id);

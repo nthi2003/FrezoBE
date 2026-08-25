@@ -54,9 +54,7 @@ public class TicketServiceImpl implements TicketService {
     private final CommentAttachmentRepository commentAttachmentRepository;
     private final TaskAccessHelper accessHelper;
 
-    // ============================================================
-    // CRUD
-    // ============================================================
+
 
     @Override
     @Transactional
@@ -70,12 +68,11 @@ public class TicketServiceImpl implements TicketService {
         if (ticket.getStatus() == null) {
             ticket.setStatus(Ticket.TicketStatus.OPEN);
         }
-        // Chỉ admin mới được tạo thẳng CLOSED; EU không tự đóng
+
         if (ticket.getStatus() == Ticket.TicketStatus.CLOSED && !accessHelper.isAdmin()) {
             ticket.setStatus(Ticket.TicketStatus.OPEN);
         }
         if (ticket.getStatus() == Ticket.TicketStatus.RESOLVED && !accessHelper.isAdmin()) {
-            // create + resolve ngay: vẫn OK nếu tự assign mình; giữ RESOLVED
             if (ticket.getAssigneeId() == null) {
                 accessHelper.currentPersonId().ifPresent(ticket::setAssigneeId);
             }
@@ -84,7 +81,7 @@ public class TicketServiceImpl implements TicketService {
         Ticket saved = ticketRepository.save(ticket);
 
         if (saved.getAssigneeId() != null) {
-            notifyAssignment(saved, /*prevAssignee*/ null, currentUser);
+            notifyAssignment(saved,null, currentUser);
         }
 
         return toVisibleResponse(saved);
@@ -135,7 +132,6 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public void delete(String id) {
         Ticket ticket = requireVisibleTicket(id);
-        // Chỉ reporter / admin xóa
         if (!accessHelper.canReviewTicket(ticket)) {
             throw new AppException(TaskErrorCode.TICKET_ACCESS_DENIED);
         }
@@ -162,9 +158,6 @@ public class TicketServiceImpl implements TicketService {
         return responses;
     }
 
-    // ============================================================
-    // Status + Assignment + Review
-    // ============================================================
 
     @Override
     @Transactional
@@ -260,10 +253,7 @@ public class TicketServiceImpl implements TicketService {
         return toVisibleResponse(saved);
     }
 
-    /**
-     * RESOLVED chỉ assignee/admin; CLOSED chỉ reporter/admin (qua review hoặc admin).
-     * Reject review dùng RESOLVED → IN_PROGRESS (reporter).
-     */
+
     private void enforceStatusTransition(Ticket ticket, Ticket.TicketStatus from, Ticket.TicketStatus to) {
         if (from == to) return;
         if (accessHelper.isAdmin()) return;
@@ -275,7 +265,7 @@ public class TicketServiceImpl implements TicketService {
             return;
         }
         if (to == Ticket.TicketStatus.CLOSED) {
-            // Prefer dedicated /review; allow status patch only for reviewer
+
             if (!accessHelper.canReviewTicket(ticket)) {
                 throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
             }
@@ -284,14 +274,14 @@ public class TicketServiceImpl implements TicketService {
             }
             return;
         }
-        // RESOLVED → IN_PROGRESS = reject by reviewer
+
         if (from == Ticket.TicketStatus.RESOLVED && to == Ticket.TicketStatus.IN_PROGRESS) {
             if (!accessHelper.canReviewTicket(ticket)) {
                 throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
             }
             return;
         }
-        // CLOSED không tự mở lại trừ admin (đã return sớm)
+
         if (from == Ticket.TicketStatus.CLOSED) {
             throw new AppException(TaskErrorCode.TICKET_REVIEW_FORBIDDEN);
         }
@@ -320,9 +310,6 @@ public class TicketServiceImpl implements TicketService {
         response.setCanComplete(accessHelper.canCompleteTicket(ticket));
     }
 
-    // ============================================================
-    // Comment / attachment aggregates
-    // ============================================================
 
     private TicketResponse enrichCounts(TicketResponse response) {
         if (response == null || response.getId() == null) return response;
@@ -393,9 +380,6 @@ public class TicketServiceImpl implements TicketService {
         return out;
     }
 
-    // ============================================================
-    // Notifications
-    // ============================================================
 
     private void notifyAssignment(Ticket ticket, String prevAssigneeId, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();

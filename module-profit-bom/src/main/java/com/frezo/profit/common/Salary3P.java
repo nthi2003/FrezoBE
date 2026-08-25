@@ -2,12 +2,7 @@ package com.frezo.profit.common;
 
 import com.frezo.qlns.entity.Contract;
 
-/**
- * Lương 3P — Pay for Position · Person · Performance.
- * <p>
- * Thu nhập mục tiêu = P1 + P2 + P3 (khi đạt 100% KPI doanh thu).
- * Doanh thu cần đạt = tổng chi phí 3P / biên đóng góp (%).
- */
+
 public record Salary3P(double p1Position, double p2Person, double p3Performance) {
 
     public double fixedMonthly() {

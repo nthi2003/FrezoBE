@@ -12,5 +12,4 @@ public interface IpBlacklistRepository extends JpaRepository<IpBlacklist, String
     @Query("SELECT i FROM IpBlacklist i WHERE i.ipAddress = :ip AND (i.active = true OR i.bannedUntil > :now)")
     Optional<IpBlacklist> findActiveBanByIp(@Param("ip") String ip, @Param("now") LocalDateTime now);
 
-    Optional<IpBlacklist> findByIpAddressAndActiveTrue(String ipAddress);
 }

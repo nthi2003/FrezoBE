@@ -62,6 +62,8 @@ public class ProductPricingService {
         }
     }
 
+    //cải tiến
+
     public Double calculatePrice(String productCode, String unitName, String priceGroupCode) {
         Product product = productRepository.findByCode(productCode)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -102,7 +104,7 @@ public class ProductPricingService {
         }
         priceConfigRepository.save(config);
     }
-
+ // cải tiến
     @Transactional
     public ProductResponse updateSalePrice(String productId, ProductSalePriceUpdateRequest request) {
         Product product = productRepository.findById(productId)
@@ -160,7 +162,7 @@ public class ProductPricingService {
                 .build();
     }
 
-    /** Bản ghi cũ có thể lưu user UUID trong created_by — resolve sang login name nếu có. */
+
     private String resolveUpdatedBy(String createdBy) {
         if (createdBy == null || createdBy.isBlank() || !UUID_PATTERN.matcher(createdBy).matches()) {
             return createdBy;

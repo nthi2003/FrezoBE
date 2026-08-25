@@ -3,6 +3,7 @@ package com.frezo.common.service;
 import com.frezo.common.entity.Notification;
 import com.frezo.common.response.PageResponse;
 import java.util.List;
+import java.util.Map;
 
 public interface NotificationService {
 
@@ -63,4 +64,7 @@ public interface NotificationService {
 
     /** Số thông báo khẩn chưa đọc. */
     long getUrgentUnreadCount(String username);
+
+    /** Tổng hợp unread/total/urgent cho badge + stats trang. */
+    Map<String, Long> getNotificationSummary(String username);
 }

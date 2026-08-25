@@ -35,9 +35,8 @@ public class NotificationController {
             @RequestParam(required = false) String tab,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search) {
-        String username = authentication.getName();
         PageResponse<Notification> result = notificationService.getMyNotifications(
-                username, page, size, tab, type, search);
+                authentication.getName(), page, size, tab, type, search);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -45,14 +44,8 @@ public class NotificationController {
     @GetMapping("/unread-count")
     @CheckPermission(api = "/qtht/notification/unread-count", action = "VIEW")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount(Authentication authentication) {
-        String username = authentication.getName();
-        long unread = notificationService.getUnreadCount(username);
-        long total = notificationService.getTotalCount(username);
-        long urgent = notificationService.getUrgentUnreadCount(username);
-        return ResponseEntity.ok(ApiResponse.success(Map.of(
-                "count", unread,
-                "total", total,
-                "urgent", urgent)));
+        return ResponseEntity.ok(ApiResponse.success(
+                notificationService.getNotificationSummary(authentication.getName())));
     }
 
     @Operation(summary = "Đánh dấu đã đọc", description = "Đánh dấu một thông báo là đã đọc")

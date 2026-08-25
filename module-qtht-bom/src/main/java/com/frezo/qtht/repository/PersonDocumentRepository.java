@@ -10,5 +10,4 @@ import java.util.List;
 public interface PersonDocumentRepository extends JpaRepository<PersonDocument, String> {
     List<PersonDocument> findByPersonIdOrderByCreatedDateDesc(String personId);
     List<PersonDocument> findByPersonIdAndTypeOrderByCreatedDateDesc(String personId, String type);
-    void deleteByPersonIdAndId(String personId, String id);
 }

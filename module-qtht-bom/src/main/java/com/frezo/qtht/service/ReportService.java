@@ -1,25 +1,23 @@
 package com.frezo.qtht.service;
 
-import com.alibaba.excel.EasyExcel;
-// import com.frezo.qlns.entity.Attendance;
-// import com.frezo.qlns.repository.AttendanceRepository;
-// import com.frezo.qlns.repository.ContractRepository;
+
 import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.UserRepository;
-// import com.frezo.task.repository.TaskRepository;
+
 import com.frezo.email.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
-import java.time.LocalDate;
+
 import java.util.Collections;
-import java.util.List;
+
 import java.util.Map;
 import java.util.Optional;
-import java.util.ArrayList;
 
+
+// đưa hêết logic sang Impl nhé
 @Service
 @RequiredArgsConstructor
 @Slf4j

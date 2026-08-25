@@ -2,7 +2,6 @@ package com.frezo.qtht.controller;
 
 import com.frezo.common.response.ApiResponse;
 import com.frezo.qtht.entity.IpBlacklist;
-import com.frezo.qtht.entity.IpWhitelist;
 import com.frezo.qtht.service.IpBlacklistService;
 import com.frezo.qtht.service.IpWhitelistService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/qtht/internal-gateway")
@@ -25,19 +23,13 @@ public class InternalGatewayController {
     @GetMapping("/blacklist")
     @Operation(summary = "Lấy danh sách IP bị cấm cho Gateway")
     public ApiResponse<List<String>> getBlacklist() {
-        List<String> ips = ipBlacklistService.getAllActiveBans().stream()
-                .map(IpBlacklist::getIpAddress)
-                .collect(Collectors.toList());
-        return ApiResponse.success(ips);
+        return ApiResponse.success(ipBlacklistService.getAllActiveBanIps());
     }
 
     @GetMapping("/whitelist")
     @Operation(summary = "Lấy danh sách IP được phép cho Gateway")
     public ApiResponse<List<String>> getWhitelist() {
-        List<String> ips = ipWhitelistService.getAllActive().stream()
-                .map(IpWhitelist::getIpAddress)
-                .collect(Collectors.toList());
-        return ApiResponse.success(ips);
+        return ApiResponse.success(ipWhitelistService.getAllActiveWhitelistIps());
     }
 
     @PostMapping("/block-ip")

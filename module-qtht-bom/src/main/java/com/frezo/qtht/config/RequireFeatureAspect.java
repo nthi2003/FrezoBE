@@ -48,11 +48,6 @@ public class RequireFeatureAspect {
 
         Person person = personRepository.findByIdAndIsDeletedFalse(personId)
                 .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_NOT_FOUND));
-
-        // Admin bypass feature check as per spec? 
-        // Spec says: "Không áp dụng cho Super Admin hệ thống (ngoài scope của org)"
-        // But "Nếu Setting.isAttendance = false thì không ai trong org đó có thể sử dụng module chấm công, kể cả Admin của org."
-        // So I will only bypass for Super Admin (where isAdmin is true in a certain way)
         if (Boolean.TRUE.equals(person.getIsAdmin())) {
             log.debug("User {} is admin, bypass feature check", userName);
             return;

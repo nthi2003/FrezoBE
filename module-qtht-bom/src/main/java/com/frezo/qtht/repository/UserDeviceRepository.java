@@ -12,7 +12,7 @@ public interface UserDeviceRepository extends JpaRepository<UserDevice, String> 
 
     Optional<UserDevice> findByExpoPushToken(String expoPushToken);
 
-    List<UserDevice> findByUsernameAndIsActiveTrue(String username);
+
 
     List<UserDevice> findByUsernameInAndIsActiveTrue(List<String> usernames);
 }

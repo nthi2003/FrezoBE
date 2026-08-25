@@ -1,5 +1,6 @@
 package com.frezo.qtht.service.impl;
 
+import com.frezo.qtht.dto.request.BanIpRequest;
 import com.frezo.qtht.entity.IpBlacklist;
 import com.frezo.qtht.repository.IpBlacklistRepository;
 import com.frezo.qtht.service.IpBlacklistService;
@@ -33,6 +34,12 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
     }
 
     @Override
+    public IpBlacklist addBan(BanIpRequest request) {
+        return addBan(request.getIpAddress(), request.getReason(),
+                request.getBannedBy(), request.getHours());
+    }
+
+    @Override
     public IpBlacklist addBanMinutes(String ip, String reason, String bannedBy, Integer minutes) {
         LocalDateTime bannedUntil = (minutes != null) ? LocalDateTime.now().plusMinutes(minutes) : null;
         IpBlacklist ban = IpBlacklist.builder()
@@ -60,6 +67,13 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
         LocalDateTime now = LocalDateTime.now();
         return ipBlacklistRepository.findAll().stream()
                 .filter(i -> Boolean.TRUE.equals(i.getActive()) || (i.getBannedUntil() != null && i.getBannedUntil().isAfter(now)))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getAllActiveBanIps() {
+        return getAllActiveBans().stream()
+                .map(IpBlacklist::getIpAddress)
                 .collect(Collectors.toList());
     }
 

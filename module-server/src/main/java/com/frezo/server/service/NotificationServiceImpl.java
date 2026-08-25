@@ -287,4 +287,12 @@ public class NotificationServiceImpl implements NotificationService {
         if (username == null || username.isBlank()) return 0;
         return notificationRepository.countByUsernameAndPriorityAndIsReadFalse(username, "URGENT");
     }
+
+    @Override
+    public Map<String, Long> getNotificationSummary(String username) {
+        return Map.of(
+                "count", getUnreadCount(username),
+                "total", getTotalCount(username),
+                "urgent", getUrgentUnreadCount(username));
+    }
 }

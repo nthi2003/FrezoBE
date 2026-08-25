@@ -3,6 +3,7 @@ package com.frezo.qtht.controller;
 import com.frezo.common.security.CheckPermission;
 import com.frezo.qtht.dto.request.PersonAddRequest;
 import com.frezo.qtht.dto.request.PersonFilterRequest;
+import com.frezo.qtht.dto.request.PersonImportBatchRequest;
 import com.frezo.qtht.dto.request.PersonUpdateRequest;
 import com.frezo.qtht.service.PersonService;
 import com.frezo.common.response.ApiResponse;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/qlns/person")
@@ -86,7 +88,7 @@ public class PersonController {
     @CheckPermission(api = "/qlns/person/upload-avatar-temp", action = "UPDATE")
     public ApiResponse<?> uploadAvatarTemp(
             @RequestParam("userName") String userName,
-            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+            @RequestParam("file") MultipartFile file) {
         String tempUrl = personService.uploadAvatarTemp(userName, file);
         return ApiResponse.ok(tempUrl);
     }
@@ -94,7 +96,7 @@ public class PersonController {
     @PostMapping("/import")
     @Operation(summary = "Nhập hàng loạt nhân sự (JSON rows từ CSV/Excel)")
     @CheckPermission(api = "/qlns/person/import", action = "CREATE")
-    public ApiResponse<?> importBatch(@RequestBody com.frezo.qtht.dto.request.PersonImportBatchRequest request) {
+    public ApiResponse<?> importBatch(@RequestBody PersonImportBatchRequest request) {
         return ApiResponse.ok(personService.importBatch(request));
     }
 

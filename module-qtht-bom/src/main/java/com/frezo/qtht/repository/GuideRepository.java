@@ -12,7 +12,6 @@ public interface GuideRepository extends JpaRepository<Guide, String> {
 
     Optional<Guide> findByIdAndIsDeletedFalse(String id);
 
-    Optional<Guide> findBySlugAndIsDeletedFalse(String slug);
 
     Optional<Guide> findBySlugAndPublishedTrueAndIsDeletedFalse(String slug);
 

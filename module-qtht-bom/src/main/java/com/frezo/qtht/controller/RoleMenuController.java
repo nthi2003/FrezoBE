@@ -27,7 +27,6 @@ public class RoleMenuController {
     @Operation(summary = "Lấy danh sách Menu theo Role", description = "Trả về tất cả các bản ghi RoleMenu của một Role cụ thể")
     @GetMapping("/role/{roleCode}")
     @CheckPermission(api = "/qtht/role-menu/role/{roleCode}", action = "VIEW")
-    //    @CheckPermission(api = "/qtht/role-menu/role/{roleCode}", action = "VIEW")
     public ResponseEntity<ApiResponse<List<?>>> getMenusByRole(@PathVariable String roleCode) {
         log.debug("Fetching menus for role: {}", roleCode);
         List<?> menus = roleMenuService.getMenusByRole(roleCode);
@@ -38,7 +37,6 @@ public class RoleMenuController {
     @Operation(summary = "Lưu tất cả quyền cho một vai trò", description = "Xóa toàn bộ quyền cũ và ghi đè quyền mới dựa trên danh sách tick chọn từ UI")
     @PostMapping("/save-all")
     @CheckPermission(api = "/qtht/role-menu/save-all", action = "CREATE")
-    // @CheckPermission(api = "/qtht/role-menu/save-all", action = "UPDATE")
     public ResponseEntity<ApiResponse<String>> saveAllPermissions(@RequestBody RolePermissionSaveRequest request) {
         try {
             log.debug("Saving permissions for role: {}, appCode: {}, menuIds count: {}",

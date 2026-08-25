@@ -8,5 +8,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequireFeature {
-    String value(); // feature name (e.g., "isAttendance")
+    String value();
 }

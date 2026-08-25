@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 
 public interface ApiLogRepository extends JpaRepository<ApiLog, String>, JpaSpecificationExecutor<ApiLog> {
 
-    /** Xoá log cũ hơn cutoff (effFrom &lt; cutoff). */
     @Modifying
     @Query("DELETE FROM ApiLog a WHERE a.effFrom < :cutoff")
     int deleteOlderThan(@Param("cutoff") LocalDateTime cutoff);

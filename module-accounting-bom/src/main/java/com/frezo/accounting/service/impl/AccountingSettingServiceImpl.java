@@ -18,6 +18,9 @@ public class AccountingSettingServiceImpl implements AccountingSettingService {
     private final AccountingSettingRepository repo;
     private final AccountService accountService;
 
+    /**
+     * Lấy cấu hình kế toán hiện có; nếu chưa có thì tạo cấu hình mặc định (chuẩn TT133, tiền VND, TK mặc định).
+     */
     @Override
     @Transactional
     public AccountingSetting getOrCreateDefault() {
@@ -39,12 +42,19 @@ public class AccountingSettingServiceImpl implements AccountingSettingService {
         });
     }
 
+    /**
+     * Xem cấu hình kế toán hiện tại dưới dạng DTO phản hồi.
+     */
     @Override
     @Transactional(readOnly = true)
     public AccountingSettingResponse view() {
         return toResponse(getOrCreateDefault());
     }
 
+    /**
+     * Cập nhật cấu hình kế toán. Khi đổi chuẩn mực sẽ áp dụng lại các TK mặc định phù hợp chuẩn mới
+     * và nạp hệ thống tài khoản nếu được yêu cầu.
+     */
     @Override
     @Transactional
     public AccountingSettingResponse update(AccountingSettingRequest req) {
@@ -76,6 +86,9 @@ public class AccountingSettingServiceImpl implements AccountingSettingService {
         return toResponse(saved);
     }
 
+    /**
+     * Áp dụng lại các tài khoản mặc định (TK chi phí lương, BHTN) cho phù hợp chuẩn mực nếu người dùng chưa override.
+     */
     private void applyStandardDefaults(AccountingSetting s, AccountingStandard std) {
         // TT133: BHTN = 3385. TT99 (như TT200): BHTN = 3386. Salary expense: TT133 = 6421, TT99 = 642.
         if (std == AccountingStandard.TT99) {
@@ -95,6 +108,9 @@ public class AccountingSettingServiceImpl implements AccountingSettingService {
         }
     }
 
+    /**
+     * Chuyển entity AccountingSetting thành DTO phản hồi cho client.
+     */
     private AccountingSettingResponse toResponse(AccountingSetting s) {
         return AccountingSettingResponse.builder()
                 .id(s.getId())

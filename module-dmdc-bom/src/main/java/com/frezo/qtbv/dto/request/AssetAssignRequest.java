@@ -8,7 +8,6 @@ import java.time.LocalDate;
 public class AssetAssignRequest {
     private String personId;
     private String personName;
-    /** Nullable — default hôm nay. */
     private LocalDate actionDate;
     private String note;
 }

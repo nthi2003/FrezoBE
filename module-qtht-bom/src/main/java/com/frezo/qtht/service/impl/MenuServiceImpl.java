@@ -55,6 +55,9 @@ public class MenuServiceImpl implements MenuService {
      *   <li>Migrate {@code AppException("exception.user.not_found")} → {@code AppException(QthtErrorCode.USER_NOT_FOUND)}.</li>
      * </ul>
      */
+    /**
+     * Lấy danh sách menu sidebar cho người dùng theo vai trò và quyền hạn.
+     */
     @Override
     @Cacheable(value = CACHE_NAME, key = "#username", unless = "#result == null || #result.isEmpty()")
     public List<MenuResponse> getMenusForUser(String username) {
@@ -108,17 +111,26 @@ public class MenuServiceImpl implements MenuService {
         return menuMapper.toSidebarResponseList(menus);
     }
 
+    /**
+     * Lấy danh sách tất cả menu đang hoạt động để hiển thị trên quản trị.
+     */
     @Override
     public List<MenuResponse> getAllMenus() {
         return menuMapper.toResponseList(menuRepository.findByIsDeletedFalse());
     }
 
+    /**
+     * Lấy thực thể Menu theo ID, ném ngoại lệ nếu không tồn tại hoặc đã xoá.
+     */
     @Override
     public Menu getById(String id) {
         return menuRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(ERROR_MENU_NOT_FOUND, id));
     }
 
+    /**
+     * Tạo mới menu và gán các quyền (permission) liên quan, xoá cache menu.
+     */
     @Override
     @Transactional
     @CacheEvict(value = CACHE_NAME, allEntries = true)
@@ -135,6 +147,9 @@ public class MenuServiceImpl implements MenuService {
         return menuMapper.toResponse(savedMenu);
     }
 
+    /**
+     * Cập nhật thông tin menu và đồng bộ lại danh sách quyền, xoá cache menu.
+     */
     @Override
     @Transactional
     @CacheEvict(value = CACHE_NAME, allEntries = true)
@@ -152,6 +167,9 @@ public class MenuServiceImpl implements MenuService {
         return menuMapper.toResponse(savedMenu);
     }
 
+    /**
+     * Xoá mềm menu theo mã định danh và xoá cache menu.
+     */
     @Override
     @Transactional
     @CacheEvict(value = CACHE_NAME, allEntries = true)
@@ -162,12 +180,18 @@ public class MenuServiceImpl implements MenuService {
         log.debug("Soft deleted menu: {}", id);
     }
 
+    /**
+     * Kiểm tra mã menu có trùng lặp với menu đang hoạt động khác hay không.
+     */
     private void validateMenuCodeUniqueness(String code) {
         if (menuRepository.existsByCodeAndIsDeletedFalse(code)) {
             throw new AppException(ERROR_MENU_CODE_EXISTS, code);
         }
     }
 
+    /**
+     * Khởi tạo thực thể Menu từ request dữ liệu đầu vào.
+     */
     private Menu buildMenuFromRequest(MenuSaveRequest request) {
         Menu menu = new Menu();
         menu.setCode(request.getCode());
@@ -185,6 +209,9 @@ public class MenuServiceImpl implements MenuService {
         return menu;
     }
 
+    /**
+     * Gán danh sách quyền (permission) mới cho menu.
+     */
     private void assignPermissionsToMenu(Menu menu, List<String> permissionIds) {
         if (permissionIds == null || permissionIds.isEmpty()) {
             return;
@@ -200,11 +227,17 @@ public class MenuServiceImpl implements MenuService {
         menuPermissionRepository.saveAll(newPermissions);
     }
 
+    /**
+     * Xoá quyền cũ và gán lại danh sách quyền mới cho menu.
+     */
     private void updateMenuPermissions(String menuId, Menu menu, List<String> newPermissionIds) {
         clearExistingPermissions(menuId);
         assignPermissionsToMenu(menu, newPermissionIds);
     }
 
+    /**
+     * Xoá toàn bộ bản ghi quyền liên kết với menu theo menuId.
+     */
     private void clearExistingPermissions(String menuId) {
         menuPermissionRepository.deleteByMenuId(menuId);
     }

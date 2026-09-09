@@ -17,12 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
-/**
- * Import catalog sản phẩm từ Excel (.xlsx/.xls) theo sheet mẫu rau củ.
- * <p>
- * Bỏ qua cột % lợi nhuận. Upsert theo mã sản phẩm.
- * Không đụng tồn kho (warehouse) / giá vốn lô.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -48,6 +43,7 @@ public class ProductExcelImportService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    /** Nhập sản phẩm từ file Excel, đọc từng dòng và upsert vào database. */
     public ProductImportResultResponse importFromExcel(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File Excel trống");
@@ -110,6 +106,7 @@ public class ProductExcelImportService {
                 .build();
     }
 
+    /** Đọc 1 dòng Excel, tạo/cập nhật sản phẩm và cập nhật giá theo nhóm giá. */
     private void upsertRow(Row row, Map<String, Integer> colMap, DataFormatter formatter) {
         String code = normalizeCode(cellText(row, colMap.get(COL_CODE), formatter));
         String name = trimToNull(cellText(row, colMap.get(COL_NAME), formatter));
@@ -185,12 +182,14 @@ public class ProductExcelImportService {
         }
     }
 
+    /** Đảm bảo các nhóm giá mặc định (bán lẻ, bán sỉ, siêu sỉ) tồn tại. */
     private void ensurePriceGroups() {
         ensureGroup("RETAIL", "Giá bán lẻ");
         ensureGroup("WHOLESALE_10KG", "Giá bán sỉ (10kg)");
         ensureGroup("SUPER_WHOLESALE", "Giá siêu sỉ (30kg+)");
     }
 
+    /** Tạo mới nhóm giá nếu chưa tồn tại theo mã. */
     private void ensureGroup(String code, String name) {
         if (priceGroupRepository.findByCode(code).isEmpty()) {
             priceGroupRepository.save(PriceGroup.builder()
@@ -201,6 +200,7 @@ public class ProductExcelImportService {
         }
     }
 
+    /** Tạo đối tượng UnitPrice từ đơn vị, nhóm giá và giá mới. */
     private static PriceUpdateRequest.UnitPrice unitPrice(String unit, String group, Double price) {
         PriceUpdateRequest.UnitPrice up = new PriceUpdateRequest.UnitPrice();
         up.setUnitName(unit);
@@ -209,6 +209,7 @@ public class ProductExcelImportService {
         return up;
     }
 
+    /** Tìm danh mục theo tên/mã/shortName với fuzzy match, ưu tiên kết quả chính xác nhất. */
     @SuppressWarnings("unchecked")
     private String resolveCategoryId(String raw) {
         if (raw == null || raw.isBlank()) {
@@ -242,6 +243,7 @@ public class ProductExcelImportService {
         return ids.isEmpty() ? null : String.valueOf(ids.get(0));
     }
 
+    /** Đọc dòng header Excel và ánh xạ tên cột sang key chuẩn. */
     private Map<String, Integer> mapHeaders(Row headerRow) {
         Map<String, Integer> map = new HashMap<>();
         if (headerRow == null) {
@@ -265,6 +267,7 @@ public class ProductExcelImportService {
         return map;
     }
 
+    /** Kiểm tra header có chứa ký hiệu phần trăm (%) — không import cột % giá. */
     private static boolean isPercentHeader(String norm) {
         if (norm.startsWith("%") || norm.contains("% ")) {
             return true;
@@ -273,6 +276,7 @@ public class ProductExcelImportService {
                 || norm.contains("%sieusi") || norm.equals("%");
     }
 
+    /** Phân loại tên cột Excel sang key chuẩn hóa (code, name, category, ...). */
     private static String classifyHeader(String norm) {
         // strip accents for matching
         String n = stripAccents(norm).replace(" ", "");
@@ -305,6 +309,7 @@ public class ProductExcelImportService {
         return null;
     }
 
+    /** Chuẩn hóa header: chuyển thường, bỏ dấu, bỏ khoảng trắng thừa. */
     private static String normalizeHeader(String raw) {
         String s = stripAccents(raw.trim().toLowerCase(Locale.ROOT));
         s = s.replace('\n', ' ').replace('\r', ' ');
@@ -312,6 +317,7 @@ public class ProductExcelImportService {
         return s;
     }
 
+    /** Bỏ dấu tiếng Việt (NFD normalization). */
     private static String stripAccents(String input) {
         if (input == null) {
             return "";
@@ -320,12 +326,14 @@ public class ProductExcelImportService {
         return n.replaceAll("\\p{M}+", "");
     }
 
+    /** Kiểm tra dòng Excel có trống hoàn toàn (cả mã và tên đều rỗng). */
     private static boolean isBlankRow(Row row, Map<String, Integer> colMap, DataFormatter formatter) {
         String code = cellText(row, colMap.get(COL_CODE), formatter);
         String name = cellText(row, colMap.get(COL_NAME), formatter);
         return (code == null || code.isBlank()) && (name == null || name.isBlank());
     }
 
+    /** Đọc nội dung text từ 1 ô Excel theo index cột. */
     private static String cellText(Row row, Integer idx, DataFormatter formatter) {
         if (row == null || idx == null) {
             return null;
@@ -345,6 +353,7 @@ public class ProductExcelImportService {
         return text != null ? text.trim() : null;
     }
 
+    /** Chuẩn hóa mã sản phẩm: xử lý số thập phân Excel (1.0 → 1) và trim. */
     private static String normalizeCode(String raw) {
         String s = trimToNull(raw);
         if (s == null) {
@@ -357,6 +366,7 @@ public class ProductExcelImportService {
         return s;
     }
 
+    /** Trim chuỗi và trả về null nếu kết quả rỗng. */
     private static String trimToNull(String s) {
         if (s == null) {
             return null;
@@ -420,6 +430,7 @@ public class ProductExcelImportService {
         }
     }
 
+    /** Parse trạng thái active/inactive từ text Excel (hỗ trợ tiếng Việt và tiếng Anh). */
     private static Boolean parseStatus(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;

@@ -17,9 +17,6 @@ public class CryptoUtils {
     private static final int TAG_LENGTH_BIT = 128;
     private static final int IV_LENGTH_BYTE = 12;
 
-    // Ideally, this key should be loaded from an environment variable or secret manager
-    // For demonstration, a static key is used. 
-    // In production: System.getenv("AES_SECRET_KEY")
     private static final String SECRET_KEY_STRING = "12345678901234567890123456789012"; // 32 bytes for AES-256
 
     public static byte[] encryptAESGCM(String plainText) {

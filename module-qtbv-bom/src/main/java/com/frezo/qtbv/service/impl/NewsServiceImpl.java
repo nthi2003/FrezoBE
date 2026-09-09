@@ -41,6 +41,7 @@ public class NewsServiceImpl implements NewsService {
     private final UserRepository userRepository;
     private final PersonRepository personRepository;
 
+    /** Liệt kê danh mục tin tức: riêng của tổ chức, hoặc gộp với các danh mục toàn cục khi có organizationId. */
     @Override
     public List<NewsCategoryResponse> listCategories(String organizationId) {
         List<NewsCategory> rows = StringUtils.hasText(organizationId)
@@ -56,6 +57,7 @@ public class NewsServiceImpl implements NewsService {
         return rows.stream().map(this::toCategoryDto).collect(Collectors.toList());
     }
 
+    /** Tạo danh mục tin tức mới, yêu cầu tên bắt buộc và tự gán màu mặc định nếu bỏ trống. */
     @Override
     @Transactional
     public NewsCategoryResponse createCategory(NewsCategoryRequest request) {
@@ -71,6 +73,7 @@ public class NewsServiceImpl implements NewsService {
         return toCategoryDto(saved);
     }
 
+    /** Cập nhật thông tin danh mục tin tức theo id, chỉ ghi đè các trường có giá trị mới. */
     @Override
     @Transactional
     public NewsCategoryResponse updateCategory(String id, NewsCategoryRequest request) {
@@ -82,6 +85,7 @@ public class NewsServiceImpl implements NewsService {
         return toCategoryDto(categoryRepo.save(cat));
     }
 
+    /** Xoá mềm một danh mục tin tức theo id. */
     @Override
     @Transactional
     public void deleteCategory(String id) {
@@ -90,6 +94,7 @@ public class NewsServiceImpl implements NewsService {
         categoryRepo.save(cat);
     }
 
+    /** Liệt kê các câu khẩu hiệu (motto) chưa bị xoá, xếp theo thời gian tạo giảm dần. */
     @Override
     public List<NewsMottoResponse> listMottos() {
         return mottoRepo.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
@@ -97,6 +102,7 @@ public class NewsServiceImpl implements NewsService {
                 .collect(Collectors.toList());
     }
 
+    /** Tạo mới một câu khẩu hiệu, yêu cầu nội dung bắt buộc. */
     @Override
     @Transactional
     public NewsMottoResponse createMotto(NewsMottoRequest request) {
@@ -110,6 +116,7 @@ public class NewsServiceImpl implements NewsService {
         return toMottoDto(saved);
     }
 
+    /** Cập nhật nội dung hoặc tác giả của câu khẩu hiệu theo id. */
     @Override
     @Transactional
     public NewsMottoResponse updateMotto(String id, NewsMottoRequest request) {
@@ -121,6 +128,7 @@ public class NewsServiceImpl implements NewsService {
         return toMottoDto(mottoRepo.save(motto));
     }
 
+    /** Xoá mềm một câu khẩu hiệu theo id. */
     @Override
     @Transactional
     public void deleteMotto(String id) {
@@ -129,12 +137,14 @@ public class NewsServiceImpl implements NewsService {
         mottoRepo.save(motto);
     }
 
+    /** Liệt kê các bài viết được ghim của một tổ chức theo thứ tự sort order. */
     @Override
     public List<ArticleResponse> listPins(String organizationId) {
         if (!StringUtils.hasText(organizationId)) return List.of();
         return resolvePinnedArticles(organizationId);
     }
 
+    /** Ghim một bài viết đã xuất bản vào tổ chức, giới hạn tối đa MAX_PINS_PER_ORG bài và tránh ghim trùng. */
     @Override
     @Transactional
     public ArticleResponse pinArticle(ArticlePinRequest request) {
@@ -165,6 +175,7 @@ public class NewsServiceImpl implements NewsService {
         return articleService.findById(article.getId());
     }
 
+    /** Bỏ ghim (xoá mềm) một bài viết khỏi tổ chức theo organizationId và articleId. */
     @Override
     @Transactional
     public void unpinArticle(String organizationId, String articleId) {
@@ -175,6 +186,7 @@ public class NewsServiceImpl implements NewsService {
                 });
     }
 
+    /** Tổng hợp toàn bộ dữ liệu cho trang tin tức: banner, motto, danh mục, bài viết feed và bài ghim. */
     @Override
     public NewsPageDataResponse getNewsPageData(String organizationId) {
         String resolvedOrgId = resolveOrganizationId(organizationId);
@@ -215,6 +227,7 @@ public class NewsServiceImpl implements NewsService {
                 .build();
     }
 
+    /** Xác định organizationId hiệu lực: dùng giá trị truyền vào hoặc suy ra từ tổ chức của người dùng hiện tại. */
     private String resolveOrganizationId(String organizationId) {
         if (StringUtils.hasText(organizationId)) {
             return organizationId.trim();
@@ -222,6 +235,7 @@ public class NewsServiceImpl implements NewsService {
         return resolveCurrentUserOrganizationId();
     }
 
+    /** Suy ra mã tổ chức của người dùng đang đăng nhập từ user -> person -> orgId. */
     private String resolveCurrentUserOrganizationId() {
         String username = SystemUtils.getCurrentUsername();
         if (!StringUtils.hasText(username)) {
@@ -236,6 +250,7 @@ public class NewsServiceImpl implements NewsService {
                 .orElse(null);
     }
 
+    /** Lấy các bài viết đã ghim còn hợp lệ (đã xuất bản, hoạt động, hiển thị trên tin tức) của một tổ chức. */
     private List<ArticleResponse> resolvePinnedArticles(String organizationId) {
         List<ArticlePin> pins = pinRepo.findByOrganizationIdAndIsDeletedFalseOrderBySortOrderAsc(organizationId);
         List<ArticleResponse> result = new ArrayList<>();
@@ -253,6 +268,7 @@ public class NewsServiceImpl implements NewsService {
         return result;
     }
 
+    /** Gán tên và màu chuyên mục cho danh sách bài viết dựa trên categoryId. */
     private void enrichCategoryMeta(List<ArticleResponse> articles) {
         if (articles == null || articles.isEmpty()) return;
         Set<String> catIds = articles.stream()
@@ -272,18 +288,21 @@ public class NewsServiceImpl implements NewsService {
         }
     }
 
+    /** Tìm danh mục tin tức theo id còn hoạt động, nếu không tồn tại thì ném lỗi NOT_FOUND. */
     private NewsCategory getCategory(String id) {
         return categoryRepo.findById(id)
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, id));
     }
 
+    /** Tìm câu khẩu hiệu theo id còn hoạt động, nếu không tồn tại thì ném lỗi NOT_FOUND. */
     private NewsMotto getMotto(String id) {
         return mottoRepo.findById(id)
                 .filter(m -> !Boolean.TRUE.equals(m.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, id));
     }
 
+    /** Chuyển đổi entity NewsCategory thành NewsCategoryResponse. */
     private NewsCategoryResponse toCategoryDto(NewsCategory c) {
         return NewsCategoryResponse.builder()
                 .id(c.getId())
@@ -294,6 +313,7 @@ public class NewsServiceImpl implements NewsService {
                 .build();
     }
 
+    /** Chuyển đổi entity NewsMotto thành NewsMottoResponse. */
     private NewsMottoResponse toMottoDto(NewsMotto m) {
         return NewsMottoResponse.builder()
                 .id(m.getId())
@@ -302,6 +322,7 @@ public class NewsServiceImpl implements NewsService {
                 .build();
     }
 
+    /** Chuyển đổi entity Banner thành BannerResponse. */
     private BannerResponse toBannerDto(Banner b) {
         return BannerResponse.builder()
                 .id(b.getId())
@@ -317,6 +338,7 @@ public class NewsServiceImpl implements NewsService {
                 .build();
     }
 
+    /** Chuyển một chuỗi rỗng/trắng thành null, ngược lại trả về chuỗi đã trim. */
     private static String blankToNull(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
     }

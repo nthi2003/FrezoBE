@@ -38,28 +38,19 @@ public class SalaryBandDataInitializer {
 
     private static final String GROUP_CODE = "SalaryBand";
     private static final String GROUP_NAME = "Bậc lương";
-    /** {@code cat_group} là int flag phân loại — dùng 1 = business (khớp các group hiện có). */
     private static final int GROUP_CAT = 1;
 
     private final CategoryRepository categoryRepository;
     private final CategoryGroupRepository categoryGroupRepository;
 
-    /**
-     * Định nghĩa gọn 1 dòng cho readability. currency mặc định VND, tất cả active.
-     * (code, name, shortName, function, min, max, target, orderIndex, note)
-     */
     private record BandSeed(
             String code, String name, String shortName, String fn,
             long min, long max, long target, int orderIndex, String note
     ) {}
 
-    /**
-     * Ladder 12 bậc cho SMB — từ Thực tập → C-Suite.
-     * Range Min↔Max ~30-80% (theo Radford best practice, hơi rộng cho VN market).
-     * ENG tách 2 bậc riêng vì market rate cao hơn +25-40% so với chung.
-     */
+
     private static final List<BandSeed> SEEDS = List.of(
-            // ---- Chung (function=ALL) ----
+
             new BandSeed("P0-INTERN", "Thực tập sinh",       "Intern",  "ALL",   5_000_000L,   8_000_000L,   6_500_000L, 1,
                     "Sinh viên năm cuối, học việc 3-6 tháng"),
             new BandSeed("P1-JR",     "Junior",              "JR",      "ALL",  10_000_000L,  18_000_000L,  14_000_000L, 2,
@@ -81,7 +72,7 @@ public class SalaryBandDataInitializer {
             new BandSeed("P9-C",      "C-Level",             "C-SUITE", "ALL", 300_000_000L, 600_000_000L, 450_000_000L, 10,
                     "CEO/CTO/CFO — thoả thuận riêng + ESOP"),
 
-            // ---- Kỹ thuật (function=ENG) — market rate cao hơn ----
+
             new BandSeed("ENG-SR",    "Senior Engineer",     "ENG-SR",   "ENG",  45_000_000L,  75_000_000L,  58_000_000L, 20,
                     "Backend/Fullstack/Mobile 5+ năm, đọc source lib chính"),
             new BandSeed("ENG-STAFF", "Staff Engineer",      "STAFF",    "ENG",  70_000_000L, 120_000_000L,  92_000_000L, 21,
@@ -92,7 +83,7 @@ public class SalaryBandDataInitializer {
     public void init() {
         ensureGroupExists();
 
-        // Idempotent: chỉ seed khi group SalaryBand hoàn toàn trống
+
         long existing = categoryRepository.findAll().stream()
                 .filter(c -> GROUP_CODE.equals(c.getGroupCode()))
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
@@ -122,12 +113,7 @@ public class SalaryBandDataInitializer {
         log.info("[seed] SalaryBand: inserted={} bậc lương.", inserted);
     }
 
-    /**
-     * Đảm bảo có row {@code category_group(code='SalaryBand')} trước khi INSERT categories,
-     * tránh FK violation. {@code CategoryGroup.id} = {@code code} (không phải UUID),
-     * nên {@code findById(GROUP_CODE)} là PK lookup.
-     * {@code save()} tự có transaction (Spring Data proxy) → không cần {@code @Transactional} ngoài.
-     */
+
     private void ensureGroupExists() {
         if (categoryGroupRepository.findById(GROUP_CODE).isPresent()) {
             log.debug("[seed] CategoryGroup '{}' đã tồn tại → skip.", GROUP_CODE);
@@ -142,12 +128,7 @@ public class SalaryBandDataInitializer {
         log.info("[seed] Đã tạo CategoryGroup '{}' = '{}'.", GROUP_CODE, GROUP_NAME);
     }
 
-    /**
-     * Pack meta JSON đúng schema mà FE {@code parseMeta} kỳ vọng:
-     * {@code {min,max,target,currency,function,note}}.
-     * Cố tình build tay bằng String để tránh add Jackson dep chỉ cho seeder.
-     * Đảm bảo escape các dấu " trong note.
-     */
+
     private String buildMetaJson(BandSeed s) {
         String note = s.note() == null ? "" : s.note().replace("\"", "'");
         return "{"

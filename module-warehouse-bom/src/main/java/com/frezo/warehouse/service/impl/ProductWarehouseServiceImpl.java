@@ -40,6 +40,10 @@ public class ProductWarehouseServiceImpl implements ProductWarehouseService {
     private final ReorderService reorderService;
     private final WarehouseRepository warehouseRepository;
 
+    /**
+     * Tổng hợp toàn bộ bối cảnh tồn kho của sản phẩm: tổng tồn (on-hand/available/reserved), biểu đồ biến động,
+     * mức tồn theo từng kho và quy tắc đặt hàng lại.
+     */
     @Override
     @Transactional(readOnly = true)
     public ProductWarehouseContextDto getContext(String productId, Integer days, String warehouseId) {
@@ -60,6 +64,10 @@ public class ProductWarehouseServiceImpl implements ProductWarehouseService {
                 .build();
     }
 
+    /**
+     * Dựng chuỗi điểm dữ liệu biến động tồn kho của sản phẩm trong khoảng thời gian cho trước,
+     * bắt đầu từ tồn đầu kỳ và cộng dồn theo từng biến động giao dịch.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ProductStockChartPoint> getStockChart(String productId, Integer days, String warehouseId) {
@@ -97,6 +105,9 @@ public class ProductWarehouseServiceImpl implements ProductWarehouseService {
         return points;
     }
 
+    /**
+     * Tính mức tồn kho (on-hand/reserved/available) của sản phẩm theo từng kho, sắp xếp theo tên kho.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ProductStockLevelDto> getStockLevels(String productId) {
@@ -129,6 +140,9 @@ public class ProductWarehouseServiceImpl implements ProductWarehouseService {
                 .toList();
     }
 
+    /**
+     * Lấy danh sách quy tắc đặt hàng lại (reorder) áp dụng cho một sản phẩm.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ReorderRuleDto> getReorderRules(String productId) {
@@ -136,16 +150,25 @@ public class ProductWarehouseServiceImpl implements ProductWarehouseService {
         return reorderService.listRules(null, productId).getContent();
     }
 
+    /**
+     * Xác minh sản phẩm tồn tại và chưa bị xóa; ném lỗi NOT_FOUND nếu không thỏa.
+     */
     private void ensureProductExists(String productId) {
         productRepository.findById(productId)
                 .filter(p -> p.getIsDeleted() == null || !p.getIsDeleted())
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Không tìm thấy sản phẩm"));
     }
 
+    /**
+     * Tính tổng số lượng của danh sách các biến động sổ cái.
+     */
     private static double sumQuantity(List<StockLedger> entries) {
         return entries.stream().mapToDouble(e -> safe(e.getQuantity())).sum();
     }
 
+    /**
+     * Chuyển giá trị null thành 0.0 để tránh lỗi khi tính toán.
+     */
     private static double safe(Double v) {
         return v != null ? v : 0d;
     }

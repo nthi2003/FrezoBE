@@ -6,7 +6,6 @@ import java.time.LocalDate;
 
 @Data
 public class AssetTransferCreateRequest {
-    /** ASSIGN hoặc RETURN. Default ASSIGN nếu null. */
     private String requestType;
     private String personId;
     private String personName;

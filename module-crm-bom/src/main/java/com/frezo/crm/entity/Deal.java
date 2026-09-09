@@ -33,7 +33,7 @@ public class Deal extends BaseEntity {
     @Column(name = "stage_id", nullable = false, length = 36)
     private String stageId;
 
-    /** Customer ID (nullable nếu Lead chưa convert). */
+
     @Column(name = "customer_id", length = 36)
     private String customerId;
 
@@ -43,7 +43,7 @@ public class Deal extends BaseEntity {
     @Column(name = "currency", length = 3)
     private String currency;
 
-    /** Xác suất chốt (0-100). Có thể override từ stage.probability. */
+
     @Column(name = "probability")
     private Integer probability;
 
@@ -63,7 +63,7 @@ public class Deal extends BaseEntity {
     @Column(length = 2000)
     private String description;
 
-    /** Nếu bị mất, lưu lý do. */
+
     @Column(name = "lost_reason", length = 500)
     private String lostReason;
 }

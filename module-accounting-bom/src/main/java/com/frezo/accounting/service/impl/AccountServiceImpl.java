@@ -28,6 +28,9 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository repo;
 
+    /**
+     * Tạo mới một tài khoản kế toán (TK). Kiểm tra mã TK chưa tồn tại rồi lưu vào cơ sở dữ liệu.
+     */
     @Override
     @Transactional
     public AccountResponse create(AccountRequest req) {
@@ -38,6 +41,9 @@ public class AccountServiceImpl implements AccountService {
         return toResponse(repo.save(e));
     }
 
+    /**
+     * Cập nhật thông tin một tài khoản kế toán theo id. Không cho đổi mã TK nếu mã mới đã bị trùng với TK khác.
+     */
     @Override
     @Transactional
     public AccountResponse update(String id, AccountRequest req) {
@@ -61,6 +67,9 @@ public class AccountServiceImpl implements AccountService {
         return toResponse(repo.save(e));
     }
 
+    /**
+     * Xóa mềm một tài khoản kế toán: đánh dấu isDeleted và gỡ trạng thái hoạt động (active = false).
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -71,6 +80,9 @@ public class AccountServiceImpl implements AccountService {
         repo.save(e);
     }
 
+    /**
+     * Lấy thông tin chi tiết một tài khoản kế toán theo id; ném lỗi nếu không tồn tại.
+     */
     @Override
     @Transactional(readOnly = true)
     public AccountResponse getById(String id) {
@@ -79,12 +91,18 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AppException(AccountingErrorCode.ACCOUNT_NOT_FOUND, id));
     }
 
+    /**
+     * Tìm entity Account còn hoạt động theo mã TK (dùng nội bộ cho các service khác).
+     */
     @Override
     @Transactional(readOnly = true)
     public Optional<Account> findEntityByCode(String code) {
         return repo.findByCodeAndIsDeletedFalse(code);
     }
 
+    /**
+     * Liệt kê toàn bộ tài khoản kế toán chưa xóa, sắp xếp theo mã TK tăng dần.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<AccountResponse> listAll() {
@@ -93,6 +111,9 @@ public class AccountServiceImpl implements AccountService {
                 .toList();
     }
 
+    /**
+     * Liệt kê các tài khoản kế toán theo chuẩn mực kế toán (TT133/TT99).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<AccountResponse> listByStandard(AccountingStandard standard) {
@@ -101,6 +122,9 @@ public class AccountServiceImpl implements AccountService {
                 .toList();
     }
 
+    /**
+     * Nạp hệ thống tài khoản chuẩn (seed COA) theo chuẩn mực; chỉ tạo các TK chưa tồn tại. Trả về số TK đã tạo.
+     */
     @Override
     @Transactional
     public int seedChartOfAccounts(AccountingStandard standard) {
@@ -141,6 +165,9 @@ public class AccountServiceImpl implements AccountService {
         return created;
     }
 
+    /**
+     * Chuyển dữ liệu request thành entity Account với các giá trị mặc định cho các trường null.
+     */
     private Account toEntity(AccountRequest r) {
         return Account.builder()
                 .code(r.getCode())
@@ -157,6 +184,9 @@ public class AccountServiceImpl implements AccountService {
                 .build();
     }
 
+    /**
+     * Chuyển entity Account thành DTO phản hồi cho client.
+     */
     private AccountResponse toResponse(Account e) {
         return AccountResponse.builder()
                 .id(e.getId())

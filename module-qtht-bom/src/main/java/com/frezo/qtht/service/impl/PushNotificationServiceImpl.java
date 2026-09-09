@@ -29,6 +29,9 @@ public class PushNotificationServiceImpl implements PushNotificationService {
     private final UserDeviceRepository deviceRepository;
     private final RestTemplate restTemplate;
 
+    /**
+     * Đăng ký thiết bị push notification — lưu hoặc cập nhật token Expo Push cho người dùng.
+     */
     @Override
     public void registerDevice(String username, String expoPushToken,
                                String platform, String deviceName,
@@ -50,6 +53,9 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         log.info("[Push] Registered device for user={} platform={}", username, platform);
     }
 
+    /**
+     * Hủy đăng ký thiết bị push notification — đánh dấu thiết bị không hoạt động.
+     */
     @Override
     public void unregisterDevice(String username, String expoPushToken) {
         deviceRepository.findByExpoPushToken(expoPushToken).ifPresent(d -> {
@@ -60,12 +66,18 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         });
     }
 
+    /**
+     * Gửi thông báo push đến một người dùng (chuyển tiếp sang sendToUsers với danh sách đơn).
+     */
     @Async
     @Override
     public void sendToUser(String username, String title, String body, Map<String, Object> data) {
         sendToUsers(List.of(username), title, body, data);
     }
 
+    /**
+     * Gửi thông báo push đến nhiều người dùng — tìm tất cả thiết bị đang hoạt động và gửi theo lô (batch 100/request).
+     */
     @Async
     @Override
     public void sendToUsers(List<String> usernames, String title, String body, Map<String, Object> data) {
@@ -96,6 +108,9 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         }
     }
 
+    /**
+     * Gửi một lô (batch) tin nhắn push tới Expo API — tự động đánh dấu thiết bị không hoạt động nếu Expo trả về lỗi "DeviceNotRegistered".
+     */
     private void sendBatch(List<Map<String, Object>> batch) {
         try {
             HttpHeaders headers = new HttpHeaders();

@@ -22,6 +22,9 @@ public class TagServiceImpl implements TagService {
     private final TagMapper tagMapper;
     private final TagRepository tagRepository;
 
+    /**
+     * Thêm mới tag, kiểm tra trùng mã trước khi lưu.
+     */
     @Override
     @Transactional
     public TagResponse add(TagRequest request) {
@@ -32,6 +35,9 @@ public class TagServiceImpl implements TagService {
         return tagMapper.toResponse(savedTag);
     }
 
+    /**
+     * Cập nhật tag theo mã định danh. Nếu mã thay đổi thì kiểm tra trùng.
+     */
     @Override
     @Transactional
     public TagResponse edit(String id, TagRequest request) {
@@ -44,6 +50,9 @@ public class TagServiceImpl implements TagService {
         return tagMapper.toResponse(savedTag);
     }
 
+    /**
+     * Xóa mềm tag (đánh dấu isDeleted = true).
+     */
     @Override
     @Transactional
     public Void delete(String id) {
@@ -53,6 +62,9 @@ public class TagServiceImpl implements TagService {
         return null;
     }
 
+    /**
+     * Tìm tất cả tag chưa xóa, có thể lọc theo danh mục (category).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TagResponse> findAll(String category) {
@@ -65,12 +77,14 @@ public class TagServiceImpl implements TagService {
         return tagMapper.toResponseList(tags);
     }
 
+    /** Kiểm tra mã tag đã tồn tại hay chưa, nếu trùng thì ném ngoại lệ. */
     private void validateRequest(TagRequest request) {
         if (tagRepository.existsByCode(request.getCode())) {
             throw new AppException(TaskErrorCode.TAG_CODE_EXISTS, request.getCode());
         }
     }
 
+    /** Tìm entity tag theo mã, ném ngoại lệ nếu không tìm thấy hoặc đã bị xóa. */
     @Transactional(readOnly = true)
     protected Tag findEntityById(String id) {
         return tagRepository.findByIdAndIsDeletedFalse(id)

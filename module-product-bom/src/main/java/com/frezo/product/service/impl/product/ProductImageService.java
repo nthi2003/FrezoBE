@@ -9,9 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Upload ảnh sản phẩm lên MinIO — tách riêng để façade không cần biết detail bucket.
- */
+
 @Component
 @RequiredArgsConstructor
 public class ProductImageService {
@@ -21,6 +19,7 @@ public class ProductImageService {
 
     private final MinioService minioService;
 
+    /** Upload hình ảnh sản phẩm lên MinIO bucket, trả về URL và tên file. */
     public Map<String, Object> uploadImage(MultipartFile file) {
         String objectName = PREFIX + UUID.randomUUID() + "_" + file.getOriginalFilename();
         String url = minioService.uploadFile(objectName, file, BUCKET);

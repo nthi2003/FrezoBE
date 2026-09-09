@@ -11,7 +11,6 @@ public class AssetResponse {
     private String code;
     private String name;
     private String categoryCode;
-    /** Tên category — service enrich để FE khỏi phải join. */
     private String categoryName;
     private String brand;
     private String model;
@@ -23,7 +22,6 @@ public class AssetResponse {
     private String status;
     private String location;
     private String assignedPersonId;
-    /** Tên Person đang giữ — enrich. */
     private String assignedPersonName;
     private LocalDate assignedAt;
     private String imageUrl;

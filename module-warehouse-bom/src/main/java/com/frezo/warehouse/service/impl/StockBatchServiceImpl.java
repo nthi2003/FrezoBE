@@ -42,6 +42,7 @@ public class StockBatchServiceImpl implements StockBatchService {
     private final WarehouseLocationRepository locationRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    /** Lấy thông tin một lô hàng (chưa bị xóa) theo id. */
     @Override
     public StockBatchResponse getById(String id) {
         StockBatch batch = batchRepository.findById(id)
@@ -50,6 +51,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return toResponse(batch);
     }
 
+    /** Liệt kê danh sách lô hàng theo các điều kiện lọc (kho, sản phẩm, trạng thái, từ khóa, khoảng hạn dùng). */
     @Override
     public FePage<StockBatchResponse> list(
             String warehouseId,
@@ -87,6 +89,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return FePage.all(rows);
     }
 
+    /** Kiểm tra lô hàng có khớp từ khóa tìm kiếm ở các trường mã lô, mã/tên sản phẩm, nhà cung cấp, vị trí hay không. */
     private static boolean matchesKeyword(StockBatchResponse r, String kw) {
         if (kw == null) return true;
         return containsIgnoreCase(r.getBatchCode(), kw)
@@ -96,10 +99,12 @@ public class StockBatchServiceImpl implements StockBatchService {
                 || containsIgnoreCase(r.getLocationLabel(), kw);
     }
 
+    /** Kiểm tra chuỗi có chứa từ khóa (không phân biệt hoa thường). */
     private static boolean containsIgnoreCase(String value, String kw) {
         return value != null && value.toLowerCase().contains(kw);
     }
 
+    /** Kiểm tra ngày hết hạn của lô có nằm trong khoảng ngày lọc hay không. */
     private static boolean matchesExpiryRange(String expiryIso, LocalDate from, LocalDate to) {
         if (from == null && to == null) return true;
         if (expiryIso == null || expiryIso.isBlank()) return false;
@@ -114,6 +119,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return true;
     }
 
+    /** Gợi ý phân bổ số lượng xuất theo nguyên tắc FEFO (hết hạn trước xuất trước) cho sản phẩm trong kho. */
     @Override
     public FefoSuggestResponse suggestFefo(String warehouseId, String productId, double qty) {
         List<StockBatch> available = batchRepository.findAvailableForFefo(warehouseId, productId);
@@ -151,6 +157,7 @@ public class StockBatchServiceImpl implements StockBatchService {
                 .build();
     }
 
+    /** Tính ngày hết hạn của lô dựa trên ngày nhập và thời hạn sử dụng theo loại sản phẩm. */
     @Override
     public LocalDate computeExpiryDate(String productId, LocalDate receivedDate) {
         LocalDate base = receivedDate != null ? receivedDate : LocalDate.now();
@@ -158,6 +165,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return base.plusDays(shelfDays);
     }
 
+    /** Sinh mã lô tự động kết hợp mã sản phẩm, mã nhà cung cấp và ngày nhập (đảm bảo duy nhất trong ngày). */
     @Override
     public String generateBatchCode(String productId, String supplierId, LocalDate receivedDate) {
         String productCode = productRepository.findById(productId)
@@ -171,6 +179,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return prefix + "-" + String.format("%03d", sameDay + 1);
     }
 
+    /** Xác định số ngày thời hạn sử dụng của sản phẩm dựa trên mã danh mục (rau lá 3 ngày, còn lại 7 ngày). */
     int resolveShelfLifeDays(String productId) {
         Product p = productRepository.findById(productId).orElse(null);
         if (p == null) return SHELF_LIFE_ROOT_DAYS;
@@ -181,6 +190,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         return SHELF_LIFE_ROOT_DAYS;
     }
 
+    /** Truy vấn mã danh mục của sản phẩm từ bảng categories. */
     private String resolveCategoryCode(String categoryId) {
         if (categoryId == null || categoryId.isBlank()) return null;
         try {
@@ -192,6 +202,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         }
     }
 
+    /** Truy vấn mã nhà cung cấp, trả về "NCC" nếu không tìm thấy. */
     private String resolveSupplierCode(String supplierId) {
         if (supplierId == null || supplierId.isBlank()) return "NCC";
         try {
@@ -203,6 +214,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         }
     }
 
+    /** Truy vấn tên nhà cung cấp, trả về null nếu không tìm thấy. */
     private String resolveSupplierName(String supplierId) {
         if (supplierId == null || supplierId.isBlank()) return null;
         try {
@@ -214,6 +226,7 @@ public class StockBatchServiceImpl implements StockBatchService {
         }
     }
 
+    /** Chuyển entity lô hàng thành response kèm thông tin sản phẩm, kho, vị trí và cảnh báo hạn dùng. */
     private StockBatchResponse toResponse(StockBatch b) {
         Product p = productRepository.findById(b.getProductId()).orElse(null);
         Warehouse wh = warehouseRepository.findById(b.getWarehouseId()).orElse(null);
@@ -247,6 +260,7 @@ public class StockBatchServiceImpl implements StockBatchService {
                 .build();
     }
 
+    /** Định dạng vị trí lưu kho thành chuỗi theo dãy/kệ/tầng/ô. */
     private String formatLocation(WarehouseLocation loc) {
         return String.format("%s-%s-L%s-B%s",
                 loc.getAisle() != null ? loc.getAisle() : "",
@@ -255,11 +269,13 @@ public class StockBatchServiceImpl implements StockBatchService {
                 loc.getBin() != null ? loc.getBin() : "");
     }
 
+    /** Tính số ngày còn lại đến ngày hết hạn so với ngày hiện tại. */
     static Integer daysToExpiry(LocalDate expiryDate) {
         if (expiryDate == null) return null;
         return (int) ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
     }
 
+    /** Tạo cảnh báo hạn dùng dựa trên số ngày còn lại (đã hết hạn, cận hạn). */
     static String expiryWarning(Integer days) {
         if (days == null) return null;
         if (days <= 0) return "Đã hết hạn";

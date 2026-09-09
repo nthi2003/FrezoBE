@@ -17,22 +17,16 @@ public interface ProductService {
     ProductResponse create(ProductCreateRequest request);
     ProductResponse update(String id, ProductUpdateRequest request);
     void delete(String id);
-
     void bulkUpdatePrices(List<PriceUpdateRequest> requests);
     void importBatch(BatchImportRequest request);
-    /** Import catalog từ Excel (.xlsx/.xls); upsert theo mã; bỏ qua cột %. */
     ProductImportResultResponse importFromExcel(MultipartFile file);
     Double calculatePrice(String productCode, String unitName, String priceGroupCode);
     ProductDashboardStats getDashboardStats();
     List<Map<String, Object>> getProfitChart(int days);
     List<Map<String, Object>> getPriceFluctuation();
     List<Map<String, Object>> getMarketComparison();
-    /** Lịch sử giá vốn theo lô nhập (product_batches.cost_price). */
     List<Map<String, Object>> getCostHistory(String productId);
-
     ProductResponse updateSalePrice(String productId, ProductSalePriceUpdateRequest request);
-
     List<ProductSalePriceHistoryResponse> getSalePriceHistory(String productId);
-
     Map<String, Object> uploadImage(MultipartFile file);
 }

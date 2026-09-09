@@ -13,7 +13,6 @@ public class PipelineRequest {
     private Boolean isDefault;
     private Boolean active;
 
-    /** Nếu truyền, tạo/cập nhật stages. */
     private List<StageInline> stages;
 
     @Data

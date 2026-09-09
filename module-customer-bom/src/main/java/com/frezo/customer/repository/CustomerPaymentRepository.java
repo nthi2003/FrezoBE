@@ -10,5 +10,4 @@ import java.util.List;
 @Repository
 public interface CustomerPaymentRepository extends JpaRepository<CustomerPayment, String>,
         JpaSpecificationExecutor<CustomerPayment> {
-    List<CustomerPayment> findByCustomerIdOrderByCreatedDateDesc(String customerId);
 }

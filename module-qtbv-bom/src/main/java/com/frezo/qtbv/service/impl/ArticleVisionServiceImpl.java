@@ -22,6 +22,7 @@ public class ArticleVisionServiceImpl implements ArticleVisionService {
     private final SecurityHelper helper;
     private final ArticleRevisionRepository articleRevisionRepository;
 
+    /** Cho phép manager được chỉ định chỉnh sửa nội dung bài viết đang chờ duyệt bằng cách lưu bản sửa đổi (revision). */
     @Override
     public void managerEdit(String articleId, ArticleManagerEditRequest request) {
         String managerId = helper.getCurrentUserId();

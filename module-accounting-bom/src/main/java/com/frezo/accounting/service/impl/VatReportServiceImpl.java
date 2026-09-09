@@ -20,6 +20,9 @@ public class VatReportServiceImpl implements VatReportService {
 
     private final JournalEntryLineRepository journalEntryLineRepository;
 
+    /**
+     * Tổng hợp số liệu thuế GTGT của một tháng: VAT đầu vào (TK 133) và VAT đầu ra (TK 3331), tính VAT phải nộp.
+     */
     @Override
     public VatReportResponse summarize(int year, int month) {
         YearMonth ym = YearMonth.of(year, month);

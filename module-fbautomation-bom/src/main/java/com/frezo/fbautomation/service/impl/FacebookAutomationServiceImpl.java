@@ -56,6 +56,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     // 1. SEARCH & SCRAPE GROUPS (Bất đồng bộ)
     // ─────────────────────────────────────────────────────────
+    /** Tìm và thu thập các nhóm Facebook theo từ khóa bằng Selenium, lưu/cập nhật group vào DB, thực thi bất đồng bộ. */
     @Override
     @Async("fbAutomationExecutor")
     public CompletableFuture<List<FacebookGroupResponse>> searchAndScrapeGroups(
@@ -132,6 +133,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     // 2. AUTO JOIN GROUP (Bất đồng bộ)
     // ─────────────────────────────────────────────────────────
+    /** Tự động tham gia một nhóm Facebook bằng tài khoản được chỉ định, cập nhật trạng thái group, thực thi bất đồng bộ. */
     @Override
     @Async("fbAutomationExecutor")
     public CompletableFuture<String> autoJoinGroup(String accountId, String groupId) {
@@ -198,6 +200,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     // 3. LOGIN WITH COOKIE
     // ─────────────────────────────────────────────────────────
+    /** Khởi tạo driver riêng cho tài khoản và đăng nhập Facebook bằng cookie đã lưu, đóng driver sau khi xong. */
     @Override
     public void loginWithCookie(String accountId) {
         WebDriver driver = null;
@@ -246,6 +249,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     // 4. SUMMARY
     // ─────────────────────────────────────────────────────────
+    /** Tổng hợp số liệu tự động hóa: số tài khoản, nhóm, lead và trạng thái tương ứng. */
     @Override
     public AutomationSummaryResponse getSummary() {
         return AutomationSummaryResponse.builder()
@@ -278,6 +282,7 @@ public class FacebookAutomationServiceImpl implements FacebookAutomationService 
     // ─────────────────────────────────────────────────────────
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────
+    /** Tìm tài khoản Facebook theo mã, ném ngoại lệ nếu không tồn tại. */
     private FacebookAccount findAccount(String accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AppException(FbAutomationErrorCode.ACCOUNT_NOT_FOUND));

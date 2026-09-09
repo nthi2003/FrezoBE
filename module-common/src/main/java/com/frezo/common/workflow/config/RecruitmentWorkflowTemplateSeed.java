@@ -15,10 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Seed mẫu visual {@code RECRUITMENT_DEFAULT} — lưu đồ tuyển dụng 3 lane
- * Hiring Manager / HR / CEO + Yes/No. Idempotent.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -37,7 +34,7 @@ public class RecruitmentWorkflowTemplateSeed {
     public void init() {
         try {
             if (definitionRepository.existsByCode(CODE)) {
-                // Backfill graph nếu bản cũ thiếu visual fields
+
                 definitionRepository.findByCode(CODE).ifPresent(this::backfillIfNeeded);
                 return;
             }

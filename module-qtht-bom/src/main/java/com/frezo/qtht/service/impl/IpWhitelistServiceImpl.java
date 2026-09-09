@@ -19,11 +19,17 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
 
     private final IpWhitelistRepository ipWhitelistRepository;
 
+    /**
+     * Lấy danh sách tất cả các IP đang trong whitelist (isActive = true).
+     */
     @Override
     public List<IpWhitelist> getAllActive() {
         return ipWhitelistRepository.findByIsActiveTrue();
     }
 
+    /**
+     * Lấy danh sách địa chỉ IP đang được phép (whitelist), chỉ trả về chuỗi IP.
+     */
     @Override
     public List<String> getAllActiveWhitelistIps() {
         return getAllActive().stream()
@@ -31,6 +37,9 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Thêm một IP vào danh sách trắng, kiểm tra trùng lặp trước khi lưu.
+     */
     @Override
     @Transactional
     public IpWhitelist addToWhitelist(String ipAddress, String description, String createdBy) {
@@ -49,6 +58,9 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
         return ipWhitelistRepository.save(whitelist);
     }
 
+    /**
+     * Gỡ IP khỏi danh sách trắng bằng cách đặt isActive = false (xoá mềm logic).
+     */
     @Override
     @Transactional
     public void removeFromWhitelist(String id) {
@@ -58,6 +70,9 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
         ipWhitelistRepository.save(whitelist);
     }
 
+    /**
+     * Kiểm tra xem một địa chỉ IP có nằm trong danh sách trắng (whitelist) và đang hoạt động hay không.
+     */
     @Override
     public boolean isWhitelisted(String ipAddress) {
         return ipWhitelistRepository.findByIpAddress(ipAddress)
@@ -65,6 +80,9 @@ public class IpWhitelistServiceImpl implements IpWhitelistService {
                 .orElse(false);
     }
 
+    /**
+     * Kiểm tra xem chế độ whitelist có đang được kích hoạt (có ít nhất một IP active) hay không.
+     */
     @Override
     public boolean hasWhitelistEnabled() {
         return !ipWhitelistRepository.findByIsActiveTrue().isEmpty();

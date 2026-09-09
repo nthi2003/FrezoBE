@@ -59,6 +59,7 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
     private final ObjectMapper objectMapper;
     private final ProfitContractSalaryResolver contractSalaryResolver;
 
+    /** Tính toán dashboard lợi nhuận: doanh thu, chi phí, lãi ròng, break-even, mục tiêu theo kỳ. */
     @Override
     @Transactional(readOnly = true)
     public ProfitDashboardResponse getDashboard(int year, int month, boolean persistSnapshot) {
@@ -184,6 +185,7 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
         return response;
     }
 
+    /** Tính KPI bán hàng: mục tiêu, thực tế, % đạt được, hoa hồng, lương 3P cho từng nhân viên kinh doanh. */
     @Override
     @Transactional(readOnly = true)
     public ProfitSalesKpiResponse getSalesKpi(int year, int month) {
@@ -248,6 +250,7 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
                 .build();
     }
 
+    /** Lưu snapshot kết quả phân tích lợi nhuận vào database để audit trail. */
     private void persistSnapshot(int year, int month, String currency,
                                  ProfitSettingDto input, ProfitDashboardResponse result) {
         try {
@@ -266,11 +269,13 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
         }
     }
 
+    /** Lấy cài đặt lợi nhuận toàn cục (GLOBAL), dùng giá trị mặc định nếu chưa có. */
     private ProfitSetting resolveGlobalSetting() {
         return profitSettingRepository.findByScopeAndScopeRefIdAndIsDeletedFalse("GLOBAL", null)
                 .orElseGet(this::defaultGlobal);
     }
 
+    /** Tạo đối tượng ProfitSetting mặc định khi chưa có cấu hình trong database. */
     private ProfitSetting defaultGlobal() {
         return ProfitSetting.builder()
                 .scope("GLOBAL")
@@ -284,6 +289,7 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
                 .build();
     }
 
+    /** Xác định lương thực tế: lấy từ bảng payroll nếu dùng payrollSource, nếu không lấy manually. */
     private double resolveSalary(ProfitEmployeeAllocation alloc, int year, int month) {
         if (Boolean.TRUE.equals(alloc.getUsePayrollSource())) {
             Optional<Payroll> payroll = payrollRepository
@@ -298,6 +304,7 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
         return safe(alloc.getMonthlySalary());
     }
 
+    /** Tra cứu tên nhân viên theo personId, trả về personId nếu không tìm thấy. */
     private String resolvePersonName(String personId) {
         return personRepository.findById(personId)
                 .filter(p -> p.getIsDeleted() == null || !p.getIsDeleted())
@@ -305,10 +312,12 @@ public class ProfitDashboardServiceImpl implements ProfitDashboardService {
                 .orElse(personId);
     }
 
+    /** Trả về giá trị Double an toàn, trả 0 nếu null. */
     private static double safe(Double v) {
         return v != null ? v : 0d;
     }
 
+    /** Trả về giá trị phần trăm an toàn với giá trị mặc định nếu null. */
     private static double safePct(Double v, double fallback) {
         return v != null ? v : fallback;
     }

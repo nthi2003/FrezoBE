@@ -22,6 +22,9 @@ public class GuideServiceImpl implements GuideService {
 
     private final GuideRepository guideRepository;
 
+    /**
+     * Lấy danh sách tất cả hướng dẫn đã xuất bản, sắp xếp theo thứ tự hiển thị.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<GuideSummaryResponse> listPublished() {
@@ -31,6 +34,9 @@ public class GuideServiceImpl implements GuideService {
                 .toList();
     }
 
+    /**
+     * Lấy chi tiết một hướng dẫn đã xuất bản theo đường dẫn slug.
+     */
     @Override
     @Transactional(readOnly = true)
     public GuideResponse getPublishedBySlug(String slug) {
@@ -39,6 +45,9 @@ public class GuideServiceImpl implements GuideService {
         return toResponse(guide);
     }
 
+    /**
+     * Lấy danh sách tất cả hướng dẫn (kể cả chưa xuất bản) cho quản trị viên.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<GuideSummaryResponse> listAll() {
@@ -48,12 +57,18 @@ public class GuideServiceImpl implements GuideService {
                 .toList();
     }
 
+    /**
+     * Lấy chi tiết một hướng dẫn theo mã định danh.
+     */
     @Override
     @Transactional(readOnly = true)
     public GuideResponse getById(String id) {
         return toResponse(requireGuide(id));
     }
 
+    /**
+     * Tạo mới một hướng dẫn, kiểm tra tính duy nhất của slug trước khi lưu.
+     */
     @Override
     @Transactional
     public GuideResponse create(GuideSaveRequest request) {
@@ -73,6 +88,9 @@ public class GuideServiceImpl implements GuideService {
         return toResponse(guideRepository.save(guide));
     }
 
+    /**
+     * Cập nhật thông tin hướng dẫn, kiểm tra slug trùng lặp với hướng dẫn khác.
+     */
     @Override
     @Transactional
     public GuideResponse update(String id, GuideSaveRequest request) {
@@ -95,6 +113,9 @@ public class GuideServiceImpl implements GuideService {
         return toResponse(guideRepository.save(guide));
     }
 
+    /**
+     * Xuất bản hướng dẫn (đặt trạng thái published = true).
+     */
     @Override
     @Transactional
     public GuideResponse publish(String id) {
@@ -103,6 +124,9 @@ public class GuideServiceImpl implements GuideService {
         return toResponse(guideRepository.save(guide));
     }
 
+    /**
+     * Ẩn hướng dẫn (đặt trạng thái published = false).
+     */
     @Override
     @Transactional
     public GuideResponse unpublish(String id) {
@@ -111,6 +135,9 @@ public class GuideServiceImpl implements GuideService {
         return toResponse(guideRepository.save(guide));
     }
 
+    /**
+     * Xoá mềm hướng dẫn theo mã định danh.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -119,11 +146,17 @@ public class GuideServiceImpl implements GuideService {
         guideRepository.save(guide);
     }
 
+    /**
+     * Tìm hướng dẫn theo ID, ném ngoại lệ nếu không tồn tại hoặc đã xoá.
+     */
     private Guide requireGuide(String id) {
         return guideRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QthtErrorCode.GUIDE_NOT_FOUND, id));
     }
 
+    /**
+     * Chuyển đổi thực thể Guide sang DTO Response đầy đủ thông tin.
+     */
     private GuideResponse toResponse(Guide g) {
         return GuideResponse.builder()
                 .id(g.getId())
@@ -141,6 +174,9 @@ public class GuideServiceImpl implements GuideService {
                 .build();
     }
 
+    /**
+     * Chuyển đổi thực thể Guide sang DTO tóm tắt (không chứa nội dung body).
+     */
     private GuideSummaryResponse toSummary(Guide g) {
         return GuideSummaryResponse.builder()
                 .id(g.getId())
@@ -155,6 +191,9 @@ public class GuideServiceImpl implements GuideService {
                 .build();
     }
 
+    /**
+     * Chuẩn hoá slug: chuyển sang chữ thường, thay khoảng trắng bằng dấu gạch ngang.
+     */
     private static String normalizeSlug(String raw) {
         if (raw == null) {
             return "";
@@ -162,6 +201,9 @@ public class GuideServiceImpl implements GuideService {
         return raw.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", "-");
     }
 
+    /**
+     * Cắt khoảng trắng đầu cuối, trả về null nếu kết quả rỗng.
+     */
     private static String trimToNull(String value) {
         if (value == null) {
             return null;

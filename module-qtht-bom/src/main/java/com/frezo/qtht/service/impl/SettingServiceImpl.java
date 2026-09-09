@@ -31,6 +31,9 @@ public class SettingServiceImpl implements SettingService {
     private final SettingMapper settingMapper;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Lấy tất cả cài đặt chưa bị xóa dưới dạng danh sách phản hồi.
+     */
     @Override
     public List<SettingResponse> findAll() {
         return settingRepository.findAll().stream()
@@ -39,6 +42,9 @@ public class SettingServiceImpl implements SettingService {
                 .toList();
     }
 
+    /**
+     * Thêm mới cài đặt cho tổ chức — kiểm tra đã tồn tại cài đặt cho orgId chưa, sau đó lưu và xóa cache.
+     */
     @Override
     @Transactional
     @CacheEvict(value = "settings", key = "#request.orgId")
@@ -51,6 +57,9 @@ public class SettingServiceImpl implements SettingService {
         return ApiResponse.success(settingMapper.toResponse(savedSetting));
     }
 
+    /**
+     * Chỉnh sửa cài đặt hiện tại — cập nhật entity từ request, lưu và xóa cache.
+     */
     @Override
     @Transactional
     @CacheEvict(value = "settings", key = "#request.orgId")
@@ -63,6 +72,9 @@ public class SettingServiceImpl implements SettingService {
         return ApiResponse.success(settingMapper.toResponse(savedSetting));
     }
 
+    /**
+     * Lấy cài đặt theo mã tổ chức — nếu chưa có thì trả về cài đặt mặc định (tất cả boolean = false).
+     */
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "settings", key = "#orgId")
@@ -78,6 +90,9 @@ public class SettingServiceImpl implements SettingService {
         return ApiResponse.success(settingMapper.toResponse(setting));
     }
 
+    /**
+     * Lấy cài đặt lương (PayrollSetting) từ JSON details của tổ chức, trả về giá trị mặc định nếu chưa cấu hình.
+     */
     @Override
     public PayrollSettingResponse getPayrollSetting(String orgId) {
         SystemDetailsSettingResponse details = getSystemDetails(orgId);
@@ -96,6 +111,9 @@ public class SettingServiceImpl implements SettingService {
                 .build();
     }
 
+    /**
+     * Lấy cài đặt chấm công (AttendanceSetting) từ JSON details của tổ chức, trả về giá trị mặc định nếu chưa cấu hình.
+     */
     @Override
     public AttendanceSettingResponse getAttendanceSetting(String orgId) {
         SystemDetailsSettingResponse details = getSystemDetails(orgId);
@@ -115,6 +133,9 @@ public class SettingServiceImpl implements SettingService {
                 .build();
     }
 
+    /**
+     * Phân tích chuỗi JSON details của cài đặt thành SystemDetailsSettingResponse, trả về null nếu rỗng hoặc lỗi parse.
+     */
     private SystemDetailsSettingResponse getSystemDetails(String orgId) {
         Setting setting = settingRepository.findByOrgIdAndIsDeletedFalse(orgId).orElse(null);
         if (setting == null || setting.getDetails() == null || setting.getDetails().isEmpty()) {

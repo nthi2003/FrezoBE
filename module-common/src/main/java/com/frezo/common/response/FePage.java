@@ -7,11 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/**
- * Page shape khớp FE TanStack / Sprint-1 mocks:
- * {@code { content, totalElements, totalPages, number, size }}.
- * Không thay {@link PageResponse} (items/total) để tránh phá API cũ.
- */
+
 @Data
 @Builder
 @NoArgsConstructor

@@ -28,6 +28,9 @@ public class PersonStatisticsServiceImpl implements PersonStatisticsService {
     private final PersonRepository personRepository;
     private final ContractRepository contractRepository;
 
+    /**
+     * Tổng hợp số liệu nhân sự trong khoảng thời gian: tổng số nhân viên, giới tính, nhân sự mới, nghỉ việc, hợp đồng thử việc/chính thức, hợp đồng sắp hết hạn và danh sách sinh nhật trong tháng.
+     */
     @Override
     @Transactional(readOnly = true)
     public PersonStatisticsResponse getStatistics(LocalDate from, LocalDate to) {
@@ -120,6 +123,9 @@ public class PersonStatisticsServiceImpl implements PersonStatisticsService {
                 .build();
     }
 
+    /**
+     * Dựng map thông tin cơ bản của một nhân viên (kèm thông tin hợp đồng nếu có) để đưa vào các danh sách thống kê.
+     */
     private Map<String, Object> personRow(Person p, Contract c) {
         Map<String, Object> row = new HashMap<>();
         row.put("id", p.getId());

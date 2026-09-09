@@ -21,7 +21,6 @@ public class DepreciationScheduleResponse {
     private String method;
     private LocalDate startDate;
     private Integer months;
-    /** Nguyên giá (purchasePrice của tài sản) — phục vụ bảng dòng khấu hao. */
     private BigDecimal purchasePrice;
     private BigDecimal monthlyAmount;
     private BigDecimal remainingValue;

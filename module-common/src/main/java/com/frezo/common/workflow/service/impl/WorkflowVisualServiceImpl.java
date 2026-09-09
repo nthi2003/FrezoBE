@@ -32,6 +32,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
     private final WorkflowStepRepository stepRepository;
     private final ObjectMapper objectMapper;
 
+
     @Override
     public List<WorkflowTemplateMetaDto> listTemplates() {
         return definitionRepository.findByIsTemplateTrueAndIsDeletedFalseOrderByModuleCodeAscNameAsc()
@@ -40,11 +41,13 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
                 .toList();
     }
 
+
     @Override
     public WorkflowDefinitionDto getTemplate(String code) {
         WorkflowDefinition def = findTemplate(code);
         return toDto(def);
     }
+
 
     @Override
     @Transactional
@@ -70,10 +73,12 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return toDto(saved);
     }
 
+
     @Override
     public WorkflowDefinitionDto getDefinitionVisual(String id) {
         return toDto(requireDefinition(id));
     }
+
 
     @Override
     @Transactional
@@ -114,6 +119,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return toDto(saved);
     }
 
+
     @Override
     public WorkflowGraphDto getGraph(String definitionId) {
         WorkflowDefinition def = requireDefinition(definitionId);
@@ -123,6 +129,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         }
         return graph;
     }
+
 
     @Override
     @Transactional
@@ -145,6 +152,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return graph;
     }
 
+
     @Override
     public WorkflowValidateResultDto validate(String definitionId) {
         WorkflowDefinition def = requireDefinition(definitionId);
@@ -152,7 +160,6 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return validateGraph(graph);
     }
 
-    // ---- Validation rules ----
 
     public static WorkflowValidateResultDto validateGraph(WorkflowGraphDto graph) {
         List<String> errors = new ArrayList<>();
@@ -219,7 +226,6 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return errors.isEmpty() ? WorkflowValidateResultDto.ok() : WorkflowValidateResultDto.fail(errors);
     }
 
-    // ---- Helpers ----
 
     private WorkflowDefinition findTemplate(String code) {
         String key = code != null ? code.trim() : "";
@@ -230,11 +236,13 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
                 .orElseThrow(() -> new AppException(WorkflowErrorCode.TEMPLATE_NOT_FOUND));
     }
 
+
     private WorkflowDefinition requireDefinition(String id) {
         return definitionRepository.findById(id)
                 .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
                 .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
     }
+
 
     private String uniqueCloneCode(String base) {
         String prefix = (base != null ? base : "WF") + "_COPY_";
@@ -247,6 +255,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         } while (definitionRepository.existsByCode(candidate) && guard < 20);
         return candidate;
     }
+
 
     private WorkflowTemplateMetaDto toTemplateMeta(WorkflowDefinition def) {
         WorkflowTemplateMetaDto m = new WorkflowTemplateMetaDto();
@@ -263,6 +272,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         m.setNodeCount(g.getNodes() != null ? g.getNodes().size() : 0);
         return m;
     }
+
 
     private WorkflowDefinitionDto toDto(WorkflowDefinition def) {
         WorkflowDefinitionDto d = new WorkflowDefinitionDto();
@@ -301,6 +311,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
         return d;
     }
 
+
     private WorkflowGraphDto readGraph(String json) {
         if (json == null || json.isBlank()) {
             WorkflowGraphDto empty = new WorkflowGraphDto();
@@ -317,6 +328,7 @@ public class WorkflowVisualServiceImpl implements WorkflowVisualService {
             throw new AppException(WorkflowErrorCode.GRAPH_INVALID);
         }
     }
+
 
     private String writeGraph(WorkflowGraphDto graph) {
         try {

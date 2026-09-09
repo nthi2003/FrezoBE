@@ -43,12 +43,18 @@ public class OnboardingServiceImpl implements OnboardingService {
     private final OnboardingAssignmentRepository assignmentRepository;
     private final OnboardingAssignmentItemRepository assignmentItemRepository;
 
+    /**
+     * Lấy danh sách template onboarding chưa bị xoá.
+     */
     @Override
     public List<OnboardingTemplateResponse> listTemplates() {
         return templateRepository.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
                 .map(this::toTemplateDto).toList();
     }
 
+    /**
+     * Tạo mới template onboarding cùng danh sách các bước (items).
+     */
     @Override
     @Transactional
     public OnboardingTemplateResponse createTemplate(OnboardingTemplateRequest req) {
@@ -63,6 +69,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         return toTemplateDto(t);
     }
 
+    /**
+     * Cập nhật template onboarding; nếu gửi lại items sẽ xoá mềm cũ và thay thế bằng danh sách mới.
+     */
     @Override
     @Transactional
     public OnboardingTemplateResponse updateTemplate(String id, OnboardingTemplateRequest req) {
@@ -81,6 +90,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         return toTemplateDto(t);
     }
 
+    /**
+     * Lấy danh sách assignment onboarding (theo nhân sự nếu có chỉ định, ngược lại toàn bộ).
+     */
     @Override
     public List<OnboardingAssignmentResponse> listAssignments(String personId) {
         List<OnboardingAssignment> list = personId != null
@@ -89,6 +101,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         return list.stream().map(this::toAssignmentDto).toList();
     }
 
+    /**
+     * Gán template onboarding cho một nhân sự: tạo assignment IN_PROGRESS và sinh các item với ngày đến hạn tương ứng.
+     */
     @Override
     @Transactional
     public OnboardingAssignmentResponse assign(OnboardingAssignRequest req) {
@@ -125,6 +140,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         return toAssignmentDto(a);
     }
 
+    /**
+     * Hoàn thành một bước onboarding: đánh dấu DONE và tính lại tiến độ, tự chuyển assignment sang COMPLETED khi đủ.
+     */
     @Override
     @Transactional
     public OnboardingAssignmentResponse completeItem(String assignmentId, String itemId) {
@@ -149,6 +167,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         return toAssignmentDto(a);
     }
 
+    /**
+     * Lưu danh sách bước (items) cho một template kèm thứ tự sắp xếp.
+     */
     private void saveTemplateItems(String templateId, List<OnboardingTemplateItemRequest> items) {
         if (items == null) return;
         int order = 0;
@@ -167,6 +188,9 @@ public class OnboardingServiceImpl implements OnboardingService {
         }
     }
 
+    /**
+     * Chuyển entity template sang DTO response kèm danh sách các bước.
+     */
     private OnboardingTemplateResponse toTemplateDto(OnboardingTemplate t) {
         List<OnboardingTemplateItemResponse> items = templateItemRepository
                 .findByTemplateIdAndIsDeletedFalseOrderBySortOrderAsc(t.getId())
@@ -181,6 +205,9 @@ public class OnboardingServiceImpl implements OnboardingService {
                 .active(t.getActive()).items(items).build();
     }
 
+    /**
+     * Chuyển entity assignment sang DTO response kèm danh sách các bước đã sinh.
+     */
     private OnboardingAssignmentResponse toAssignmentDto(OnboardingAssignment a) {
         List<OnboardingAssignmentItemResponse> items = assignmentItemRepository
                 .findByAssignmentIdAndIsDeletedFalseOrderBySortOrderAsc(a.getId())

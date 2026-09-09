@@ -28,13 +28,6 @@ public class MinioService {
     @Value("${minio.bucket:frezo-bucket}")
     private String defaultBucket;
 
-    /**
-     * Tải file lên MinIO
-     *
-     * @param objectName Tên file/đường dẫn trên MinIO (VD: username/avatar_temp.png)
-     * @param file       File cần tải lên
-     * @return URL có thể dùng để xem file
-     */
     public String uploadFile(String objectName, MultipartFile file) {
         try {
             createBucketIfNotExist(defaultBucket);
@@ -56,14 +49,7 @@ public class MinioService {
         }
     }
 
-    /**
-     * Tải file lên MinIO (tự chọn bucket)
-     *
-     * @param objectName Tên file/đường dẫn trên MinIO
-     * @param file       File cần tải lên
-     * @param bucketName Bucket đích
-     * @return URL có thể dùng để xem file
-     */
+
     public String uploadFile(String objectName, MultipartFile file, String bucketName) {
         try {
             createBucketIfNotExist(bucketName);
@@ -85,14 +71,7 @@ public class MinioService {
         }
     }
 
-    /**
-     * Lưu nội dung text vào MinIO
-     *
-     * @param objectName Tên file/đường dẫn trên MinIO
-     * @param content    Nội dung text
-     * @param bucketName Bucket đích
-     * @return URL có thể dùng để xem file
-     */
+
     public String saveContent(String objectName, String content, String bucketName) {
         try {
             createBucketIfNotExist(bucketName);
@@ -115,13 +94,7 @@ public class MinioService {
         }
     }
 
-    /**
-     * Tải file lên MinIO (từ java.io.File)
-     *
-     * @param objectName Tên file/đường dẫn trên MinIO (VD: username/avatar.png)
-     * @param file       File cần tải lên
-     * @return URL có thể dùng để xem file
-     */
+
     public String uploadFileFromPath(String objectName, File file) {
         try {
             createBucketIfNotExist(defaultBucket);
@@ -145,12 +118,7 @@ public class MinioService {
         }
     }
 
-    /**
-     * Lấy URL để xem file tạm thời
-     *
-     * @param objectName Tên file trên MinIO
-     * @return URL
-     */
+
     public String getPresignedUrl(String objectName) {
         return getPresignedUrl(objectName, defaultBucket);
     }

@@ -22,6 +22,9 @@ public class ContractTemplateServiceImpl implements ContractTemplateService {
     private final ContractTemplateRepository contractTemplateRepository;
     private final MinioService minioService;
 
+    /**
+     * Lấy danh sách mẫu hợp đồng chưa xoá, sắp xếp theo ngày tạo mới nhất.
+     */
     @Override
     public List<ContractTemplateResponse> getAll() {
         return contractTemplateRepository.findByIsDeletedFalseOrderByCreatedDateDesc()
@@ -30,6 +33,9 @@ public class ContractTemplateServiceImpl implements ContractTemplateService {
                 .toList();
     }
 
+    /**
+     * Tạo mới một mẫu hợp đồng với tên, loại và thông tin file đã upload.
+     */
     @Override
     @Transactional
     public ContractTemplateResponse create(String name, String type, String fileUrl, String fileObjectName) {
@@ -43,6 +49,9 @@ public class ContractTemplateServiceImpl implements ContractTemplateService {
         return toResponse(saved);
     }
 
+    /**
+     * Xoá mềm mẫu hợp đồng: xoá file trên MinIO (nếu có) và đánh dấu isDeleted.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -59,6 +68,9 @@ public class ContractTemplateServiceImpl implements ContractTemplateService {
         contractTemplateRepository.save(entity);
     }
 
+    /**
+     * Chuyển entity ContractTemplate sang DTO ContractTemplateResponse.
+     */
     private ContractTemplateResponse toResponse(ContractTemplate entity) {
         return ContractTemplateResponse.builder()
                 .id(entity.getId())

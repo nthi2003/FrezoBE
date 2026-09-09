@@ -20,6 +20,9 @@ public class CandidateServiceImpl implements CandidateService {
 
     private final CandidateRepository candidateRepository;
 
+    /**
+     * Tạo mới một ứng viên tuyển dụng từ dữ liệu yêu cầu và lưu vào cơ sở dữ liệu.
+     */
     @Override
     @Transactional
     public CandidateResponse create(CandidateRequest req) {
@@ -37,11 +40,17 @@ public class CandidateServiceImpl implements CandidateService {
         return toResponse(candidateRepository.save(e));
     }
 
+    /**
+     * Lấy chi tiết một ứng viên theo id, không tồn tại hoặc đã xoá thì báo lỗi CANDIDATE_NOT_FOUND.
+     */
     @Override
     public CandidateResponse getById(String id) {
         return toResponse(findOrThrow(id));
     }
 
+    /**
+     * Tìm kiếm ứng viên chưa xoá theo từ khoá (tên/email/số điện thoại), sắp xếp theo ngày tạo mới nhất.
+     */
     @Override
     public List<CandidateResponse> search(String keyword) {
         String kw = keyword == null ? "" : keyword.trim().toLowerCase();
@@ -57,12 +66,18 @@ public class CandidateServiceImpl implements CandidateService {
                 .toList();
     }
 
+    /**
+     * Tra cứu ứng viên chưa xoá theo id, không tìm thấy thì ném AppException CANDIDATE_NOT_FOUND.
+     */
     private Candidate findOrThrow(String id) {
         return candidateRepository.findById(id)
                 .filter(c -> Boolean.FALSE.equals(c.getIsDeleted()))
                 .orElseThrow(() -> new AppException(RecruitmentErrorCode.CANDIDATE_NOT_FOUND, id));
     }
 
+    /**
+     * Chuyển entity Candidate sang DTO CandidateResponse để trả về cho client.
+     */
     private CandidateResponse toResponse(Candidate e) {
         return CandidateResponse.builder()
                 .id(e.getId())

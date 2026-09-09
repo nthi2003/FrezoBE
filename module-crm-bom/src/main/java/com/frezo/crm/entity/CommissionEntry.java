@@ -46,11 +46,9 @@ public class CommissionEntry extends BaseEntity {
     @Column(name = "commission_amount", precision = 20, scale = 2, nullable = false)
     private BigDecimal commissionAmount;
 
-    /** Số dòng / tổng SL sản phẩm trên HĐ (để EU xem “số lượng + hoa hồng”). */
     @Column(name = "item_quantity", precision = 20, scale = 4)
     private BigDecimal itemQuantity;
 
-    /** PENDING | APPROVED | PAID | VOID */
     @Column(nullable = false, length = 20)
     private String status;
 

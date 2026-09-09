@@ -41,6 +41,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
     private final PersonRepository personRepository;
     private final PersonService personService;
 
+    /**
+     * Tạo đơn nghỉ việc mới (REQUESTED) cho một nhân viên còn hoạt động, sinh mã đơn tự động, các cờ bàn giao ban đầu đều false.
+     */
     @Override
     @Transactional
     public ResignationResponse create(ResignationCreateRequest request) {
@@ -71,11 +74,17 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Lấy chi tiết một đơn nghỉ việc theo ID.
+     */
     @Override
     public ResignationResponse getById(String id) {
         return toDto(findActive(id));
     }
 
+    /**
+     * Liệt kê các đơn nghỉ việc, lọc theo nhân viên hoặc trạng thái nếu được chỉ định.
+     */
     @Override
     public List<ResignationResponse> list(String personId, String status) {
         List<ResignationRequest> rows;
@@ -89,6 +98,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return rows.stream().map(this::toDto).toList();
     }
 
+    /**
+     * Duyệt đơn nghỉ việc: chuyển sang APPROVED, ghi nhận ngày nghỉ thực tế (hoặc dùng ngày dự kiến) và thông tin người duyệt.
+     */
     @Override
     @Transactional
     public ResignationResponse approve(String id, ResignationApproveRequest request) {
@@ -113,6 +125,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Xác nhận hoàn tất bàn giao tài sản (laptop, thẻ nhân viên, tài liệu); chỉ khi đủ các cờ bàn giao thì chuyển sang HANDOVER_DONE.
+     */
     @Override
     @Transactional
     public ResignationResponse confirmHandover(String id, ResignationHandoverRequest request) {
@@ -146,6 +161,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Xác nhận đã quyết toán lương cho đơn nghỉ việc, chuyển trạng thái sang PAYROLL_SETTLED.
+     */
     @Override
     @Transactional
     public ResignationResponse settlePayroll(String id) {
@@ -157,6 +175,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Hoàn tất đơn nghỉ việc (COMPLETED): thu hồi tài khoản người dùng và vô hiệu hóa hồ sơ nhân viên nếu còn hoạt động.
+     */
     @Override
     @Transactional
     public ResignationResponse complete(String id) {
@@ -176,6 +197,9 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Hủy đơn nghỉ việc (CANCELLED), chỉ hợp lệ khi đơn chưa hoàn tất hoặc chưa bị hủy trước đó.
+     */
     @Override
     @Transactional
     public ResignationResponse cancel(String id) {
@@ -187,17 +211,26 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Tìm đơn nghỉ việc còn hoạt động (chưa bị xóa) theo ID, ném lỗi nếu không tồn tại.
+     */
     private ResignationRequest findActive(String id) {
         return repository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QlnsErrorCode.RESIGNATION_NOT_FOUND));
     }
 
+    /**
+     * Kiểm tra đơn đang ở đúng trạng thái mong đợi để thực hiện bước chuyển tiếp tiếp theo.
+     */
     private void assertStatus(ResignationRequest entity, String expected) {
         if (!expected.equals(entity.getStatus())) {
             throw new AppException(QlnsErrorCode.RESIGNATION_INVALID_STATUS);
         }
     }
 
+    /**
+     * Chuyển entity đơn nghỉ việc sang DTO response với các thời điểm được format theo ISO.
+     */
     private ResignationResponse toDto(ResignationRequest e) {
         return ResignationResponse.builder()
                 .id(e.getId())
@@ -225,10 +258,16 @@ public class ResignationRequestServiceImpl implements ResignationRequestService 
                 .build();
     }
 
+    /**
+     * Format ngày LocalDate theo chuẩn ISO_LOCAL_DATE, trả null nếu giá trị rỗng.
+     */
     private String formatDate(LocalDate d) {
         return d != null ? d.format(DATE) : null;
     }
 
+    /**
+     * Format thời điểm LocalDateTime theo chuẩn ISO_LOCAL_DATE_TIME, trả null nếu giá trị rỗng.
+     */
     private String formatTs(LocalDateTime t) {
         return t != null ? t.format(ISO) : null;
     }

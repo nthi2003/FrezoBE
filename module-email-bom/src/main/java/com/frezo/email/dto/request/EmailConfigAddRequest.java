@@ -18,9 +18,7 @@ public class EmailConfigAddRequest {
     public String apiKey;
     @Column(nullable = false, unique = true, length = 100)
     private String smtp;
-
     private String orgId;
-
     private Short port;
     @Column(nullable = false, unique = true, length = 100)
     private String nameEmail;

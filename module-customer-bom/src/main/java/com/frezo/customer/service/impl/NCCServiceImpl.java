@@ -36,18 +36,19 @@ public class NCCServiceImpl implements NCCService {
     private final com.frezo.common.service.MinioService minioService;
     private final NCCMapper nccMapper;
 
+
     @Override
     public Map<String, Object> all(NCCFilterRequest filter) {
         Specification<NCC> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (filter.getKeyword() != null && !filter.getKeyword().isEmpty()) {
                 String keyword = "%" + filter.getKeyword().toLowerCase() + "%";
-                // Phone search uses SHA-256 hash for security
+
                 String phoneHash = com.frezo.common.utils.CryptoUtils.hashSHA256(filter.getKeyword());
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("name")), keyword),
                         cb.like(cb.lower(root.get("code")), keyword),
-                        cb.equal(root.get("phoneHash"), phoneHash),   // search by hash
+                        cb.equal(root.get("phoneHash"), phoneHash),
                         cb.like(cb.lower(root.get("representative")), keyword)
                 ));
             }
@@ -74,6 +75,7 @@ public class NCCServiceImpl implements NCCService {
         return mapToResponse(ncc);
     }
 
+
     @Override
     @Transactional
     public NCCResponse createNCC(NCCRequest request) {
@@ -98,6 +100,7 @@ public class NCCServiceImpl implements NCCService {
 
         return mapToResponse(ncc);
     }
+
 
     @Override
     @Transactional
@@ -129,6 +132,7 @@ public class NCCServiceImpl implements NCCService {
         return mapToResponse(ncc);
     }
 
+
     @Override
     @Transactional
     public void delete(String id) {
@@ -147,6 +151,7 @@ public class NCCServiceImpl implements NCCService {
         certificateRepository.deleteByNccId(id);
     }
 
+
     private void saveCertificates(String nccId, List<NCCCertificateDTO> dtos) {
         if (dtos != null) {
             List<NCCCertificate> certificates = dtos.stream()
@@ -159,6 +164,7 @@ public class NCCServiceImpl implements NCCService {
             certificateRepository.saveAll(certificates);
         }
     }
+
 
     private NCCResponse mapToResponse(NCC ncc) {
         NCCResponse response = nccMapper.toResponse(ncc);
@@ -178,6 +184,7 @@ public class NCCServiceImpl implements NCCService {
 
         return response;
     }
+
 
     @Override
     public String uploadCertificate(String nccCode, MultipartFile file) {

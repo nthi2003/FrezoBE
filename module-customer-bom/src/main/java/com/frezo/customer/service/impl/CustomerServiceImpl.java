@@ -41,6 +41,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final com.frezo.common.service.MinioService minioService;
 
 
+
     @Override
     public PageResponse<CustomerResponse> getAll(CustomerFilterRequest filter) {
         Specification<Customer> spec = buildSpec(filter);
@@ -76,6 +77,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
 
+
     @Override
     @Transactional
     public CustomerResponse create(CustomerRequest request) {
@@ -94,6 +96,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
 
+
     @Override
     @Transactional
     public CustomerResponse update(String id, CustomerRequest request) {
@@ -107,6 +110,7 @@ public class CustomerServiceImpl implements CustomerService {
         customerMapper.updateEntity(entity, request);
         return customerMapper.toResponse(customerRepository.save(entity));
     }
+
 
 
     @Override
@@ -124,6 +128,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (entity.getPhoneEncrypted() == null) return null;
         return CryptoUtils.decryptAESGCM(entity.getPhoneEncrypted());
     }
+
 
 
     @Override
@@ -232,7 +237,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
     }
 
-    // ─────────────────── UPLOAD AVATAR ──────────────────────────────────────────
+
     @Override
     @Transactional
     public String uploadAvatar(String id, MultipartFile file) {
@@ -249,7 +254,7 @@ public class CustomerServiceImpl implements CustomerService {
         return url;
     }
 
-    // ─────────────────── PRIVATE HELPERS ────────────────────────────────────────
+
     private Customer findById(String id) {
         return customerRepository.findById(id)
                 .orElseThrow(() -> new AppException(CustomerErrorCode.CUSTOMER_NOT_FOUND));

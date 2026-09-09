@@ -33,6 +33,7 @@ public class StockReportServiceImpl implements StockReportService {
     private final StockBalanceRepository stockBalanceRepository;
     private final ProductRepository productRepository;
 
+    /** Tạo báo cáo nhập-xuất-tồn theo từng sản phẩm trong khoảng thời gian, tính tồn đầu kỳ, cuối kỳ và tổng nhập/xuất. */
     @Override
     public List<StockMovementReportResponse> getStockMovementReport(
             LocalDateTime from, LocalDateTime to, String productId, String warehouseId) {
@@ -95,6 +96,7 @@ public class StockReportServiceImpl implements StockReportService {
         return reports;
     }
 
+    /** Xuất báo cáo nhập-xuất-tồn ra file Excel theo khoảng thời gian và điều kiện lọc. */
     @Override
     public byte[] exportStockMovementExcel(
             LocalDateTime from, LocalDateTime to, String productId, String warehouseId) {
@@ -158,6 +160,7 @@ public class StockReportServiceImpl implements StockReportService {
         }
     }
 
+    /** Trả về danh sách cảnh báo tồn kho thấp kèm ngưỡng cảnh báo của từng sản phẩm. */
     @Override
     public List<LowStockAlertResponse> getLowStockAlerts() {
         List<String> ids = stockBalanceRepository.findLowStockBalanceIds();

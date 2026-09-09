@@ -22,20 +22,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Security config — JWT stateless + RBAC qua {@code @CheckPermission} aspect + method security qua {@code @PreAuthorize}.
- * <p>
- * <b>Đã fix (v1.1 — Batch B):</b>
- * <ul>
- *   <li>Password encoder: {@code DelegatingPasswordEncoder} (default = BCrypt-12), backward-compat với {@code {noop}} legacy plain text.</li>
- *   <li>CORS: whitelist qua {@link SecurityCorsProperties} — KHÔNG còn {@code allowedOrigins("*")}.</li>
- *   <li>DI: constructor injection thay {@code @Autowired} field.</li>
- *   <li>Method security: {@code @EnableMethodSecurity(prePostEnabled=true)} — cho phép {@code @PreAuthorize}, {@code @PostAuthorize}.</li>
- * </ul>
- * <p>
- * <b>Kế hoạch tiếp theo (Batch C):</b> bật lại toàn bộ {@code @CheckPermission} đang bị comment-out trong controllers,
- * implement SUPER_ADMIN bypass, rà soát permission code trong DB.
- */
 @Slf4j
 @Configuration
 @EnableWebSecurity
@@ -67,31 +53,15 @@ public class SecurityConfig {
                                 "/ws-endpoint/**",
                                 "/error"
                         ).permitAll()
-                        // Public landing / catalog / article (chỉ GET) — dùng cho landing page KHÔNG cần login
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/public/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/public/product/filter").permitAll()
-                        // Public inbox — landing contact form + Zalo OA webhook (POST). Có anti-spam
-                        // (honeypot + IP rate limit) + signature verify riêng cho Zalo trong controller.
-                        // Context-path là /api → matcher chỉ ghi path phần sau context, không có prefix `/api`.
                         .requestMatchers("/public/inbox/**").permitAll()
-                        // Internal gateway (service-to-service, có protection riêng qua network policy)
                         .requestMatchers("/qtht/internal-gateway/**").permitAll()
-                        // Actuator — dev bật; prod override qua application-prod.yml
                         .requestMatchers("/actuator/**").permitAll()
-                        // v1.1 fix (Batch H): /customer/** và /voucher/** trước đây permitAll cho MỌI method
-                        //   → cho phép anonymous POST/PUT/DELETE. GỠ. Nếu cần API public cho storefront,
-                        //     tách endpoint riêng dưới prefix /public/customer, /public/voucher.
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
-    /**
-     * CORS config đọc từ {@link SecurityCorsProperties} — cấm {@code allowedOrigins("*")}.
-     * <p>
-     * Nếu {@code allowCredentials=true} + có {@code "*"} trong allowed-origins → Spring throw exception (đúng quy chuẩn).
-     * Log warning nếu detect {@code "*"} trong config để phát hiện sớm cấu hình sai.
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         if (corsProperties.getAllowedOrigins().contains("*")) {
@@ -111,21 +81,6 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * Password encoder — {@code DelegatingPasswordEncoder} với default id = {@code bcrypt} (strength 10 mặc định Spring).
-     * <p>
-     * Hỗ trợ đồng thời:
-     * <ul>
-     *   <li>Password mới register → luôn hash {@code {bcrypt}$2a$10$...}</li>
-     *   <li>Password cũ chưa migrate → prefix {@code {noop}plaintext} vẫn login được (chỉ trong giai đoạn migration)</li>
-     * </ul>
-     * <p>
-     * <b>Migration bắt buộc:</b> chạy script SQL trong {@code FrezoBE/module-auth-bom/src/main/resources/scripts/migrate-passwords-to-bcrypt.sql}
-     * để convert tất cả password plain text sang BCrypt. Sau migration, xoá support {@code {noop}} bằng cách chuyển sang
-     * {@code new BCryptPasswordEncoder(12)} thuần.
-     * <p>
-     * <b>CẤM</b> quay lại {@code NoOpPasswordEncoder} kể cả tạm thời.
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();

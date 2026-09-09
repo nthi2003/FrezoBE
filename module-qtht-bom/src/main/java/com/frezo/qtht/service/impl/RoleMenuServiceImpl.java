@@ -36,6 +36,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
     private final RoleRepository roleRepository;
     private final com.frezo.qtht.repository.MenuRepository menuRepository;
 
+    /**
+     * Gán menu cho vai trò — kiểm tra trùng lặp, cập nhật action nếu đã tồn tại, nếu chưa thì tạo mới RoleMenu kèm parent menu.
+     */
     @Override
     @Transactional
     public RoleMenuResponse assignMenuToRole(RoleMenuAssignRequest request) {
@@ -100,6 +103,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
     }
 
 
+    /**
+     * Lấy danh sách menu đã gán cho vai trò theo mã vai trò (roleCode).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<RoleMenuResponse> getMenusByRole(String roleCode) {
@@ -120,6 +126,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
                 .toList();
     }
 
+    /**
+     * Lưu toàn bộ quyền menu cho vai trò — xóa các menu không còn trong danh sách và thêm menu mới.
+     */
     @Override
     @Transactional
     public void savePermissions(RolePermissionSaveRequest request) {
@@ -131,11 +140,17 @@ public class RoleMenuServiceImpl implements RoleMenuService {
     }
 
 
+    /**
+     * Tìm vai trò theo mã định danh, ném ngoại lệ nếu không tồn tại.
+     */
     private Role getRoleById(String roleId) {
         return roleRepository.findById(roleId)
                 .orElseThrow(() -> new AppException(ERR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND));
     }
 
+    /**
+     * Xóa các RoleMenu không nằm trong danh sách menuId hiệu lực khỏi vai trò.
+     */
     private void deleteRemovedPermissions(Role role, List<String> effectiveMenuIds) {
         List<RoleMenu> existingRoleMenus = roleMenuRepository.findByRole_Code(role.getCode());
         List<RoleMenu> toDelete = existingRoleMenus.stream()
@@ -147,6 +162,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
         }
     }
 
+    /**
+     * Thêm mới RoleMenu cho các menu chưa tồn tại trong vai trò, kèm xử lý parent menu.
+     */
     private void addNewPermissions(Role role, List<String> effectiveMenuIds) {
         List<RoleMenu> existingRoleMenus = roleMenuRepository.findByRole_Code(role.getCode());
         Set<String> existingMenuCodes = existingRoleMenus.stream()
@@ -171,6 +189,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
         roleMenuRepository.saveAll(newRoleMenus);
     }
 
+    /**
+     * Lấy bản đồ parentCode → Menu từ danh sách menu con để thiết lập parentMenuId.
+     */
     private Map<String, Menu> fetchParentMenus(List<Menu> menus, String appCode) {
         Set<String> parentCodes = menus.stream()
                 .map(Menu::getParentCode)
@@ -187,6 +208,9 @@ public class RoleMenuServiceImpl implements RoleMenuService {
                 .collect(Collectors.toMap(Menu::getCode, Function.identity(), (a, b) -> a));
     }
 
+    /**
+     * Tạo entity RoleMenu từ vai trò và menu, thiết lập parentMenuId nếu menu là menu con.
+     */
     private RoleMenu createRoleMenu(Role role, Menu menu, Map<String, Menu> parentMenuMap) {
         RoleMenu.RoleMenuBuilder builder = RoleMenu.builder()
                 .role(role)

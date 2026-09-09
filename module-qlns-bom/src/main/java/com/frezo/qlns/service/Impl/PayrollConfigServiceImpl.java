@@ -17,6 +17,9 @@ public class PayrollConfigServiceImpl implements PayrollConfigService {
     private final PayrollConfigRepository payrollConfigRepository;
     private final PayrollConfigMapper payrollConfigMapper;
 
+    /**
+     * Lưu cấu hình lương cho tổ chức/năm: cập nhật nếu đã tồn tại bản active, ngược lại tạo mới.
+     */
     @Override
     @Transactional
     public PayrollConfigResponse save(PayrollConfigRequest request) {
@@ -40,6 +43,9 @@ public class PayrollConfigServiceImpl implements PayrollConfigService {
         return payrollConfigMapper.toResponse(payrollConfigRepository.save(entity));
     }
 
+    /**
+     * Lấy cấu hình lương đang active theo tổ chức và năm, trả về null nếu chưa có.
+     */
     @Override
     public PayrollConfigResponse getByOrgAndYear(String orgId, Integer year) {
         return payrollConfigRepository.findByOrgIdAndYearAndIsActiveTrue(orgId, year)

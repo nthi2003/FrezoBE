@@ -23,6 +23,9 @@ public class PersonDocumentServiceImpl implements PersonDocumentService {
     private final PersonDocumentRepository personDocumentRepository;
     private final MinioService minioService;
 
+    /**
+     * Lấy danh sách tài liệu của nhân sự, có thể lọc theo loại tài liệu (type).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PersonDocument> getDocuments(String personId, String type) {
@@ -32,6 +35,9 @@ public class PersonDocumentServiceImpl implements PersonDocumentService {
         return personDocumentRepository.findByPersonIdOrderByCreatedDateDesc(personId);
     }
 
+    /**
+     * Upload tài liệu lên MinIO theo loại (CV, CERTIFICATE, ACHIEVEMENT, OTHER) và lưu thông tin vào CSDL.
+     */
     @Override
     @Transactional
     public PersonDocument uploadDocument(String personId, String type, String title, String description, MultipartFile file) {
@@ -71,6 +77,9 @@ public class PersonDocumentServiceImpl implements PersonDocumentService {
         return saved;
     }
 
+    /**
+     * Xóa tài liệu — kiểm tra quyền sở hữu, xóa file trên MinIO rồi xóa bản ghi trong CSDL.
+     */
     @Override
     @Transactional
     public void deleteDocument(String personId, String documentId) {

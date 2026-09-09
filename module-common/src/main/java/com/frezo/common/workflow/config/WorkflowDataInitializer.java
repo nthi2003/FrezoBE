@@ -12,17 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Seed 3 workflow definition mặc định để user có sẵn cái mà dùng ngay:
- * <ul>
- *   <li>{@code ASSET_TRANSFER_DEFAULT} — Cấp phát tài sản (Admin duyệt → Admin bàn giao)</li>
- *   <li>{@code LEAVE_DEFAULT} — Đăng ký nghỉ phép (Manager → HR)</li>
- *   <li>{@code CONTRACT_APPROVE} — Hợp đồng (Legal → Finance → CEO)</li>
- * </ul>
- * <p>
- * <b>Idempotent</b>: skip nếu code đã tồn tại. Admin có thể vào editor UI để chỉnh sửa
- * mà không lo bị ghi đè khi restart.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor

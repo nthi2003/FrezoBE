@@ -30,6 +30,9 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
     private final EmailTemplateRepository emailTemplateRepository;
 
 
+    /**
+     * Lấy danh sách mẫu email phân trang theo từ khóa tìm kiếm.
+     */
     public PageResponse<EmailTemplateResponse> all(EmailTemplateFilter filter) {
         Specification<EmailTemplate> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate" );
@@ -37,6 +40,9 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
         return PageResponse.from(entities, emailTemplateMapper::toResponse);
     }
 
+    /**
+     * Thêm mới mẫu email sau khi kiểm tra trùng lặp mã/tên.
+     */
     @Transactional
     public ApiResponse<?> add(EmailTemplateRequest request) {
 
@@ -47,6 +53,9 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
         return ApiResponse.ok(emailTemplateMapper.toResponse(saveEmail));
 
     }
+    /**
+     * Cập nhật mẫu email theo mã định danh sau khi kiểm tra trùng lặp.
+     */
     @Transactional
     public ApiResponse<?> edit(String id, EmailTemplateRequest request) {
         EmailTemplate exist = findEntityById(id);
@@ -56,17 +65,26 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
         return ApiResponse.ok(emailTemplateMapper.toResponse(saveEmail));
     }
 
+    /**
+     * Xem chi tiết mẫu email theo mã định danh.
+     */
     public EmailTemplateResponse view (String id) {
        EmailTemplate emailTemplate = findEntityById(id);
        return emailTemplateMapper.toResponse(emailTemplate);
     }
 
+    /**
+     * Tìm mẫu email chưa xóa theo id, ném lỗi nếu không tồn tại.
+     */
     @Transactional(readOnly = true)
     protected EmailTemplate findEntityById(String id) {
         return emailTemplateRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(EmailErrorCode.TEMPLATE_NOT_FOUND));
     }
 
+    /**
+     * Kiểm tra trùng lặp mã và tên mẫu email khi thêm/cập nhật.
+     */
     private void validateRequest(EmailTemplateRequest request) {
         if (request.getCode() != null) {
             if (emailTemplateRepository.existsByCode(request.getCode())) {
@@ -76,12 +94,18 @@ public class EmailtemplateServiceImpl implements EmailtemplateService {
             }
         }
     }
+    /**
+     * Xóa mềm mẫu email (đánh dấu đã xóa).
+     */
     public void delete (String id) {
        EmailTemplate emailTemplate  = findEntityById(id);
        emailTemplate.setIsDeleted(true);
        emailTemplateRepository.save(emailTemplate);
 
     }
+    /**
+     * Xây dựng điều kiện truy vấn mẫu email (loại bỏ đã xóa, tìm theo từ khóa).
+     */
     private Specification<EmailTemplate> createSpecification (EmailTemplateFilter filter) {
         Specification<EmailTemplate> specification = Specification
             .where(GenericSpecification.hasFieldIs("isDeleted" , Boolean.FALSE));

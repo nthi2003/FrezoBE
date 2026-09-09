@@ -43,25 +43,30 @@ public class AuthServiceImpl implements AuthService {
     private final AuthSessionService sessionService;
     private final AuthProfileService profileService;
 
+
     @Override
     public LoginResponse login(LoginRequest request) {
         return loginProcessor.login(request);
     }
+
 
     @Override
     public LoginResponse verifyOtp(String username, String code) {
         return twoFactorService.verifyOtp(username, code);
     }
 
+
     @Override
     public void forgotPassword(String email) {
         passwordResetService.forgotPassword(email);
     }
 
+
     @Override
     public String verifyResetOtp(String email, String otp) {
         return passwordResetService.verifyResetOtp(email, otp);
     }
+
 
     @Override
     public void resetPassword(String email, String resetToken, String newPassword) {
@@ -73,15 +78,18 @@ public class AuthServiceImpl implements AuthService {
         return sessionService.getRecentLoginHistory(username);
     }
 
+
     @Override
     public LoginResponse refreshToken(String refreshToken) {
         return loginProcessor.refreshToken(refreshToken);
     }
 
+
     @Override
     public String upload(File file, String username) {
         return profileService.upload(file, username);
     }
+
 
     @Override
     public String uploadAvatar(MultipartFile file, String username) {

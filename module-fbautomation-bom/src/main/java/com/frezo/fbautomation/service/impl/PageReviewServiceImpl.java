@@ -24,6 +24,7 @@ public class PageReviewServiceImpl implements PageReviewService {
 
     private final PageReviewRepository repository;
 
+    /** Lấy danh sách đánh giá trang, có thể lọc theo trạng thái và nền tảng, sắp xếp mới nhất trước. */
     @Override
     public List<PageReviewResponse> list(String status, String platform) {
         return repository.findAll().stream()
@@ -35,11 +36,13 @@ public class PageReviewServiceImpl implements PageReviewService {
                 .toList();
     }
 
+    /** Lấy thông tin chi tiết đánh giá theo mã định danh. */
     @Override
     public PageReviewResponse get(String id) {
         return toResponse(mustFind(id));
     }
 
+    /** Tạo mới đánh giá trang từ thông tin trong PageReviewRequest. */
     @Override
     @Transactional
     public PageReviewResponse create(PageReviewRequest req) {
@@ -57,6 +60,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return toResponse(repository.save(r));
     }
 
+    /** Cập nhật thông tin đánh giá theo mã định danh. */
     @Override
     @Transactional
     public PageReviewResponse update(String id, PageReviewRequest req) {
@@ -73,6 +77,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return toResponse(repository.save(r));
     }
 
+    /** Xóa mềm đánh giá theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -81,6 +86,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         repository.save(r);
     }
 
+    /** Ghi nội dung phản hồi cho đánh giá và chuyển trạng thái sang REPLIED. */
     @Override
     @Transactional
     public PageReviewResponse reply(String id, String replyText) {
@@ -93,6 +99,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return toResponse(repository.save(r));
     }
 
+    /** Tổng hợp số liệu bảng điều khiển: tổng đánh giá, điểm trung bình, số đánh giá thấp và phân loại theo trạng thái/nền tảng. */
     @Override
     public Map<String, Object> dashboard() {
         List<PageReview> all = repository.findAll().stream()
@@ -111,6 +118,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return m;
     }
 
+    /** Tìm đánh giá theo mã, ném ngoại lệ nếu không tồn tại hoặc đã xóa mềm. */
     private PageReview mustFind(String id) {
         PageReview r = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đánh giá"));
@@ -118,6 +126,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return r;
     }
 
+    /** Chuyển đổi thực thể PageReview sang DTO Response kèm cờ đánh giá thấp. */
     private PageReviewResponse toResponse(PageReview r) {
         PageReviewResponse out = new PageReviewResponse();
         out.setId(r.getId());
@@ -135,6 +144,7 @@ public class PageReviewServiceImpl implements PageReviewService {
         return out;
     }
 
+    /** Trả về giá trị mặc định nếu chuỗi null hoặc rỗng. */
     private static String nz(String v, String def) {
         return v == null || v.isBlank() ? def : v.trim();
     }

@@ -30,6 +30,9 @@ public class IpBlockServiceImpl implements IpBlockService {
 
     private static final int THRESHOLD_BLOCK_START = 6;
     private static final int THRESHOLD_LOCK_ACCOUNT = 11;
+    /**
+     * Kiểm tra xem địa chỉ IP đã bị chặn đối với người dùng mục tiêu hay chưa.
+     */
     @Override
     public void checkIpBlocked(String ipAddress, String userName) {
         if (SystemUtils.isNullOrEmpty(ipAddress) || SystemUtils.isNullOrEmpty(userName)) {
@@ -47,6 +50,9 @@ public class IpBlockServiceImpl implements IpBlockService {
         }
     }
 
+    /**
+     * Xử lý một lần đăng nhập thất bại: tăng số lần thử, chặn IP hoặc khoá tài khoản nếu vượt ngưỡng.
+     */
     @Override
     @Transactional
     public void handleFailedAttempt(String ipAddress, String targetUserName, BlockReason reason) { // Xóa port param
@@ -98,6 +104,9 @@ public class IpBlockServiceImpl implements IpBlockService {
         blockIPRepository.save(blockIP);
     }
 
+    /**
+     * Xoá bản ghi số lần thử thất bại của IP đối với người dùng (reset bộ đếm).
+     */
     @Override
     @Transactional
     public void clearFailedAttempts(String ipAddress, String userName) {
@@ -107,6 +116,9 @@ public class IpBlockServiceImpl implements IpBlockService {
         blockIPRepository.deleteByIpAddressAndTargetUserName(ipAddress, userName);
     }
 
+    /**
+     * Khoá tài khoản người dùng và thêm IP vào danh sách đen (blacklist) trong một khoảng thời gian.
+     */
     @Override
     @Transactional
     public void lockUserAndBlacklistIp(String ipAddress, String userName, BlockReason reason, Integer banMinutes) {
@@ -122,6 +134,9 @@ public class IpBlockServiceImpl implements IpBlockService {
         log.warn("Locked account {} and blacklisted IP {} (reason {})", userName, ipAddress, reason);
     }
 
+    /**
+     * Đặt trạng thái tài khoản người dùng thành bị khoá (status = 0).
+     */
     private void lockUserAccount(String userName, int attempts) {
         Optional<User> userOpt = userRepository.findByUserName(userName);
         if (userOpt.isPresent()) {
@@ -132,6 +147,9 @@ public class IpBlockServiceImpl implements IpBlockService {
         }
     }
 
+    /**
+     * Ánh xạ chỉ số mức chặn sang_enum TimeBlock tương ứng (LEVEL_1 → LEVEL_MAX).
+     */
     private TimeBlock getLevelByIndex(int index) {
         switch (index) {
             case 0:

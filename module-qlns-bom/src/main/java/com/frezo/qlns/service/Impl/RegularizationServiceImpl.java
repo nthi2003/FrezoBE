@@ -38,6 +38,9 @@ public class RegularizationServiceImpl implements RegularizationService {
     @Value("${frezo.leave.hr-users:admin}")
     private String hrUsersCsv;
 
+    /**
+     * Tạo đơn giải trình chấm công mới ở trạng thái PENDING, xác định người duyệt mặc định (quản lý hoặc HR đầu tiên) và gửi thông báo.
+     */
     @Override
     public AttendanceRegularization create(RegularizationAddRequest req) {
         if (req.getPersonId() == null || req.getAttendanceDate() == null || req.getReason() == null) {
@@ -77,6 +80,9 @@ public class RegularizationServiceImpl implements RegularizationService {
         return saved;
     }
 
+    /**
+     * Liệt kê các đơn giải trình của một nhân viên, kiểm tra quyền xem trước khi trả dữ liệu.
+     */
     @Override
     public List<AttendanceRegularization> myRequests(String personId) {
         assertCanViewPersonRequests(personId);
@@ -101,11 +107,17 @@ public class RegularizationServiceImpl implements RegularizationService {
         throw new AppException("regularization.view.denied", HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * Lấy danh sách đơn đang chờ duyệt (PENDING) được giao cho một người duyệt cụ thể.
+     */
     @Override
     public List<AttendanceRegularization> pendingForManager(String managerUsername) {
         return repo.findByManagerUsernameAndStatusOrderByCreatedDateDesc(managerUsername, "PENDING");
     }
 
+    /**
+     * Duyệt đơn giải trình: chuyển trạng thái sang APPROVED, áp dụng giờ chấm công yêu cầu vào bản ghi Attendance của ngày đó và thông báo cho người gửi.
+     */
     @Override
     public AttendanceRegularization approve(String id) {
         AttendanceRegularization e = mustExist(id);
@@ -133,6 +145,9 @@ public class RegularizationServiceImpl implements RegularizationService {
         return saved;
     }
 
+    /**
+     * Từ chối đơn giải trình: chuyển trạng thái sang REJECTED kèm lý do và thông báo cho người gửi.
+     */
     @Override
     public AttendanceRegularization reject(String id, String reason) {
         AttendanceRegularization e = mustExist(id);
@@ -159,11 +174,17 @@ public class RegularizationServiceImpl implements RegularizationService {
 
     // ---------- Helpers ----------
 
+    /**
+     * Tìm đơn giải trình theo ID, ném lỗi NOT_FOUND nếu không tồn tại.
+     */
     private AttendanceRegularization mustExist(String id) {
         return repo.findById(id)
                 .orElseThrow(() -> new AppException("regularization.not.found", HttpStatus.NOT_FOUND));
     }
 
+    /**
+     * Cập nhật giờ check-in/check-out đã duyệt vào bản ghi chấm công của ngày tương ứng, tạo mới bản ghi nếu chưa có và ghi chú giải trình.
+     */
     private void applyToAttendance(AttendanceRegularization r) {
         Attendance a = attendanceRepository
                 .findByPersonIdAndAttendanceDate(r.getPersonId(), r.getAttendanceDate())
@@ -182,12 +203,18 @@ public class RegularizationServiceImpl implements RegularizationService {
         attendanceRepository.save(a);
     }
 
+    /**
+     * Lấy tên người dùng HR đầu tiên từ cấu hình CSV, dùng làm người duyệt mặc định khi không có quản lý.
+     */
     private String firstHrUser() {
         if (hrUsersCsv == null || hrUsersCsv.isBlank()) return null;
         String[] arr = hrUsersCsv.split(",");
         return arr.length > 0 ? arr[0].trim() : null;
     }
 
+    /**
+     * Cắt chuỗi về độ dài tối đa (thêm dấu "...") để dùng cho nội dung thông báo ngắn gọn.
+     */
     private String trunc(String s, int max) {
         if (s == null) return "";
         return s.length() <= max ? s : s.substring(0, max) + "...";

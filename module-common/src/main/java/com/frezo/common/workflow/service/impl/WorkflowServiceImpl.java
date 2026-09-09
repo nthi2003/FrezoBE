@@ -26,33 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * Implementation của workflow engine.
- *
- * <h3>State machine</h3>
- * <pre>
- *   start() → tạo Instance(status=RUNNING, currentStep=0) + Task cho step 0 (PENDING)
- *   approveTask() → task=APPROVED
- *     → nếu còn step tiếp: instance.currentStep++, tạo task mới cho step đó
- *     → nếu hết step: instance.status=COMPLETED
- *   rejectTask() → task=REJECTED, instance.status=REJECTED (terminal)
- *   cancelInstance() → instance.status=CANCELLED, all pending tasks → SKIPPED
- * </pre>
- *
- * <h3>Approver resolution</h3>
- * Với step type={@code USER} → task.assigneeUsername = step.approverValue (single approver).
- * Với {@code ROLE} → task.assigneeUsername = null, task.assigneeRole = step.approverValue
- * (pool — bất kỳ user có role đó đều thấy task trong inbox).
- * Với {@code ADMIN} → task.assigneeUsername = null, task.assigneeRole = null → mọi admin
- * thấy trong inbox (query trong repository filter theo :isAdmin).
- * {@code MANAGER} tạm thời fallback về ADMIN (chưa có org resolver runtime).
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkflowServiceImpl implements WorkflowService {
 
-    // ---- Constants ----
+
     public static final String STATUS_RUNNING   = "RUNNING";
     public static final String STATUS_COMPLETED = "COMPLETED";
     public static final String STATUS_REJECTED  = "REJECTED";
@@ -74,9 +54,8 @@ public class WorkflowServiceImpl implements WorkflowService {
     private final WorkflowTaskRepository taskRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    // ============================================================
-    // Definitions
-    // ============================================================
+
+
 
     @Override
     public List<WorkflowDefinitionDto> listDefinitions(String moduleCode) {
@@ -90,6 +69,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 .toList();
     }
 
+
     @Override
     public WorkflowDefinitionDto getDefinition(String id) {
         WorkflowDefinition def = definitionRepository.findById(id)
@@ -98,6 +78,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return mapDefinitionWithSteps(def);
     }
 
+
     @Override
     public WorkflowDefinitionDto getDefinitionByCode(String code) {
         WorkflowDefinition def = definitionRepository.findByCode(code)
@@ -105,6 +86,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 .orElseThrow(() -> new AppException(WorkflowErrorCode.DEFINITION_NOT_FOUND));
         return mapDefinitionWithSteps(def);
     }
+
 
     @Override
     @Transactional
@@ -140,12 +122,11 @@ public class WorkflowServiceImpl implements WorkflowService {
             def.setName(dto.getName());
             def.setDescription(dto.getDescription());
             if (dto.getActive() != null) def.setActive(dto.getActive());
-            // Không cho đổi code / moduleCode sau khi tạo
-            // SIMPLE path không ghi đè graphJson — visual dùng /workflows/*
+
         }
         WorkflowDefinition saved = definitionRepository.save(def);
 
-        // Upsert steps: delete all + reinsert (simple, không phải hot path)
+
         stepRepository.deleteByDefinitionId(saved.getId());
         List<WorkflowStepDto> stepDtos = dto.getSteps() != null ? dto.getSteps() : List.of();
         int order = 0;
@@ -177,9 +158,6 @@ public class WorkflowServiceImpl implements WorkflowService {
         definitionRepository.save(def);
     }
 
-    // ============================================================
-    // Instances
-    // ============================================================
 
     @Override
     @Transactional
@@ -213,6 +191,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         log.info("[wf] Started instance {} for {}#{} (def={})", inst.getId(), entityType, entityId, def.getCode());
         return toInstanceDto(inst, def, steps);
     }
+
 
     @Override
     public Optional<WorkflowInstanceDto> findInstanceByEntity(String entityType, String entityId) {
@@ -259,9 +238,6 @@ public class WorkflowServiceImpl implements WorkflowService {
         return toInstanceDto(inst, def, steps);
     }
 
-    // ============================================================
-    // Tasks — inbox + actions
-    // ============================================================
 
     @Override
     public List<WorkflowTaskDto> myPendingTasks() {
@@ -274,6 +250,7 @@ public class WorkflowServiceImpl implements WorkflowService {
                 .map(this::mapTaskWithInstance)
                 .toList();
     }
+
 
     @Override
     @Transactional
@@ -313,6 +290,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return mapTaskWithInstance(task);
     }
 
+
     @Override
     @Transactional
     public WorkflowTaskDto rejectTask(String taskId, String reason) {
@@ -341,9 +319,6 @@ public class WorkflowServiceImpl implements WorkflowService {
         return mapTaskWithInstance(task);
     }
 
-    // ============================================================
-    // Internal helpers
-    // ============================================================
 
     private void createTaskForStep(WorkflowInstance inst, WorkflowStep step) {
         String assignee = null;
@@ -353,11 +328,10 @@ public class WorkflowServiceImpl implements WorkflowService {
             case TYPE_USER -> assignee = step.getApproverValue();
             case TYPE_ROLE -> role = step.getApproverValue();
             case TYPE_MANAGER, TYPE_ADMIN -> {
-                // Leave both null → pool inbox (admin) — MANAGER cần resolver runtime,
-                // tạm fallback về ADMIN pool để không block flow.
+
             }
             default -> {
-                // Should not reach — validateApproverType đã check khi save definition
+
             }
         }
         WorkflowTask task = WorkflowTask.builder()
@@ -374,20 +348,14 @@ public class WorkflowServiceImpl implements WorkflowService {
         taskRepository.save(task);
     }
 
+
     private WorkflowTask findTaskOrThrow(String id) {
         return taskRepository.findById(id)
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
                 .orElseThrow(() -> new AppException(WorkflowErrorCode.TASK_NOT_FOUND));
     }
 
-    /**
-     * Kiểm tra current user có quyền quyết định task không:
-     * <ul>
-     *   <li>USER task → assigneeUsername phải khớp</li>
-     *   <li>ROLE task → user phải có role tương ứng</li>
-     *   <li>ADMIN / MANAGER task → user phải là admin</li>
-     * </ul>
-     */
+
     private void assertCanDecide(WorkflowTask task) {
         String me = SystemUtils.getCurrentUsername();
         if (me == null) throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
@@ -403,9 +371,10 @@ public class WorkflowServiceImpl implements WorkflowService {
                 throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
             return;
         }
-        // Pool cho admin only nhưng user không phải admin
+
         throw new AppException(WorkflowErrorCode.TASK_FORBIDDEN);
     }
+
 
     private static void validateApproverType(String type) {
         if (!(TYPE_USER.equals(type) || TYPE_ROLE.equals(type)
@@ -414,9 +383,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
     }
 
-    /**
-     * Query roles của 1 user qua JDBC (avoid cross-module dep — module-common là upstream).
-     */
+
     private List<String> getRolesOfUser(String username) {
         if (username == null || username.isBlank()) return List.of();
         try {
@@ -454,9 +421,6 @@ public class WorkflowServiceImpl implements WorkflowService {
         }
     }
 
-    // ============================================================
-    // Mappers
-    // ============================================================
 
     private WorkflowDefinitionDto mapDefinitionWithSteps(WorkflowDefinition def) {
         WorkflowDefinitionDto d = new WorkflowDefinitionDto();
@@ -474,11 +438,12 @@ public class WorkflowServiceImpl implements WorkflowService {
         d.setSourceTemplateCode(def.getSourceTemplateCode());
         d.setVersion(def.getVersion());
         d.setIsTemplate(def.getIsTemplate());
-        // graphJson chỉ parse ở VisualWorkflowService — SIMPLE list không cần payload nặng
+
         d.setSteps(stepRepository.findByDefinitionIdAndIsDeletedFalseOrderByStepOrderAsc(def.getId())
                 .stream().map(this::mapStep).toList());
         return d;
     }
+
 
     private WorkflowStepDto mapStep(WorkflowStep s) {
         WorkflowStepDto d = new WorkflowStepDto();
@@ -492,6 +457,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         d.setDescription(s.getDescription());
         return d;
     }
+
 
     private WorkflowInstanceDto toInstanceDto(WorkflowInstance inst, WorkflowDefinition def, List<WorkflowStep> steps) {
         WorkflowInstanceDto dto = new WorkflowInstanceDto();
@@ -516,6 +482,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         return dto;
     }
 
+
     private WorkflowTaskDto mapTaskLite(WorkflowTask t) {
         WorkflowTaskDto td = new WorkflowTaskDto();
         td.setId(t.getId());
@@ -533,6 +500,7 @@ public class WorkflowServiceImpl implements WorkflowService {
         td.setCreatedDate(t.getCreatedDate() != null ? t.getCreatedDate().toString() : null);
         return td;
     }
+
 
     private WorkflowTaskDto mapTaskWithInstance(WorkflowTask t) {
         WorkflowTaskDto td = mapTaskLite(t);

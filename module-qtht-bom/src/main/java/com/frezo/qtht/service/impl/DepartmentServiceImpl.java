@@ -61,6 +61,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final PersonRepository personRepository;
     private final DepartmentMapper departmentMapper;
 
+    /**
+     * Truy vấn danh sách phòng ban phân trang theo bộ lọc và sắp xếp tuỳ chọn.
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<DepartmentResponse> all(DepartmentFilterRequest filter) {
@@ -70,6 +73,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         return PageResponse.from(page, departmentMapper::toResponse);
     }
 
+    /**
+     * Xây dựng và trả về cây cấu trúc tổ chức phòng ban (cây cha-con).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<DepartmentResponse> getTree() {
@@ -97,6 +103,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         return roots;
     }
 
+    /**
+     * Lấy danh sách phòng ban dưới dạng combobox (value + label) để hiển thị trên giao diện.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox() {
@@ -113,6 +122,9 @@ public class DepartmentServiceImpl implements DepartmentService {
                 .toList();
     }
 
+    /**
+     * Xoá mềm một phòng ban theo mã định danh.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -122,12 +134,18 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Deleted department id={} by={}", id, department.getDeletedBy());
     }
 
+    /**
+     * Tìm thực thể phòng ban theo ID, ném ngoại lệ nếu không tồn tại hoặc đã xoá.
+     */
     @Transactional(readOnly = true)
     private Department findEntityById(String id) {
         return departmentRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QthtErrorCode.DEPARTMENT_NOT_FOUND, id));
     }
 
+    /**
+     * Tạo JPA Specification từ bộ lọc để xây dựng truy vấn động cho phòng ban.
+     */
     private Specification<Department> createSpecification(DepartmentFilterRequest filter) {
         Specification<Department> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE));
@@ -145,6 +163,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         return specification;
     }
 
+    /**
+     * Tạo mới phòng ban kèm thiết lập các mối quan hệ tổ chức, cha và người quản lý.
+     */
     @Override
     @Transactional
     public DepartmentResponse create(DepartmentSaveRequest request) {
@@ -180,6 +201,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         return departmentMapper.toResponse(saved);
     }
 
+    /**
+     * Cập nhật thông tin phòng ban và đồng bộ lại các mối quan hệ tổ chức, cha, quản lý.
+     */
     @Override
     @Transactional
     public DepartmentResponse update(String id, DepartmentSaveRequest request) {
@@ -220,6 +244,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         return departmentMapper.toResponse(saved);
     }
 
+    /**
+     * Kích hoạt trạng thái phòng ban (đổi sang ACTIVE).
+     */
     @Override
     @Transactional
     public void activate(String id) {
@@ -229,6 +256,9 @@ public class DepartmentServiceImpl implements DepartmentService {
         log.info("Activated department id={}", id);
     }
 
+    /**
+     * Vô hiệu hoá phòng ban (đổi sang INACTIVE).
+     */
     @Override
     @Transactional
     public void deactivate(String id) {

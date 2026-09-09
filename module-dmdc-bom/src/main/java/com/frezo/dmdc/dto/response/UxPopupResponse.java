@@ -5,15 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Template popup UX resolve từ category group {@code UX_POPUP}.
- * <ul>
- *   <li>{@code eventCode} = category.code</li>
- *   <li>{@code title} = category.name</li>
- *   <li>{@code body} = description plain hoặc JSON {@code {"body","imageUrl"}}</li>
- *   <li>{@code enabled} = category.active</li>
- * </ul>
- */
 @Data
 @Builder
 @NoArgsConstructor

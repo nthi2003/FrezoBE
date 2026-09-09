@@ -69,24 +69,45 @@ public class AttendanceServiceImpl implements AttendanceService {
     // ---- Đọc config thời gian từ Setting ----
     // Cho phép mỗi tổ chức tự đặt giờ bắt đầu/kết thúc ca sáng, ca chiều
     // Nếu chưa config thì dùng mặc định: sáng 8:00-12:00, chiều 13:00-17:30
+    /**
+     * Đọc giá trị cấu hình thời gian (giờ bắt đầu/kết thúc) theo tổ chức từ bảng Setting.
+     */
     private String getSettingVal(String orgId, java.util.function.Function<Setting, String> getter) {
         Setting s = getSetting(orgId);
         return s != null ? getter.apply(s) : null;
     }
 
+    /**
+     * Lấy giờ bắt đầu ca sáng của tổ chức (mặc định 08:00).
+     */
     private LocalTime getMorningStart(String orgId) { return parseTime(getSettingVal(orgId, Setting::getMorningStart), LocalTime.of(8, 0)); }
+    /**
+     * Lấy giờ kết thúc ca sáng của tổ chức (mặc định 12:00).
+     */
     private LocalTime getMorningEnd(String orgId) { return parseTime(getSettingVal(orgId, Setting::getMorningEnd), LocalTime.of(12, 0)); }
+    /**
+     * Lấy giờ bắt đầu ca chiều của tổ chức (mặc định 13:00).
+     */
     private LocalTime getAfternoonStart(String orgId) { return parseTime(getSettingVal(orgId, Setting::getAfternoonStart), LocalTime.of(13, 0)); }
+    /**
+     * Lấy giờ kết thúc ca chiều của tổ chức (mặc định 17:30).
+     */
     private LocalTime getAfternoonEnd(String orgId) { return parseTime(getSettingVal(orgId, Setting::getAfternoonEnd), LocalTime.of(17, 30)); }
 
     private final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
+    /**
+     * Chuyển chuỗi giờ "HH:mm" sang LocalTime; nếu chuỗi rỗng/sai định dạng thì dùng giá trị mặc định.
+     */
     private LocalTime parseTime(String val, LocalTime fallback) {
         if (val == null || val.isBlank()) return fallback;
         try { return LocalTime.parse(val.trim(), TIME_FMT); }
         catch (Exception e) { return fallback; }
     }
 
+    /**
+     * Tìm cấu hình (Setting) chưa xoá của một tổ chức, không có thì trả về null.
+     */
     private Setting getSetting(String orgId) {
         return settingRepository.findByOrgIdAndIsDeletedFalse(orgId)
                 .orElse(null);
@@ -94,6 +115,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     // ---- Lấy orgId từ personId ----
     // Dùng để tra cứu config của tổ chức mà nhân viên đó thuộc về
+    /**
+     * Tra orgId của tổ chức mà nhân viên thuộc về từ personId.
+     */
     private String resolveOrgId(String personId) {
         if (personId == null) return null;
         return personRepository.findById(personId)
@@ -103,6 +127,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     // ---- Đọc config GPS/WiFi từ Setting.details (JSON) ----
     // Cấu hình này chứa: officeLat, officeLng, bán kính cho phép, danh sách WiFi hợp lệ
+    /**
+     * Đọc cấu hình GPS/WiFi (văn phòng, bán kính cho phép, WiFi hợp lệ) từ Setting.details dạng JSON.
+     */
     private GeoAttendanceConfig getGeoConfig(String orgId) {
         Setting setting = settingRepository.findByOrgIdAndIsDeletedFalse(orgId).orElse(null);
         if (setting == null || setting.getDetails() == null || setting.getDetails().isBlank()) return null;
@@ -117,6 +144,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     // ---- Kiểm tra toạ độ GPS có nằm trong bán kính cho phép không ----
     // Dùng công thức Haversine để tính khoảng cách từ vị trí nhân viên đến văn phòng
+    /**
+     * Kiểm tra toạ độ GPS của nhân viên có nằm trong bán kính cho phép quanh văn phòng không.
+     */
     private boolean isLocationValid(GeoAttendanceConfig geo, Double lat, Double lng) {
         if (geo == null || lat == null || lng == null) return true;
         if (geo.getOfficeLatitude() == null || geo.getOfficeLongitude() == null) return true;
@@ -127,6 +157,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     // ---- Kiểm tra WiFi có nằm trong danh sách cho phép không ----
     // So khớp SSID hoặc BSSID với danh sách cấu hình (phân cách bằng dấu phẩy)
+    /**
+     * Kiểm tra WiFi (SSID/BSSID) của nhân viên có nằm trong danh sách cho phép không.
+     */
     private boolean isWifiValid(GeoAttendanceConfig geo, String ssid, String bssid) {
         if (geo == null) return true;
         if (geo.getAllowedWifiSsids() != null && !geo.getAllowedWifiSsids().isBlank() && ssid != null) {
@@ -147,6 +180,9 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     // ---- Công thức Haversine tính khoảng cách giữa 2 toạ độ GPS (mét) ----
+    /**
+     * Tính khoảng cách (mét) giữa hai toạ độ GPS bằng công thức Haversine.
+     */
     private double haversine(double lat1, double lon1, double lat2, double lon2) {
         double R = 6371000;
         double dLat = Math.toRadians(lat2 - lat1);
@@ -166,6 +202,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     // 4. Lưu thông tin check-in kèm GPS/WiFi metadata
     // 5. Tính số phút đi muộn dựa trên shiftType và config giờ làm việc
     // 6. First punch of day → popupEvent = ATTENDANCE_FIRST_CHECKIN (FE load template)
+    /**
+     * Xử lý check-in cho nhân viên: kiểm tra bản ghi cũ (idempotent), validate vị trí GPS/WiFi,
+     * tính phút đi muộn theo ca và lưu thông tin check-in.
+     */
     @Override
     public AttendanceResponse checkIn(AttendanceCheckInRequest request) {
         Optional<Attendance> existing = attendanceRepository.findByPersonIdAndAttendanceDate(
@@ -234,6 +274,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     // 3. Lưu thông tin check-out kèm metadata
     // 4. Tính workMinutes (tổng phút làm việc), trừ 60p nghỉ trưa nếu là FULL
     // 5. Tính overtimeMinutes (làm sau giờ kết thúc ca)
+    /**
+     * Xử lý check-out: yêu cầu đã check-in trước đó, validate vị trí, tính số phút làm việc
+     * (trừ 60p nghỉ trưa nếu ca FULL) và số phút tăng ca.
+     */
     @Override
     public AttendanceResponse checkOut(AttendanceCheckOutRequest request) {
         // ThiNVQ : Phải check-in trước mới được check-out
@@ -282,6 +326,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return attendanceMapper.toResponse(saved);
     }
 
+    /**
+     * Truy vấn danh sách chấm công theo bộ lọc (người, hợp đồng, trạng thái, tháng/năm/ngày, phòng ban).
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<AttendanceResponse> all(AttendanceFilter filter) {
@@ -328,6 +375,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return PageResponse.of(pageNum, pageSize, page, responses);
     }
 
+    /**
+     * Lấy bảng chấm công trong ngày cho tất cả nhân viên đang hoạt động (đảm bảo đủ người kể cả chưa check-in).
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<AttendanceResponse> daily(AttendanceFilter filter) {
@@ -394,6 +444,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    /**
+     * Bổ sung thông tin nhân sự và displayStatus cho một bản ghi chấm công trả về.
+     */
     private AttendanceResponse enrichResponse(AttendanceResponse row, Person person) {
         if (person == null && row.getPersonId() != null) {
             person = personRepository.findById(row.getPersonId()).orElse(null);
@@ -403,6 +456,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return row;
     }
 
+    /**
+     * Đổ các trường thông tin nhân sự (tên, phòng ban) vào response chấm công.
+     */
     private void enrichPersonFields(AttendanceResponse row, Person person) {
         if (person == null) return;
         row.setPersonName(person.getName());
@@ -429,6 +485,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return "OK";
     }
 
+    /**
+     * Chuẩn hoá chuỗi trạng thái về dạng chung (PRESENT/CHECKED_IN → OK) để so sánh/filter.
+     */
     private String normalizeDisplayStatus(String raw) {
         if (raw == null) return "";
         String s = raw.trim().toUpperCase();
@@ -436,6 +495,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return s;
     }
 
+    /**
+     * Chuyển chuỗi trạng thái lọc sang enum AttendanceStatus; trả null nếu không xác định được.
+     */
     private AttendanceStatus parseAttendanceStatus(String raw) {
         if (raw == null || raw.isBlank()) return null;
         String s = normalizeDisplayStatus(raw);
@@ -448,12 +510,18 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
     }
 
+    /**
+     * Lấy chi tiết một bản ghi chấm công theo id, không tồn tại thì báo lỗi ATTENDANCE_NOT_FOUND.
+     */
     @Override
     public AttendanceResponse getById(String id) {
         return attendanceRepository.findById(id).map(attendanceMapper::toResponse)
                 .orElseThrow(() -> new AppException(QlnsErrorCode.ATTENDANCE_NOT_FOUND));
     }
 
+    /**
+     * Duyệt một bản ghi chấm công: gán người duyệt và lưu lại.
+     */
     @Override
     public void approve(String id, String approvedBy) {
         Attendance attendance = attendanceRepository.findById(id)
@@ -465,6 +533,9 @@ public class AttendanceServiceImpl implements AttendanceService {
     // ---- STATS: KPI cho Home dashboard Mobile ----
     // Tổng hợp trong 1 tháng: ngày có mặt, đi muộn, OT, phép, số phép còn lại.
     // Nếu month/year null → dùng tháng hiện tại.
+    /**
+     * Tổng hợp KPI chấm công trong tháng (số ngày có mặt, đi muộn, vắng, OT, phép nghỉ) cho dashboard.
+     */
     @Override
     public AttendanceStatsResponse getStats(String personId, String contractId, Integer month, Integer year) {
         if (personId == null || personId.isBlank()) {
@@ -530,6 +601,9 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     // ---- SELF: lịch tháng / hôm nay của user đăng nhập ----
 
+    /**
+     * Lấy lịch chấm công tháng của người dùng hiện tại, kèm trạng thái từng ngày (làm việc/nghỉ/cuối tuần).
+     */
     @Override
     @Transactional(readOnly = true)
     public MyAttendanceMonthResponse getMyMonth(Integer month, Integer year) {
@@ -573,6 +647,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    /**
+     * Lấy trạng thái chấm công hôm nay của người dùng hiện tại.
+     */
     @Override
     @Transactional(readOnly = true)
     public MyAttendanceDayResponse getMyToday() {
@@ -586,6 +663,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return buildDay(today, today, att, leave, shift);
     }
 
+    /**
+     * Lấy thông tin nhân sự của người đang đăng nhập, không có thì báo lỗi PERSON_NOT_FOUND.
+     */
     private Person requireCurrentPerson() {
         String personId = leaveApprovalResolver.currentPersonId();
         if (personId == null || personId.isBlank()) {
@@ -595,6 +675,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new AppException(QlnsErrorCode.PERSON_NOT_FOUND));
     }
 
+    /**
+     * Chuyển thông tin Person thành PersonSummary để hiển thị trên giao diện người dùng.
+     */
     private MyAttendanceMonthResponse.PersonSummary toPersonSummary(Person person) {
         String deptName = person.getDepartment() != null ? person.getDepartment().getName() : null;
         return MyAttendanceMonthResponse.PersonSummary.builder()
@@ -607,6 +690,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    /**
+     * Dựng thông tin ca hành chính mặc định (giờ bắt đầu/kết thúc) theo config của tổ chức.
+     */
     private MyAttendanceMonthResponse.ShiftInfo buildDefaultShift(String orgId) {
         LocalTime start = getMorningStart(orgId);
         LocalTime end = getAfternoonEnd(orgId);
@@ -617,6 +703,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    /**
+     * Lập chỉ mục các đơn nghỉ đã duyệt theo từng ngày trong khoảng thời gian đã cho.
+     */
     private Map<LocalDate, LeaveRequest> indexApprovedLeaves(List<LeaveRequest> leaves, LocalDate from, LocalDate to) {
         Map<LocalDate, LeaveRequest> map = new HashMap<>();
         if (leaves == null) return map;
@@ -631,6 +720,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return map;
     }
 
+    /**
+     * Dựng chi tiết một ngày (trạng thái chấm công, nghỉ phép, các hành động check-in/check-out cho phép).
+     */
     private MyAttendanceDayResponse buildDay(LocalDate date,
                                              LocalDate today,
                                              Attendance att,
@@ -691,6 +783,9 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .build();
     }
 
+    /**
+     * Xác định displayStatus hiển thị từ bản ghi chấm công đã lưu.
+     */
     private String resolveDisplayStatusFromEntity(Attendance att) {
         if (att.getStatus() == AttendanceStatus.HOLIDAY) return "HOLIDAY";
         if (att.getStatus() == AttendanceStatus.LEAVE) return "LEAVE";
@@ -704,6 +799,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         return "OK";
     }
 
+    /**
+     * Trả về nhãn tiếng Việt tương ứng với loại nghỉ phép (phép năm, ốm, không lương...).
+     */
     private String leaveLabel(String leaveType) {
         if (leaveType == null) return "Nghỉ phép";
         return switch (leaveType.trim().toUpperCase()) {

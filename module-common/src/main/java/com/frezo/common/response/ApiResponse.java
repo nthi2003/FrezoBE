@@ -60,9 +60,6 @@ public class ApiResponse<T> {
     /** Field validation errors — chỉ populate khi {@code messageCode = "validation.failed"}. */
     private Map<String, String> errors;
 
-    // ----------------------------------------------------------------
-    // Factory — SUCCESS
-    // ----------------------------------------------------------------
 
     public static <T> ApiResponse<T> ok() {
         return ApiResponse.<T>builder()
@@ -121,7 +118,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /** Login response — kèm JWT token. */
+
     public static <T> ApiResponse<T> loginSuccess(T data, String token) {
         return ApiResponse.<T>builder()
                 .code(HttpStatus.OK.value())
@@ -135,11 +132,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    // ----------------------------------------------------------------
-    // Factory — ERROR
-    // ----------------------------------------------------------------
 
-    /** Error response từ ErrorCode enum (khuyến nghị). Message đã được resolve i18n bên ngoài. */
     public static <T> ApiResponse<T> error(ErrorCode errorCode, String resolvedMessage, String path) {
         return ApiResponse.<T>builder()
                 .code(errorCode.getStatus().value())
@@ -152,7 +145,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /** Validation error — kèm field-level errors. */
+
     public static ApiResponse<Void> validationError(Map<String, String> errors, String resolvedMessage, String path) {
         return ApiResponse.<Void>builder()
                 .code(HttpStatus.BAD_REQUEST.value())
@@ -166,17 +159,12 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    // ----------------------------------------------------------------
-    // Backward-compat factories — giữ để không break code cũ
-    // ----------------------------------------------------------------
-
-    /** @deprecated dùng {@link #ok(Object)}. */
     @Deprecated(since = "1.1", forRemoval = false)
     public static <T> ApiResponse<T> success(T data) {
         return ok(data);
     }
 
-    /** @deprecated dùng {@link #ok(Object, String, String)}. */
+
     @Deprecated(since = "1.1", forRemoval = false)
     public static <T> ApiResponse<T> success(T data, String message) {
         return ApiResponse.<T>builder()
@@ -190,7 +178,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /** @deprecated dùng {@link #error(ErrorCode, String, String)} — cần trace path. */
+
     @Deprecated(since = "1.1", forRemoval = false)
     public static <T> ApiResponse<T> error(int code, String message) {
         return ApiResponse.<T>builder()
@@ -202,7 +190,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    /** @deprecated dùng {@link #error(ErrorCode, String, String)}. */
+
     @Deprecated(since = "1.1", forRemoval = false)
     public static <T> ApiResponse<T> error(String message) {
         return ApiResponse.<T>builder()
@@ -214,9 +202,6 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
 
     private static String currentTraceId() {
         return MDC.get("traceId");

@@ -64,6 +64,9 @@ public class CommentServiceImpl implements CommentService {
     private final MinioService minioService;
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * Lấy danh sách bình luận phân trang theo đối tượng chủ thể (subjectType + subjectId).
+     */
     @Override
     public FePage<CommentDto> list(String subjectType, String subjectId, int page, int size) {
         int p = Math.max(page, 0);
@@ -86,6 +89,9 @@ public class CommentServiceImpl implements CommentService {
                 .build();
     }
 
+    /**
+     * Tạo mới một bình luận kèm tệp đính kèm và thông báo mention đến người dùng được nhắc đến.
+     */
     @Override
     @Transactional
     public CommentDto create(CommentCreatePayload payload) {
@@ -124,6 +130,9 @@ public class CommentServiceImpl implements CommentService {
         return toDto(c, savedAtts);
     }
 
+    /**
+     * Cập nhật nội dung bình luận và đồng bộ lại danh sách người được mention.
+     */
     @Override
     @Transactional
     public CommentDto update(String id, CommentUpdatePayload payload) {
@@ -141,6 +150,9 @@ public class CommentServiceImpl implements CommentService {
         return toDto(c, atts);
     }
 
+    /**
+     * Xoá mềm bình luận và tất cả các tệp đính kèm liên quan.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -154,6 +166,9 @@ public class CommentServiceImpl implements CommentService {
                 });
     }
 
+    /**
+     * Tìm kiếm người dùng theo từ khoá để hiển thị danh sách mention trong bình luận.
+     */
     @Override
     public List<MentionUserDto> searchUsers(String q) {
         String needle = q == null ? "" : q.trim().toLowerCase();
@@ -175,6 +190,9 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+    /**
+     * Upload tệp đính kèm lên MinIO và trả về thông tin tệp để gắn vào bình luận.
+     */
     @Override
     public CommentAttachmentDto uploadAttachment(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -205,8 +223,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     /**
-     * Cho phép parentId trỏ comment con (đệ quy nhiều lớp), miễn cùng subject
-     * và depth comment mới ≤ MAX_COMMENT_DEPTH.
+     * Kiểm tra parentId có hợp lệ: tồn tại, cùng subject và không vượt quá độ sâu tối đa.
      */
     private void validateParent(String parentId, String subjectType, String subjectId) {
         if (parentId == null || parentId.isBlank()) {
@@ -227,6 +244,9 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
+    /**
+     * Tính độ sâu của bình luận bằng cách đi ngược lên các bình luận cha.
+     */
     private int computeDepth(Comment comment) {
         int depth = 0;
         String walk = comment.getParentId();
@@ -245,6 +265,9 @@ public class CommentServiceImpl implements CommentService {
         return depth;
     }
 
+    /**
+     * Tổng hợp danh sách ID người dùng được mention từ nội dung và danh sách ID rõ ràng.
+     */
     private List<String> resolveMentionIds(String content, List<String> explicitIds) {
         Set<String> ids = new LinkedHashSet<>();
         if (explicitIds != null) ids.addAll(explicitIds);
@@ -254,6 +277,9 @@ public class CommentServiceImpl implements CommentService {
         return new ArrayList<>(ids);
     }
 
+    /**
+     * Lưu các bản ghi mention liên kết giữa bình luận và người dùng được nhắc đến.
+     */
     private void saveMentions(String commentId, List<String> userIds) {
         for (String uid : userIds) {
             User u = userRepository.findById(uid).orElse(null);
@@ -267,6 +293,9 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
+    /**
+     * Lưu danh sách tệp đính kèm vào cơ sở dữ liệu và trả về danh sách DTO tương ứng.
+     */
     private List<CommentAttachmentDto> persistAttachments(String commentId, List<CommentAttachmentInput> inputs) {
         if (inputs == null || inputs.isEmpty()) return List.of();
         List<CommentAttachmentDto> out = new ArrayList<>();
@@ -294,6 +323,9 @@ public class CommentServiceImpl implements CommentService {
         return out;
     }
 
+    /**
+     * Tải danh sách tệp đính kèm theo nhiều bình luận và nhóm theo commentId.
+     */
     private Map<String, List<CommentAttachmentDto>> loadAttachments(List<String> commentIds) {
         if (commentIds == null || commentIds.isEmpty()) return Map.of();
         return attachmentRepository.findByCommentIdInAndIsDeletedFalse(commentIds).stream()
@@ -308,6 +340,9 @@ public class CommentServiceImpl implements CommentService {
                                 .build(), Collectors.toList())));
     }
 
+    /**
+     * Tìm bình luận theo ID và kiểm tra quyền sở hữu của người dùng hiện tại.
+     */
     private Comment findOwned(String id) {
         Comment c = commentRepository.findById(id)
                 .filter(x -> Boolean.FALSE.equals(x.getIsDeleted()))
@@ -319,12 +354,18 @@ public class CommentServiceImpl implements CommentService {
         return c;
     }
 
+    /**
+     * Lấy thông tin người dùng hiện tại từ hệ thống xác thực.
+     */
     private User currentUser() {
         String username = SystemUtils.getCurrentUsername();
         return userRepository.findByUserName(username)
                 .orElseThrow(() -> new AppException(CommonErrorCode.UNAUTHORIZED, "Chưa đăng nhập"));
     }
 
+    /**
+     * Chuyển đổi thực thể Comment sang DTO Response kèm thông tin mention và tệp đính kèm.
+     */
     private CommentDto toDto(Comment c, List<CommentAttachmentDto> attachments) {
         List<String> mentions = mentionRepository.findByCommentIdAndIsDeletedFalse(c.getId()).stream()
                 .map(CommentMention::getMentionedUserId)
@@ -346,6 +387,9 @@ public class CommentServiceImpl implements CommentService {
                 .build();
     }
 
+    /**
+     * Chuẩn hoá kiểu nội dung MIME từ header hoặc suy ra từ phần mở rộng tên tệp.
+     */
     private static String normalizeContentType(String raw, String filename) {
         if (raw != null && !raw.isBlank() && !"application/octet-stream".equalsIgnoreCase(raw)) {
             return raw.toLowerCase(Locale.ROOT).split(";")[0].trim();
@@ -363,6 +407,9 @@ public class CommentServiceImpl implements CommentService {
         return raw == null ? "application/octet-stream" : raw.toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Cắt ngắn chuỗi nội dung bình luận nếu vượt quá độ dài tối đa.
+     */
     private static String truncate(String s) {
         if (s == null) return "";
         return s.length() > 120 ? s.substring(0, 120) + "…" : s;

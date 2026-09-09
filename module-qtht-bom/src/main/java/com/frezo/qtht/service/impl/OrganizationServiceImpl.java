@@ -41,6 +41,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     private final PersonRepository personRepository;
     private final com.frezo.qtht.service.SettingService settingService;
 
+    /**
+     * Lấy danh sách tổ chức phân trang theo bộ lọc (từ khóa tìm kiếm, parentId, ...).
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrganizationResponse> all(OrganizationFilterRequest filter) {
@@ -52,6 +55,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         return PageResponse.from(entities, organizationMapper::toResponse);
     }
 
+    /**
+     * Thêm mới tổ chức — kiểm tra trùng mã/mã số thuế, xử lý tổ chức cha, đại diện pháp luật và tạo setting mặc định.
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<OrganizationResponse> add(OrganizationAddRequest request) {
@@ -77,6 +83,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         return ApiResponse.ok(organizationMapper.toResponse(savedOrg));
     }
 
+    /**
+     * Cập nhật thông tin tổ chức — kiểm tra trùng lặp, cập nhật tổ chức cha và đại diện pháp luật.
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<OrganizationResponse> update(String id, OrganizationEditRequest request) {
@@ -98,6 +107,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         return ApiResponse.ok(organizationMapper.toResponse(savedOrg));
     }
 
+    /**
+     * Xóa mềm tổ chức (đánh dấu isDeleted = true).
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -107,6 +119,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         log.debug("Deleted organization: {}", id);
     }
 
+    /**
+     * Lấy chi tiết tổ chức theo mã định danh.
+     */
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<OrganizationDetailResponse> getById(String id) {
@@ -114,12 +129,18 @@ public class OrganizationServiceImpl implements OrganizationService {
         return ApiResponse.ok(organizationMapper.toDetailResponse(organization));
     }
 
+    /**
+     * Lấy danh sách tổ chức con theo parentId (hiện tại trả về danh sách rỗng).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<OrganizationResponse> getChildren(String parentId) {
         return Collections.emptyList();
     }
 
+    /**
+     * Lấy danh sách tổ chức dưới dạng combobox (value=label=id, label=tên, description=mã).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox(OrganizationFilterRequest filter) {
@@ -136,12 +157,18 @@ public class OrganizationServiceImpl implements OrganizationService {
 
 
 
+    /**
+     * Tìm tổ chức theo mã định danh, ném ngoại lệ nếu không tìm thấy hoặc đã bị xóa.
+     */
     @Transactional(readOnly = true)
     protected Organization findEntityById(String id) {
         return organizationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QthtErrorCode.ORGANIZATION_NOT_FOUND));
     }
 
+    /**
+     * Kiểm tra mã tổ chức và mã số thuế có trùng lặp khi thêm mới.
+     */
     private void validateRequest(OrganizationAddRequest request) {
         if (organizationRepository.existsByCode(request.getCode())) {
             throw new AppException(QthtErrorCode.ORGANIZATION_CODE_EXISTS, request.getCode());
@@ -151,6 +178,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    /**
+     * Kiểm tra mã tổ chức và mã số thuế có trùng lặp khi cập nhật (bỏ qua bản ghi hiện tại).
+     */
     private void validateUpdate(Organization organization, OrganizationEditRequest request) {
         if (!organization.getCode().equals(request.getCode())
                 && organizationRepository.existsByCode(request.getCode())) {
@@ -163,6 +193,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    /**
+     * Xử lý tổ chức cha, kiểm tra cấp độ hợp lệ và cập nhật đường dẫn (path) phân cấp.
+     */
     private void processParentAndLevel(String parentId, Integer level, Organization organization) {
         if (!StringUtils.hasText(organization.getId())) {
             organization.setId(UUID.randomUUID().toString());
@@ -187,6 +220,9 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    /**
+     * Cập nhật đại diện pháp luật cho tổ chức (tra cứu Person theo ID).
+     */
     private void updateLegalRepresentative(Organization organization, String legalRepId) {
         if (StringUtils.hasText(legalRepId)) {
             Person legalRep = personRepository.findById(legalRepId)
@@ -197,11 +233,17 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    /**
+     * Kiểm tra tổ chức cha có thay đổi so với giá trị hiện tại hay không.
+     */
     private boolean isParentChanged(Organization organization, String newParentId) {
         return (newParentId == null && organization.getParentId() != null)
                 || (newParentId != null && !newParentId.equals(organization.getParentId()));
     }
 
+    /**
+     * Xây dựng Specification lọc tổ chức theo từ khóa (tên, mã, tên viết tắt) và trạng thái chưa xóa.
+     */
     private Specification<Organization> createSpecification(OrganizationFilterRequest filter) {
         Specification<Organization> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE));

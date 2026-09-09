@@ -19,6 +19,9 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
 
     private final PayrollComponentRepository payrollComponentRepository;
 
+    /**
+     * Lấy danh sách thành phần lương chưa bị xoá, sắp xếp theo mã.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PayrollComponentResponse> list() {
@@ -27,12 +30,18 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
                 .toList();
     }
 
+    /**
+     * Lấy chi tiết một thành phần lương theo id.
+     */
     @Override
     @Transactional(readOnly = true)
     public PayrollComponentResponse getById(String id) {
         return toResponse(findOrThrow(id));
     }
 
+    /**
+     * Tạo mới thành phần lương, kiểm tra mã không trùng.
+     */
     @Override
     @Transactional
     public PayrollComponentResponse create(PayrollComponentRequest request) {
@@ -52,6 +61,9 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
         return toResponse(payrollComponentRepository.save(entity));
     }
 
+    /**
+     * Cập nhật thành phần lương theo id (chỉ cập nhật các trường không null, kiểm tra mã trùng khi đổi mã).
+     */
     @Override
     @Transactional
     public PayrollComponentResponse update(String id, PayrollComponentRequest request) {
@@ -71,6 +83,9 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
         return toResponse(payrollComponentRepository.save(entity));
     }
 
+    /**
+     * Xoá mềm một thành phần lương theo id.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -79,6 +94,9 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
         payrollComponentRepository.save(entity);
     }
 
+    /**
+     * Kiểm tra mã thành phần lương đã tồn tại chưa (không tính entity đang sửa) và ném lỗi nếu trùng.
+     */
     private void validateCodeUnique(String code, String excludeId) {
         boolean exists = excludeId == null
                 ? payrollComponentRepository.existsByCodeAndIsDeletedFalse(code.trim().toUpperCase())
@@ -88,11 +106,17 @@ public class PayrollComponentServiceImpl implements PayrollComponentService {
         }
     }
 
+    /**
+     * Tìm thành phần lương chưa bị xoá theo id, ném lỗi nếu không tồn tại.
+     */
     private PayrollComponent findOrThrow(String id) {
         return payrollComponentRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QlnsErrorCode.ENTITY_NOT_FOUND));
     }
 
+    /**
+     * Chuyển đổi entity thành phần lương sang DTO response.
+     */
     private PayrollComponentResponse toResponse(PayrollComponent e) {
         return PayrollComponentResponse.builder()
                 .id(e.getId())

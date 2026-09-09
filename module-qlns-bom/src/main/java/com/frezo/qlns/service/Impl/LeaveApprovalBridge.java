@@ -35,7 +35,8 @@ public class LeaveApprovalBridge {
     private final ContractRepository contractRepository;
 
     /**
-     * ANTI-BLOCK: leave chỉ khi HĐ activated+ACTIVE (cùng rule payroll).
+     * Kiểm tra hợp đồng tồn tại và đang ở trạng thái activated + ACTIVE trước khi tạo đơn nghỉ,
+     * nếu không thoả mãn sẽ ném lỗi nghiệp vụ để chặn tạo đơn.
      */
     public void assertActiveContract(String contractId) {
         if (contractId == null || contractId.isBlank()) {
@@ -48,6 +49,10 @@ public class LeaveApprovalBridge {
         }
     }
 
+    /**
+     * Khởi tạo luồng duyệt (approval request) cho đơn nghỉ và lưu lại approvalRequestId
+     * vào đơn nghỉ tương ứng trong DB.
+     */
     @Transactional
     public void start(LeaveRequest leave) {
         String summary = String.format("%s %s → %s (%s ngày)",
@@ -126,14 +131,23 @@ public class LeaveApprovalBridge {
                 .orElse(false);
     }
 
+    /**
+     * Uỷ quyền tìm username quản lý trực tiếp của nhân viên cho resolver.
+     */
     public String resolveManagerUsername(String personId) {
         return approvalResolver.resolveManagerUsername(personId);
     }
 
+    /**
+     * Uỷ quyền kiểm tra current user có phải admin hay không.
+     */
     public boolean isCurrentUserAdmin() {
         return approvalResolver.isCurrentUserAdmin();
     }
 
+    /**
+     * Uỷ quyền lấy danh sách username HR nhận thông báo duyệt đơn.
+     */
     public List<String> resolveHrUsernames() {
         return approvalResolver.resolveHrUsernames();
     }

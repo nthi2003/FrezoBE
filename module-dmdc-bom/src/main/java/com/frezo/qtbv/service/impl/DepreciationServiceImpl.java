@@ -49,6 +49,7 @@ public class DepreciationServiceImpl implements DepreciationService {
     private final JournalService journalService;
     private final FiscalPeriodService fiscalPeriodService;
 
+    /** Tạo lịch khấu hao cho tài sản: kiểm tra điều kiện và tính khấu hao đường thẳng. */
     @Override
     @Transactional
     public DepreciationScheduleResponse generateSchedule(DepreciationScheduleRequest req) {
@@ -87,6 +88,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         return toResponse(scheduleRepository.save(s), asset);
     }
 
+    /** Liệt kê lịch khấu hao, có thể lọc theo assetId hoặc lấy tất cả. */
     @Override
     public List<DepreciationScheduleResponse> listSchedules(String assetId) {
         List<DepreciationSchedule> all;
@@ -103,6 +105,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         return all.stream().map(s -> toResponse(s, null)).toList();
     }
 
+    /** Xem trước tổng khấu hao của kỳ mà chưa ghi sổ kế toán. */
     @Override
     public DepreciationPostingResponse previewPeriod(int year, int month) {
         List<DepreciationSchedule> eligible = eligibleSchedules(year, month);
@@ -118,6 +121,7 @@ public class DepreciationServiceImpl implements DepreciationService {
                 .build();
     }
 
+    /** Liệt kê các bản ghi ghi sổ khấu hao đã thực hiện, có thể lọc theo năm/tháng. */
     @Override
     public List<DepreciationPostingResponse> listPostings(Integer year, Integer month) {
         List<DepreciationPosting> list;
@@ -132,6 +136,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         return list.stream().map(this::toResponse).toList();
     }
 
+    /** Ghi sổ khấu hao kỳ: trừ giá trị còn lại, tạo bút toán kế toán, đánh dấu lịch hoàn thành nếu hết kỳ. */
     @Override
     @Transactional
     public DepreciationPostingResponse postPeriod(int year, int month) {
@@ -184,6 +189,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         return toResponse(postingRepository.save(posting));
     }
 
+    /** Kiểm tra kỳ tài chính còn OPEN, nếu đã đóng thì ném ngoại lệ. */
     private void assertPeriodOpen(int year, int month) {
         YearMonth ym = YearMonth.of(year, month);
         FiscalPeriod period = fiscalPeriodService.findOrCreateByDate(ym.atEndOfMonth());
@@ -192,6 +198,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         }
     }
 
+    /** Lọc các lịch khấu hao đủ điều kiện ghi sổ trong kỳ (đang active, tài sản chưa thanh lý). */
     private List<DepreciationSchedule> eligibleSchedules(int year, int month) {
         List<DepreciationSchedule> active = scheduleRepository
                 .findByStatusAndIsDeletedFalse(DepreciationConstants.SCHEDULE_ACTIVE);
@@ -205,6 +212,7 @@ public class DepreciationServiceImpl implements DepreciationService {
                 .toList();
     }
 
+    /** Tạo request bút toán kế toán (nợ Chi phí khấu hao, có Hao mòn luỹ kế). */
     private JournalEntryRequest buildJournalRequest(int year, int month, BigDecimal total, int count) {
         JournalLineRequest debit = new JournalLineRequest();
         debit.setAccountCode(DepreciationConstants.DEFAULT_DEPRECIATION_EXPENSE);
@@ -232,6 +240,7 @@ public class DepreciationServiceImpl implements DepreciationService {
         return req;
     }
 
+    /** Chuyển entity lịch khấu hao sang DTO response kèm thông tin tài sản. */
     private DepreciationScheduleResponse toResponse(DepreciationSchedule s, Asset assetCached) {
         Asset asset = assetCached != null ? assetCached
                 : assetRepository.findById(s.getAssetId()).orElse(null);
@@ -250,6 +259,7 @@ public class DepreciationServiceImpl implements DepreciationService {
                 .build();
     }
 
+    /** Chuyển entity ghi sổ khấu hao sang DTO response. */
     private DepreciationPostingResponse toResponse(DepreciationPosting p) {
         return DepreciationPostingResponse.builder()
                 .id(p.getId())

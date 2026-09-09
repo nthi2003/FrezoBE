@@ -4,7 +4,7 @@ import com.frezo.auth.entity.User;
 import com.frezo.auth.entity.UserRole;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.auth.repository.UserRoleRepository;
-import com.frezo.common.exception.AuthException;
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,14 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Cung cấp thông tin profile chi tiết cho user hiện tại (bao gồm Person / Contract active)
- * và xử lý upload avatar. Thao tác cross-module Person/Contract/Permission dùng reflection để
- * tránh dep cycle module-auth → qtht/qlns.
- * <p>
- * Profile trả {@code roles} + {@code permissions} (permission.code) để FE button-level gating
- * ({@code usePermission} / {@code <Can>}) — mirror VBPL viewAction nhưng dùng QTHT permission.code.
- */
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -40,7 +33,6 @@ public class AuthProfileService {
     private final ApplicationContext applicationContext;
     private final MinioService minioService;
 
-    /** Profile hiện tại — merge dữ liệu User + Person (reflection) + Contract active (reflection). */
     public Map<String, Object> getCurrentProfile() {
         String username = com.frezo.common.helper.SystemUtils.getCurrentUsername();
         if (username == null) {
@@ -70,11 +62,7 @@ public class AuthProfileService {
         return profile;
     }
 
-    /**
-     * Gắn {@code roles} (role.code) + {@code permissions} (permission.code) vào profile.
-     * Role resolve qua UserRole (auth) + RoleRepository (qtht, reflection).
-     * Permission codes qua PermissionRepository.findCodesByUsername (qtht, reflection).
-     */
+
     private void enrichRolesAndPermissions(User user, String username, Map<String, Object> profile) {
         profile.put("roles", resolveRoleCodes(user.getId()));
         profile.put("permissions", resolvePermissionCodes(username));
@@ -148,14 +136,14 @@ public class AuthProfileService {
         }
     }
 
-    /** Upload avatar từ file trên đĩa (dùng cho batch import). Trả về URL cuối cùng. */
+
     public String upload(File file, String username) {
         String extension = extractExtension(file.getName());
         String objectName = username + "/avatar" + extension;
         return minioService.uploadFileFromPath(objectName, file);
     }
 
-    /** Upload avatar từ MultipartFile của web request; đồng thời lưu URL vào User. */
+
     public String uploadAvatar(MultipartFile file, String username) {
         try {
             String extension = extractExtension(file.getOriginalFilename());
@@ -163,7 +151,7 @@ public class AuthProfileService {
             String url = minioService.uploadFile(objectName, file);
 
             User user = userRepository.findByUserName(username)
-                    .orElseThrow(() -> new AuthException("User not found"));
+                    .orElseThrow(() -> new QTHTException("user.not.found"));
             user.setAvatarUrl(url);
             userRepository.save(user);
 
@@ -174,11 +162,6 @@ public class AuthProfileService {
             throw new RuntimeException("Không thể tải ảnh đại diện: " + e.getMessage());
         }
     }
-
-    // ============================================================
-    // Reflection helpers (cross-module không tạo compile-dep)
-    // ============================================================
-
     private void enrichPerson(String personId, Map<String, Object> profile) {
         try {
             Class<?> personRepoClass = Class.forName("com.frezo.qtht.repository.PersonRepository");
@@ -197,10 +180,6 @@ public class AuthProfileService {
         }
     }
 
-    /**
-     * Tìm contract active gần nhất qua reflection để dùng cho Mobile leave-request feature.
-     * Silent-fail nếu module-qlns chưa load — không phá login profile.
-     */
     private void resolveActiveContract(String personId, Map<String, Object> profile) {
         try {
             Class<?> repoClass = Class.forName("com.frezo.qlns.repository.ContractRepository");

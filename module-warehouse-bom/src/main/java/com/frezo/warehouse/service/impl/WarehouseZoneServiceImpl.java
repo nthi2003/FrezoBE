@@ -19,6 +19,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
 
     private final WarehouseZoneRepository zoneRepository;
 
+    /** Lấy thông tin một khu vực (zone) của kho theo id. */
     @Override
     public WarehouseZoneResponse getById(String id) {
         WarehouseZone zone = zoneRepository.findById(id)
@@ -26,11 +27,13 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
         return toResponse(zone);
     }
 
+    /** Lấy danh sách khu vực thuộc một kho. */
     @Override
     public List<WarehouseZoneResponse> getByWarehouseId(String warehouseId) {
         return zoneRepository.findByWarehouseId(warehouseId).stream().map(this::toResponse).toList();
     }
 
+    /** Tạo mới một khu vực trong kho. */
     @Override
     @Transactional
     public WarehouseZoneResponse create(WarehouseZoneRequest request) {
@@ -45,6 +48,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
         return toResponse(zone);
     }
 
+    /** Cập nhật thông tin khu vực (chỉ các trường được cung cấp). */
     @Override
     @Transactional
     public WarehouseZoneResponse update(String id, WarehouseZoneRequest request) {
@@ -59,6 +63,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
         return toResponse(zone);
     }
 
+    /** Xóa một khu vực theo id. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -67,6 +72,7 @@ public class WarehouseZoneServiceImpl implements WarehouseZoneService {
         zoneRepository.delete(zone);
     }
 
+    /** Chuyển entity khu vực thành response. */
     private WarehouseZoneResponse toResponse(WarehouseZone zone) {
         WarehouseZoneResponse r = new WarehouseZoneResponse();
         r.setId(zone.getId());

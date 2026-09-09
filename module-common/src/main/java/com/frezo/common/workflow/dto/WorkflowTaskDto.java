@@ -17,8 +17,6 @@ public class WorkflowTaskDto {
     private String comment;
     private String deadline;
     private String createdDate;
-
-    // Enrich từ instance để hiển thị inbox nhanh
     private String entityType;
     private String entityId;
     private String instanceTitle;

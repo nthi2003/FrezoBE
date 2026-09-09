@@ -41,6 +41,9 @@ public class JournalServiceImpl implements JournalService {
     private final AccountRepository accountRepo;
     private final FiscalPeriodService periodService;
 
+    /**
+     * Tạo mới chứng từ ở trạng thái nháp (DRAFT). Nếu idempotencyKey đã tồn tại thì trả về chứng từ cũ.
+     */
     @Override
     @Transactional
     public JournalEntryResponse createDraft(JournalEntryRequest req) {
@@ -53,6 +56,9 @@ public class JournalServiceImpl implements JournalService {
         return persist(req, JournalStatus.DRAFT);
     }
 
+    /**
+     * Tạo mới chứng từ và hạch toán ngay (POSTED); kiểm tra idempotency để tránh lưu trùng.
+     */
     @Override
     @Transactional
     public JournalEntryResponse createAndPost(JournalEntryRequest req) {
@@ -66,6 +72,9 @@ public class JournalServiceImpl implements JournalService {
         return persist(req, JournalStatus.POSTED);
     }
 
+    /**
+     * Hạch toán (post) một chứng từ nháp sau khi kiểm tra trạng thái và kỳ kế toán đang mở.
+     */
     @Override
     @Transactional
     public JournalEntryResponse post(String id) {
@@ -84,6 +93,9 @@ public class JournalServiceImpl implements JournalService {
         return withLines(e);
     }
 
+    /**
+     * Đảo chứng từ đã hạch toán: tạo chứng từ đảo (hoán đổi Nợ/Có) tại kỳ hiện tại và đánh dấu chứng từ gốc bị đảo.
+     */
     @Override
     @Transactional
     public JournalEntryResponse reverse(String id, String reason) {
@@ -141,6 +153,9 @@ public class JournalServiceImpl implements JournalService {
         return withLines(reversal);
     }
 
+    /**
+     * Lấy chi tiết một chứng từ kèm danh sách dòng theo id.
+     */
     @Override
     @Transactional(readOnly = true)
     public JournalEntryResponse getById(String id) {
@@ -149,6 +164,9 @@ public class JournalServiceImpl implements JournalService {
         return withLines(e);
     }
 
+    /**
+     * Liệt kê chứng từ theo kỳ kế toán hoặc theo nguồn phát sinh (sourceType + sourceId).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<JournalEntryResponse> list(String periodId, PostingSource source, String sourceId) {
@@ -165,6 +183,10 @@ public class JournalServiceImpl implements JournalService {
 
     // ------------------------ Helpers ------------------------
 
+    /**
+     * Lưu chứng từ với trạng thái đích: kiểm tra hợp lệ các dòng (không trùng Nợ/Có, TK tồn tại và được phép hạch toán,
+     * bắt buộc đối tượng nếu cần), đảm bảo tổng Nợ = tổng Có, gán số chứng từ và lưu các dòng tương ứng.
+     */
     private JournalEntryResponse persist(JournalEntryRequest req, JournalStatus targetStatus) {
         if (req.getLines() == null || req.getLines().size() < 2) {
             throw new AppException(AccountingErrorCode.JOURNAL_EMPTY_LINES);
@@ -252,6 +274,9 @@ public class JournalServiceImpl implements JournalService {
         return toResponse(entry, savedLines, accCache);
     }
 
+    /**
+     * Kiểm tra kỳ kế toán đang ở trạng thái mở; ném lỗi nếu kỳ bị khóa hoặc đã đóng.
+     */
     private void assertPeriodStatus(FiscalPeriod p) {
         if (p.getStatus() == PeriodStatus.LOCKED) {
             throw new AppException(AccountingErrorCode.PERIOD_LOCKED, p.getMonth() + "/" + p.getYear());
@@ -271,6 +296,9 @@ public class JournalServiceImpl implements JournalService {
         return prefix + rand;
     }
 
+    /**
+     * Nạp các dòng chứng từ và thông tin tài khoản liên quan rồi chuyển thành DTO phản hồi.
+     */
     private JournalEntryResponse withLines(JournalEntry e) {
         List<JournalEntryLine> lines = lineRepo.findByJournalEntryIdOrderByLineNoAsc(e.getId());
         Map<String, Account> accCache = new HashMap<>();
@@ -281,6 +309,9 @@ public class JournalServiceImpl implements JournalService {
         return toResponse(e, lines, accCache);
     }
 
+    /**
+     * Chuyển entity chứng từ và các dòng kèm thông tin tài khoản thành DTO phản hồi.
+     */
     private JournalEntryResponse toResponse(JournalEntry e, List<JournalEntryLine> lines,
                                             Map<String, Account> accCache) {
         return JournalEntryResponse.builder()

@@ -21,6 +21,9 @@ public class PersonWorkHistoryServiceImpl implements PersonWorkHistoryService {
     private final PersonWorkHistoryRepository personWorkHistoryRepository;
     private final PersonRepository personRepository;
 
+    /**
+     * Lấy danh sách lịch sử công tác của một nhân viên, sắp xếp theo ngày bắt đầu giảm dần.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PersonWorkHistoryResponse> listByPerson(String personId) {
@@ -30,6 +33,9 @@ public class PersonWorkHistoryServiceImpl implements PersonWorkHistoryService {
                 .toList();
     }
 
+    /**
+     * Tạo một mốc lịch sử công tác mới cho nhân viên (phòng ban, chức vụ, ghi chú...).
+     */
     @Override
     @Transactional
     public PersonWorkHistoryResponse create(PersonWorkHistoryRequest request) {
@@ -47,6 +53,9 @@ public class PersonWorkHistoryServiceImpl implements PersonWorkHistoryService {
         return toResponse(personWorkHistoryRepository.save(entity));
     }
 
+    /**
+     * Xóa mềm một bản ghi lịch sử công tác theo ID.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -57,11 +66,17 @@ public class PersonWorkHistoryServiceImpl implements PersonWorkHistoryService {
         personWorkHistoryRepository.save(entity);
     }
 
+    /**
+     * Kiểm tra nhân viên có tồn tại và chưa bị xóa, ném lỗi PERSON_NOT_FOUND nếu không có.
+     */
     private void assertPersonExists(String personId) {
         personRepository.findByIdAndIsDeletedFalse(personId)
                 .orElseThrow(() -> new AppException(QlnsErrorCode.PERSON_NOT_FOUND));
     }
 
+    /**
+     * Chuyển đổi entity PersonWorkHistory sang DTO response.
+     */
     private PersonWorkHistoryResponse toResponse(PersonWorkHistory e) {
         return PersonWorkHistoryResponse.builder()
                 .id(e.getId())

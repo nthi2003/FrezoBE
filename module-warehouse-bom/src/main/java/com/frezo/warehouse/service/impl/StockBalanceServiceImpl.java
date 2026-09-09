@@ -42,6 +42,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
     private final StockLedgerRepository stockLedgerRepository;
     private final ProductRepository productRepository;
 
+    /** Lọc danh sách tồn kho theo kho và sản phẩm, trả về phân trang. */
     @Override
     public PageResponse<StockBalanceResponse> filter(String warehouseId, String productId, String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -60,6 +61,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         return PageResponse.of(page, size, balancePage, responses);
     }
 
+    /** Lấy thông tin tồn kho theo id. */
     @Override
     public StockBalanceResponse getById(String id) {
         StockBalance balance = stockBalanceRepository.findById(id)
@@ -67,6 +69,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         return toResponse(balance);
     }
 
+    /** Trả về danh sách cảnh báo tồn kho thấp kèm ngưỡng cảnh báo của từng sản phẩm. */
     @Override
     public List<LowStockAlertResponse> getLowStockAlerts() {
         List<String> ids = stockBalanceRepository.findLowStockBalanceIds();
@@ -91,6 +94,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         }).toList();
     }
 
+    /** Tính toán các chỉ số tổng quan của kho trong ngày (số kho, sản phẩm, cảnh báo, nhập/xuất hôm nay). */
     @Override
     public WarehouseStatsResponse getStats() {
         LocalDate today = LocalDate.now();
@@ -112,6 +116,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
                 .build();
     }
 
+    /** Xuất danh sách tồn kho ra file Excel (có thể lọc theo kho và sản phẩm). */
     @Override
     public byte[] exportStock(String warehouseId, String productId) {
         List<StockBalance> balances;
@@ -163,6 +168,7 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         }
     }
 
+    /** Trả về số lượng tồn/đã giữ/khả dụng của các sản phẩm tại kho, có thể lọc theo lô. */
     @Override
     public List<StockAvailableResponse> getAvailable(String warehouseId, String productId, String productIds, String batchId) {
         if (warehouseId == null || warehouseId.isBlank()) {
@@ -225,10 +231,12 @@ public class StockBalanceServiceImpl implements StockBalanceService {
         return result;
     }
 
+    /** Chuyển giá trị Double null về 0.0 để tránh lỗi tính toán. */
     private static double nz(Double v) {
         return v != null ? v : 0.0;
     }
 
+    /** Chuyển entity tồn kho thành response kèm thông tin sản phẩm và tên kho. */
     private StockBalanceResponse toResponse(StockBalance balance) {
         StockBalanceResponse r = new StockBalanceResponse();
         r.setId(balance.getId());

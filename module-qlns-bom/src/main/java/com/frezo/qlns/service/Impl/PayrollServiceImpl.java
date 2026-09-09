@@ -50,6 +50,9 @@ public class PayrollServiceImpl implements PayrollService {
     private final PayrollEnricher enricher;
     private final PayrollDetailWriter detailWriter;
 
+    /**
+     * Tính lương cho một nhân sự trong tháng/năm và trả về phiếu lương đã bổ sung đầy đủ context.
+     */
     @Override
     @Transactional
     public PayrollResponse calculateMonthlyPayroll(String personId, Integer month, Integer year) {
@@ -63,12 +66,18 @@ public class PayrollServiceImpl implements PayrollService {
                 r.dependentCount());
     }
 
+    /**
+     * Tính lương hàng loạt cho toàn bộ nhân sự trong kỳ, mỗi nhân sự dùng một transaction riêng.
+     */
     @Override
     public PayrollCalculateAllResponse calculateAllPayroll(Integer month, Integer year) {
         // Không @Transactional ngoài — orchestrator dùng 1 TX / person + summary skip/error.
         return calculationOrchestrator.calculateAll(month, year);
     }
 
+    /**
+     * Cập nhật thưởng/khấu trừ cho phiếu lương.
+     */
     @Override
     @Transactional
     public PayrollResponse updateBonus(String id, Double bonus, Double deduction, String note) {
@@ -76,23 +85,35 @@ public class PayrollServiceImpl implements PayrollService {
         return enricher.enrichFull(saved);
     }
 
+    /**
+     * Xác nhận phiếu lương sau khi tính toán.
+     */
     @Override
     @Transactional
     public PayrollResponse confirm(String id) {
         return enricher.enrichFull(lifecycleService.confirm(id));
     }
 
+    /**
+     * Thực hiện chi lương cho phiếu lương đã xác nhận.
+     */
     @Override
     @Transactional
     public PayrollResponse pay(String id) {
         return enricher.enrichFull(lifecycleService.pay(id));
     }
 
+    /**
+     * Xoá mềm một phiếu lương.
+     */
     @Override
     public void deletePayroll(String id) {
         lifecycleService.softDelete(id);
     }
 
+    /**
+     * Lấy danh sách phiếu lương phân trang theo bộ lọc (contract, nhân sự, tháng, năm, trạng thái).
+     */
     @Override
     public PageResponse<PayrollResponse> getAll(PayrollFilter filter) {
         Specification<Payroll> spec = Specification.where(GenericSpecification.equalField("isDeleted", false));
@@ -116,6 +137,9 @@ public class PayrollServiceImpl implements PayrollService {
         return PageResponse.of(pageNum, pageSize, pageResult, items);
     }
 
+    /**
+     * Lấy chi tiết phiếu lương theo id kèm toàn bộ thông tin bổ sung.
+     */
     @Override
     public PayrollResponse getById(String id) {
         return payrollRepository.findById(id)
@@ -123,6 +147,9 @@ public class PayrollServiceImpl implements PayrollService {
                 .orElseThrow(() -> new AppException(QlnsErrorCode.PAYROLL_NOT_FOUND));
     }
 
+    /**
+     * Lấy danh sách dòng chi tiết của một phiếu lương.
+     */
     @Override
     public List<PayrollDetailResponse> getPayrollDetails(String payrollId) {
         return detailWriter.getDetails(payrollId);

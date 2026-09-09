@@ -12,5 +12,5 @@ import java.util.List;
 @AllArgsConstructor
 public class WorkflowConfig {
     private String module;
-    private List<String> steps; // e.g. ["MANAGER", "HR"]
+    private List<String> steps;
 }

@@ -3,7 +3,8 @@ package com.frezo.auth.service.impl.auth;
 import com.frezo.auth.dto.response.LoginResponse;
 import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.UserRepository;
-import com.frezo.common.exception.AuthException;
+
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -11,14 +12,12 @@ import org.springframework.stereotype.Component;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
-/**
- * Xử lý 2FA — sinh OTP, gửi qua NotificationService, verify khi user submit lại.
- */
+
 @Component
 @RequiredArgsConstructor
 public class AuthTwoFactorService {
 
-    /** SecureRandom là thread-safe → chia sẻ instance static an toàn. */
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
@@ -26,10 +25,7 @@ public class AuthTwoFactorService {
     private final AuthTokenBuilder tokenBuilder;
     private final AuthSessionService sessionService;
 
-    /**
-     * Bắt đầu flow 2FA: sinh OTP 6 số, lưu vào user + hết hạn 5 phút, gửi qua notification.
-     * Trả về response yêu cầu FE hỏi thêm mã.
-     */
+
     public LoginResponse startTwoFactor(User user) {
         int otpValue = 100_000 + SECURE_RANDOM.nextInt(900_000);
         String otp = String.valueOf(otpValue);
@@ -53,12 +49,12 @@ public class AuthTwoFactorService {
      */
     public LoginResponse verifyOtp(String username, String code) {
         User user = userRepository.findByUserName(username)
-                .orElseThrow(() -> new AuthException("User not found"));
+                .orElseThrow(() -> new QTHTException("user.not.found"));
 
         if (user.getOtpCode() == null || !user.getOtpCode().equals(code)
                 || user.getOtpExpiration() == null
                 || user.getOtpExpiration().isBefore(LocalDateTime.now())) {
-            throw new AuthException("Mã OTP không chính xác hoặc đã hết hạn");
+            throw new QTHTException("otp.exp");
         }
 
         user.setOtpCode(null);

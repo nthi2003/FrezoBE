@@ -41,6 +41,10 @@ public class UserActivityServiceImpl implements UserActivityService {
         return sorted;
     }
 
+    /**
+     * Tổng hợp số liệu sử dụng hôm nay: tổng đăng nhập, người dùng duy nhất,
+     * người đang online và phiên hoạt động hiện tại.
+     */
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> usageSummary(int onlineSeconds) {

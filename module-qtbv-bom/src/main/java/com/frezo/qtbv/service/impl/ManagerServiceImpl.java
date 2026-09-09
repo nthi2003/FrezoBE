@@ -18,6 +18,7 @@ public class ManagerServiceImpl implements ManagerService {
 
     private final PersonRepository personRepository;
 
+    /** Lấy danh sách người quản lý đang kích hoạt từ danh sách nhân sự và chuyển thành dạng ManagerResponse. */
     @Override
     @Transactional(readOnly = true)
     public List<ManagerResponse> getManagersList() {
@@ -27,6 +28,7 @@ public class ManagerServiceImpl implements ManagerService {
                 .toList();
     }
 
+    /** Chuyển đổi một Person thành ManagerResponse, trả về null nếu Person rỗng. */
     private ManagerResponse toManagerResponse(Person person) {
         if (person == null) {
             return null;

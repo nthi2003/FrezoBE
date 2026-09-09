@@ -51,8 +51,6 @@ public class AssetServiceImpl implements AssetService {
     private static final String STATUS_IN_USE = "IN_USE";
     private static final String STATUS_MAINTENANCE = "MAINTENANCE";
     private static final String STATUS_DISPOSED = "DISPOSED";
-
-    // Workflow ticket
     private static final String TR_PENDING = "PENDING";
     private static final String TR_APPROVED = "APPROVED";
     private static final String TR_REJECTED = "REJECTED";
@@ -60,26 +58,14 @@ public class AssetServiceImpl implements AssetService {
     private static final String TR_CANCELLED = "CANCELLED";
     private static final String TR_TYPE_ASSIGN = "ASSIGN";
     private static final String TR_TYPE_RETURN = "RETURN";
-
-    // ---- Workflow engine binding ----
-    /** entityType để nhận biết instance của ticket cấp phát tài sản trong engine. */
     public static final String WF_ENTITY_TYPE = "ASSET_TRANSFER";
-    /** Definition code mặc định (seed sẵn trong {@code WorkflowDataInitializer}). */
     public static final String WF_DEF_CODE = "ASSET_TRANSFER_DEFAULT";
-
     private final AssetRepository assetRepository;
     private final AssetAssignmentRepository assignmentRepository;
     private final AssetTransferRequestRepository transferRequestRepository;
     private final CategoryRepository categoryRepository;
-
     private final JdbcTemplate jdbcTemplate;
-
     private final WorkflowService workflowService;
-
-    // ============================================================
-    // Query
-    // ============================================================
-
     @Override
     public Map<String, Object> list(String keyword, String status, String categoryCode,
                                     String assignedPersonId, int page, int size) {
@@ -124,11 +110,6 @@ public class AssetServiceImpl implements AssetService {
     public AssetResponse getById(String id) {
         return enrich(findOrThrow(id));
     }
-
-    // ============================================================
-    // CRUD
-    // ============================================================
-
     @Override
     @Transactional
     public AssetResponse create(AssetSaveRequest req) {
@@ -156,6 +137,7 @@ public class AssetServiceImpl implements AssetService {
         return enrich(saved);
     }
 
+
     @Override
     @Transactional
     public AssetResponse update(String id, AssetSaveRequest req) {
@@ -173,26 +155,19 @@ public class AssetServiceImpl implements AssetService {
         if (req.getLocation() != null) e.setLocation(req.getLocation());
         if (req.getImageUrl() != null) e.setImageUrl(req.getImageUrl());
         if (req.getNote() != null) e.setNote(req.getNote());
-        // Status chỉ đổi qua transition method (assign/unassign/dispose)
         return enrich(assetRepository.save(e));
     }
 
-    @Override
+
     @Transactional
     public void delete(String id) {
         Asset e = findOrThrow(id);
-        // Đang cấp phát không cho xoá
         if (STATUS_IN_USE.equals(e.getStatus())) {
             throw new AppException(DmdcErrorCode.ASSET_IN_USE_CANNOT_DELETE);
         }
         e.softDelete(SystemUtils.getCurrentUsername());
         assetRepository.save(e);
     }
-
-    // ============================================================
-    // Workflow transitions
-    // ============================================================
-
     @Override
     @Transactional
     public AssetResponse assign(String id, AssetAssignRequest req) {
@@ -272,7 +247,6 @@ public class AssetServiceImpl implements AssetService {
             throw new AppException(DmdcErrorCode.ASSET_ALREADY_DISPOSED);
         }
         e.setStatus(STATUS_DISPOSED);
-        // Nếu đang cấp phát → auto-return trong lịch sử trước khi dispose
         if (e.getAssignedPersonId() != null) {
             String pid = e.getAssignedPersonId();
             String pn = lookupPersonName(pid);
@@ -284,10 +258,6 @@ public class AssetServiceImpl implements AssetService {
         writeAssignment(id, "DISPOSE", null, null, LocalDate.now(), note, null);
         return enrich(e);
     }
-
-    // ============================================================
-    // History + stats
-    // ============================================================
 
     @Override
     public List<AssetAssignmentResponse> history(String assetId) {
@@ -312,7 +282,6 @@ public class AssetServiceImpl implements AssetService {
                         : (a.getPurchasePrice() != null ? a.getPurchasePrice() : BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Sắp hết bảo hành (< 30 ngày)
         LocalDate threshold = LocalDate.now().plusDays(30);
         long expiringSoon = all.stream()
                 .filter(a -> a.getWarrantyEndDate() != null)
@@ -331,9 +300,6 @@ public class AssetServiceImpl implements AssetService {
         return r;
     }
 
-    // ============================================================
-    // Helpers
-    // ============================================================
 
     private Asset findOrThrow(String id) {
         return assetRepository.findById(id)
@@ -341,10 +307,7 @@ public class AssetServiceImpl implements AssetService {
                 .orElseThrow(() -> new AppException(DmdcErrorCode.ASSET_NOT_FOUND));
     }
 
-    /**
-     * Query trực tiếp bảng {@code person} vì không thể inject {@code PersonRepository}
-     * (cross-module cycle). Trả null nếu không tồn tại — caller ignore.
-     */
+
     private String lookupPersonName(String personId) {
         if (personId == null || personId.isBlank()) return null;
         try {
@@ -359,20 +322,18 @@ public class AssetServiceImpl implements AssetService {
         }
     }
 
-    /** Auto-gen code dạng AS-YYYY-####. Concurrent-safe hơn nếu wrap advisory lock, nhưng
-     *  cho SMB (< 1K asset/năm) count query đủ dùng. */
     private String generateCode() {
         int year = LocalDate.now().getYear();
         String prefix = "AS-" + year + "-";
         long count = assetRepository.countByCodePrefix(prefix);
-        // +1, retry vài lần nếu collision (edge case race)
         for (int i = 1; i <= 5; i++) {
             String candidate = prefix + String.format("%04d", count + i);
             if (!assetRepository.existsByCode(candidate)) return candidate;
         }
-        // Fallback timestamp
+
         return prefix + System.currentTimeMillis() % 10000;
     }
+
 
     private void writeAssignment(String assetId, String action, String personId, String personName,
                                  LocalDate date, String note, BigDecimal cost) {
@@ -421,7 +382,6 @@ public class AssetServiceImpl implements AssetService {
         r.setCreatedDate(e.getCreatedDate() != null ? e.getCreatedDate().toString() : null);
         return r;
     }
-
     private AssetAssignmentResponse mapAssignment(AssetAssignment a) {
         AssetAssignmentResponse r = new AssetAssignmentResponse();
         r.setId(a.getId());
@@ -436,11 +396,6 @@ public class AssetServiceImpl implements AssetService {
         r.setCreatedDate(a.getCreatedDate() != null ? a.getCreatedDate().toString() : null);
         return r;
     }
-
-    // ============================================================
-    // Workflow: Transfer Request (ticket cấp phát / thu hồi)
-    // ============================================================
-
     @Override
     @Transactional
     public AssetTransferRequestResponse createTransferRequest(String assetId, AssetTransferCreateRequest req) {
@@ -448,7 +403,7 @@ public class AssetServiceImpl implements AssetService {
         String type = (req.getRequestType() != null && !req.getRequestType().isBlank())
                 ? req.getRequestType().trim().toUpperCase() : TR_TYPE_ASSIGN;
 
-        // Pre-check theo type + tránh 2 request đang chạy cùng lúc
+
         List<AssetTransferRequest> active = transferRequestRepository
                 .findByAssetIdAndStatusIn(assetId, List.of(TR_PENDING, TR_APPROVED));
         if (!active.isEmpty()) {
@@ -466,13 +421,13 @@ public class AssetServiceImpl implements AssetService {
             if (!STATUS_IN_USE.equals(asset.getStatus())) {
                 throw new AppException(DmdcErrorCode.ASSET_NOT_IN_USE);
             }
-            // Với RETURN, personId auto = người đang giữ
+
             req.setPersonId(asset.getAssignedPersonId());
         } else {
             throw new AppException(DmdcErrorCode.TRANSFER_TYPE_INVALID);
         }
 
-        // Enrich personName nếu client không truyền
+
         String personName = req.getPersonName();
         if ((personName == null || personName.isBlank()) && req.getPersonId() != null) {
             personName = lookupPersonName(req.getPersonId());
@@ -490,9 +445,7 @@ public class AssetServiceImpl implements AssetService {
                 .build();
         AssetTransferRequest saved = transferRequestRepository.save(tr);
 
-        // ---- Wire vào Workflow Engine (nếu definition tồn tại) ----
-        // Ưu điểm: admin có thể sửa flow (thêm bước, đổi approver) qua /qtht/workflows
-        // mà không cần đụng code business. Instance được tạo ngay để FE có state chạy engine.
+
         try {
             String title = String.format("%s %s cho %s",
                     TR_TYPE_ASSIGN.equals(type) ? "Cấp phát" : "Thu hồi",
@@ -506,8 +459,7 @@ public class AssetServiceImpl implements AssetService {
             log.info("[asset] Tạo ticket {} #{} + workflow instance {} cho asset {}",
                     type, saved.getId(), instance.getId(), asset.getCode());
         } catch (Exception ex) {
-            // Fallback graceful — nếu engine chưa seed definition, ticket vẫn hoạt động
-            // theo flow hard-coded 3-status như trước.
+
             log.warn("[asset] Không start được workflow cho ticket {}: {} — fallback legacy flow",
                     saved.getId(), ex.getMessage());
         }
@@ -617,7 +569,6 @@ public class AssetServiceImpl implements AssetService {
         return enrichTransfer(tr, asset);
     }
 
-
     private AssetTransferRequestResponse approveViaEngine(AssetTransferRequest tr, String note) {
         WorkflowTaskDto task = findCurrentPendingTask(tr);
         if (task == null) {
@@ -655,8 +606,6 @@ public class AssetServiceImpl implements AssetService {
         }
         return enrichTransfer(tr, null);
     }
-
-
     private void syncFromEngine(AssetTransferRequest tr) {
         if (tr.getWorkflowInstanceId() == null) return;
         WorkflowInstanceDto inst = workflowService
@@ -678,9 +627,7 @@ public class AssetServiceImpl implements AssetService {
         }
     }
 
-    /**
-     * Lookup task PENDING của instance đang gắn với 1 ticket (entityId = {@code tr.id}).
-     */
+
     private WorkflowTaskDto findCurrentPendingTask(AssetTransferRequest tr) {
         WorkflowInstanceDto inst = workflowService
                 .findInstanceByEntity(WF_ENTITY_TYPE, tr.getId())
@@ -690,7 +637,6 @@ public class AssetServiceImpl implements AssetService {
                 .filter(t -> "PENDING".equals(t.getStatus()))
                 .findFirst().orElse(null);
     }
-
 
     private void applyHandoverEffects(AssetTransferRequest tr, Asset asset, String note) {
         if (TR_TYPE_ASSIGN.equals(tr.getRequestType())) {
@@ -760,8 +706,6 @@ public class AssetServiceImpl implements AssetService {
         return enrichTransfer(findTransferOrThrow(requestId), null);
     }
 
-    // ---- Helpers ----
-
     private AssetTransferRequest findTransferOrThrow(String id) {
         return transferRequestRepository.findById(id)
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
@@ -775,13 +719,6 @@ public class AssetServiceImpl implements AssetService {
         }
     }
 
-    /**
-     * Kiểm tra admin bằng cách lookup {@code user → person.is_admin} qua JDBC.
-     * <p>JWT filter chỉ set username vào SecurityContext, không có claim isAdmin →
-     * đây là single source of truth (Person.isAdmin).
-     * <p>Admin bootstrap {@code admin} / {@code superadmin} luôn được coi là admin
-     * kể cả khi Person chưa link (fallback an toàn cho local dev + first-time seed).
-     */
     private boolean isAdmin() {
         String username = SystemUtils.getCurrentUsername();
         if (username == null || username.isBlank()) return false;
@@ -835,7 +772,6 @@ public class AssetServiceImpl implements AssetService {
         r.setCreatedBy(tr.getCreatedBy());
         r.setCreatedDate(tr.getCreatedDate() != null ? tr.getCreatedDate().toString() : null);
 
-        // Enrich asset code/name để hiển thị trên FE (khỏi phải fetch lần 2)
         Asset asset = preloaded;
         if (asset == null) {
             asset = assetRepository.findById(tr.getAssetId()).orElse(null);
@@ -845,9 +781,6 @@ public class AssetServiceImpl implements AssetService {
             r.setAssetName(asset.getName());
         }
 
-        // ---- Workflow enrichment ----
-        // Trả kèm currentTaskId + stepName để FE có thể render nút "Duyệt: <stepName>"
-        // và query GET /wf/instances/by-entity/ASSET_TRANSFER/{id} nếu muốn stepper full.
         r.setWorkflowInstanceId(tr.getWorkflowInstanceId());
         if (tr.getWorkflowInstanceId() != null) {
             r.setWorkflowEntityType(WF_ENTITY_TYPE);

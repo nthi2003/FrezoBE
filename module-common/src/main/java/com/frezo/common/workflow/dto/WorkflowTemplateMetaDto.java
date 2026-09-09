@@ -2,10 +2,7 @@ package com.frezo.common.workflow.dto;
 
 import lombok.Data;
 
-/**
- * Metadata mẫu trong gallery — FE không hardcode graph.
- * Field {@code key} khớp FE {@code WorkflowTemplateMeta.key}.
- */
+
 @Data
 public class WorkflowTemplateMetaDto {
     private String key;

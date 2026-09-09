@@ -27,6 +27,9 @@ public class RequisitionServiceImpl implements RequisitionService {
     private final RequisitionRepository requisitionRepository;
     private final JobApplicationRepository jobApplicationRepository;
 
+    /**
+     * Tạo mới một yêu cầu tuyển dụng (Requisition) ở trạng thái mở, với ngày mở mặc định là hôm nay nếu không nhập.
+     */
     @Override
     @Transactional
     public RequisitionResponse create(RequisitionRequest req) {
@@ -47,6 +50,9 @@ public class RequisitionServiceImpl implements RequisitionService {
         return toResponse(requisitionRepository.save(e));
     }
 
+    /**
+     * Cập nhật các trường được gửi lên cho yêu cầu tuyển dụng đang mở, các trường null được giữ nguyên giá trị cũ.
+     */
     @Override
     @Transactional
     public RequisitionResponse update(String id, RequisitionRequest req) {
@@ -66,11 +72,17 @@ public class RequisitionServiceImpl implements RequisitionService {
         return toResponse(requisitionRepository.save(e));
     }
 
+    /**
+     * Lấy chi tiết một yêu cầu tuyển dụng theo ID.
+     */
     @Override
     public RequisitionResponse getById(String id) {
         return toResponse(findOrThrow(id));
     }
 
+    /**
+     * Liệt kê các yêu cầu tuyển dụng chưa xóa, lọc theo trạng thái nếu có, sắp xếp theo ngày tạo mới nhất.
+     */
     @Override
     public List<RequisitionResponse> list(String status) {
         return requisitionRepository.findAll().stream()
@@ -82,6 +94,9 @@ public class RequisitionServiceImpl implements RequisitionService {
                 .toList();
     }
 
+    /**
+     * Đóng yêu cầu tuyển dụng: chuyển trạng thái sang CLOSED và gán ngày đóng là hôm nay.
+     */
     @Override
     @Transactional
     public RequisitionResponse close(String id) {
@@ -91,12 +106,18 @@ public class RequisitionServiceImpl implements RequisitionService {
         return toResponse(requisitionRepository.save(e));
     }
 
+    /**
+     * Tìm yêu cầu tuyển dụng theo ID và đảm bảo chưa bị xóa, nếu không có thì ném lỗi.
+     */
     private Requisition findOrThrow(String id) {
         return requisitionRepository.findById(id)
                 .filter(r -> Boolean.FALSE.equals(r.getIsDeleted()))
                 .orElseThrow(() -> new AppException(RecruitmentErrorCode.REQUISITION_NOT_FOUND, id));
     }
 
+    /**
+     * Chuyển entity Requisition sang DTO response, kèm số lượng đã tuyển được (HIRED) để biết còn slot tuyển.
+     */
     private RequisitionResponse toResponse(Requisition e) {
         long hired = jobApplicationRepository.countByRequisitionIdAndStageAndIsDeletedFalse(
                 e.getId(), RecruitmentConstants.STAGE_HIRED);

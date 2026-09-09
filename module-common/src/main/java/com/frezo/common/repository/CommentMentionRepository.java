@@ -9,5 +9,4 @@ public interface CommentMentionRepository extends JpaRepository<CommentMention, 
 
     List<CommentMention> findByCommentIdAndIsDeletedFalse(String commentId);
 
-    void deleteByCommentId(String commentId);
 }

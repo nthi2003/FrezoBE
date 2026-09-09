@@ -32,6 +32,10 @@ public class GLServiceImpl implements GLService {
     private final JournalEntryRepository entryRepo;
     private final JournalEntryLineRepository lineRepo;
 
+    /**
+     * Lập sổ cái cho một tài khoản trong kỳ: tính số dư đầu kỳ, liệt kê các dòng phát sinh
+     * và số dư cuối kỳ (dư Nợ/dư Có theo tính chất tài khoản).
+     */
     @Override
     @Transactional(readOnly = true)
     public GLResponse getLedger(String accountCode, LocalDate from, LocalDate to) {
@@ -105,6 +109,10 @@ public class GLServiceImpl implements GLService {
                 .build();
     }
 
+    /**
+     * Lập bảng cân đối số phát sinh (trial balance) cho tất cả tài khoản trong kỳ:
+     * số dư đầu kỳ, phát sinh Nợ/Có và số dư cuối kỳ.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TrialBalanceRowResponse> trialBalance(LocalDate from, LocalDate to) {
@@ -148,10 +156,16 @@ public class GLServiceImpl implements GLService {
         return out;
     }
 
+    /**
+     * Xác định tài khoản có tính chất dư Nợ (Tài sản, Chi phí) hay không.
+     */
     private static boolean isDebitNature(AccountType t) {
         return t == AccountType.ASSET || t == AccountType.EXPENSE;
     }
 
+    /**
+     * Trả về 0 nếu giá trị null, ngược lại trả về giá trị gốc (bảo vệ phép tính số học).
+     */
     private static BigDecimal safe(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
     }

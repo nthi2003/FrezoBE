@@ -18,6 +18,9 @@ public class GrnAttachmentServiceImpl implements GrnAttachmentService {
     private final GrnAttachmentRepository attachmentRepository;
     private final MinioService minioService;
 
+    /**
+     * Tải file đính kèm lên MinIO theo phiếu nhập kho và lưu thông tin file vào cơ sở dữ liệu; trả về file đã lưu.
+     */
     @Override
     @Transactional
     public GrnAttachment upload(String grnId, MultipartFile file, String note) {
@@ -35,12 +38,18 @@ public class GrnAttachmentServiceImpl implements GrnAttachmentService {
         return attachmentRepository.save(attachment);
     }
 
+    /**
+     * Liệt kê danh sách file đính kèm của một phiếu nhập kho theo grnId.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<GrnAttachment> listByGrnId(String grnId) {
         return attachmentRepository.findByGrnId(grnId);
     }
 
+    /**
+     * Xóa file đính kèm theo id đã cho.
+     */
     @Override
     @Transactional
     public void delete(String attachmentId) {

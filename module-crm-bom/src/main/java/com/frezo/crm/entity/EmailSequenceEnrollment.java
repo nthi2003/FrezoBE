@@ -34,7 +34,7 @@ public class EmailSequenceEnrollment extends BaseEntity {
     @Column(name = "current_step_order")
     private Integer currentStepOrder;
 
-    /** ACTIVE / COMPLETED / PAUSED / CANCELLED */
+
     @Column(name = "status", length = 20)
     private String status;
 

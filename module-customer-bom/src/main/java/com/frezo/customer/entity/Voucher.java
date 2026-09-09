@@ -26,23 +26,18 @@ public class Voucher extends BaseEntity {
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
-    /** PERCENT | FIXED */
     @Column(name = "discount_type", length = 20)
     private String discountType;
 
-    /** Giá trị giảm (% hoặc số tiền cố định) */
     @Column(name = "discount_value", precision = 18, scale = 2)
     private BigDecimal discountValue;
 
-    /** Giá trị đơn hàng tối thiểu để áp dụng */
     @Column(name = "min_order_value", precision = 18, scale = 2)
     private BigDecimal minOrderValue;
 
-    /** Số lần sử dụng tối đa (null = không giới hạn) */
     @Column(name = "max_usage")
     private Integer maxUsage;
 
-    /** Số lần đã dùng */
     @Column(name = "used_count")
     private Integer usedCount = 0;
 
@@ -52,7 +47,6 @@ public class Voucher extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    /** ACTIVE | INACTIVE | EXPIRED */
     @Column(name = "status", length = 20)
     private String status;
 

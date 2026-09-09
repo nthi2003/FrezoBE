@@ -9,9 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface QuoteRepository extends JpaRepository<Quote, String> {
-    Optional<Quote> findByCode(String code);
-    List<Quote> findByCustomerIdAndIsDeletedFalseOrderByIssuedDateDesc(String customerId);
-    List<Quote> findByDealIdAndIsDeletedFalseOrderByIssuedDateDesc(String dealId);
     List<Quote> findByIsDeletedFalseOrderByIssuedDateDesc();
-    long countByIsDeletedFalse();
 }

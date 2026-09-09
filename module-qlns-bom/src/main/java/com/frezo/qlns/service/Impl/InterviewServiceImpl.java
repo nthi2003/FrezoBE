@@ -24,6 +24,9 @@ public class InterviewServiceImpl implements InterviewService {
     private final InterviewRepository interviewRepository;
     private final JobApplicationRepository applicationRepository;
 
+    /**
+     * Tạo mới một buổi phỏng vấn cho hồ sơ ứng tuyển (kiểm tra loại phỏng vấn hợp lệ và hồ sơ tồn tại).
+     */
     @Override
     @Transactional
     public InterviewResponse create(InterviewRequest req) {
@@ -46,6 +49,9 @@ public class InterviewServiceImpl implements InterviewService {
         return toResponse(interviewRepository.save(e));
     }
 
+    /**
+     * Lấy danh sách buổi phỏng vấn của một hồ sơ ứng tuyển, sắp xếp theo thời gian sớm nhất trước.
+     */
     @Override
     public List<InterviewResponse> list(String applicationId) {
         return interviewRepository
@@ -55,6 +61,9 @@ public class InterviewServiceImpl implements InterviewService {
                 .toList();
     }
 
+    /**
+     * Hoàn tất một buổi phỏng vấn: đổi trạng thái thành DONE và lưu điểm/đánh giá nếu có.
+     */
     @Override
     @Transactional
     public InterviewResponse complete(String id, InterviewCompleteRequest req) {
@@ -72,6 +81,9 @@ public class InterviewServiceImpl implements InterviewService {
         return toResponse(interviewRepository.save(e));
     }
 
+    /**
+     * Chuyển entity Interview sang DTO InterviewResponse để trả về cho client.
+     */
     private InterviewResponse toResponse(Interview e) {
         return InterviewResponse.builder()
                 .id(e.getId())

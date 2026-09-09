@@ -24,6 +24,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
     private final FacebookAccountRepository accountRepository;
     private final FacebookAccountMapper accountMapper;
 
+    /** Lấy danh sách tất cả tài khoản Facebook đã lưu. */
     @Override
     public List<FacebookAccountResponse> getAll() {
         return accountRepository.findAll().stream()
@@ -31,11 +32,13 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
                 .toList();
     }
 
+    /** Lấy thông tin chi tiết tài khoản Facebook theo mã định danh. */
     @Override
     public FacebookAccountResponse getById(String id) {
         return accountMapper.toResponse(findById(id));
     }
 
+    /** Tạo mới tài khoản Facebook, kiểm tra trùng username và gán giá trị mặc định cho trạng thái/số bài đăng. */
     @Override
     @Transactional
     public FacebookAccountResponse create(FacebookAccountRequest request) {
@@ -52,6 +55,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         return accountMapper.toResponse(accountRepository.save(entity));
     }
 
+    /** Cập nhật thông tin tài khoản Facebook theo mã định danh. */
     @Override
     @Transactional
     public FacebookAccountResponse update(String id, FacebookAccountRequest request) {
@@ -60,6 +64,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         return accountMapper.toResponse(accountRepository.save(entity));
     }
 
+    /** Xóa tài khoản Facebook theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -67,6 +72,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         accountRepository.deleteById(id);
     }
 
+    /** Cập nhật cookie đăng nhập cho tài khoản Facebook theo mã định danh. */
     @Override
     @Transactional
     public void updateCookie(String id, String cookie) {
@@ -75,6 +81,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         accountRepository.save(entity);
     }
 
+    /** Tăng bộ đếm số bài đăng trong ngày của tài khoản Facebook. */
     @Override
     @Transactional
     public void incrementPostsToday(String id) {
@@ -83,6 +90,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         accountRepository.save(entity);
     }
 
+    /** Đặt lại bộ đếm bài đăng trong ngày về 0 cho mọi tài khoản đang ACTIVE. */
     @Override
     @Transactional
     public void resetDailyPostCount() {
@@ -92,6 +100,7 @@ public class FacebookAccountServiceImpl implements FacebookAccountService {
         log.info("Đã reset postsToday cho {} tài khoản", accounts.size());
     }
 
+    /** Tìm tài khoản Facebook theo mã, ném ngoại lệ nếu không tồn tại. */
     private FacebookAccount findById(String id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(FbAutomationErrorCode.ACCOUNT_NOT_FOUND));

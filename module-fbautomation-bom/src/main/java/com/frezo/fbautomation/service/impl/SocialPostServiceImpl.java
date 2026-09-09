@@ -43,6 +43,7 @@ public class SocialPostServiceImpl implements SocialPostService {
     // ============================================================
     //  CRUD
     // ============================================================
+    /** Tạo mới bài viết đa kênh; trạng thái SCHEDULED nếu có lịch đăng, ngược lại là DRAFT. */
     @Override
     @Transactional
     public SocialPostResponse create(SocialPostRequest req) {
@@ -64,6 +65,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         return toResponse(post);
     }
 
+    /** Cập nhật bài viết theo mã định danh; chặn sửa nếu bài đã PUBLISHED. */
     @Override
     @Transactional
     public SocialPostResponse update(String id, SocialPostRequest req) {
@@ -83,11 +85,13 @@ public class SocialPostServiceImpl implements SocialPostService {
         return toResponse(repository.save(post));
     }
 
+    /** Lấy thông tin chi tiết bài viết theo mã định danh. */
     @Override
     public SocialPostResponse get(String id) {
         return toResponse(mustFind(id));
     }
 
+    /** Xóa mềm bài viết theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -96,6 +100,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         repository.save(post);
     }
 
+    /** Tạo một bản sao nháp (DRAFT) của bài viết có sẵn, tiêu đề thêm hậu tố "(bản sao)". */
     @Override
     @Transactional
     public SocialPostResponse duplicate(String id) {
@@ -115,6 +120,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         return toResponse(repository.save(copy));
     }
 
+    /** Hủy bài viết đang ở trạng thái SCHEDULED, chuyển sang CANCELLED. */
     @Override
     @Transactional
     public SocialPostResponse cancel(String id) {
@@ -126,6 +132,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         return toResponse(repository.save(post));
     }
 
+    /** Đăng ngay lập tức một bài viết qua quy trình publish hiện có, không chờ lịch hẹn. */
     @Override
     @Transactional
     public SocialPostResponse publishNow(String id) {
@@ -134,6 +141,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         return toResponse(post);
     }
 
+    /** Lấy danh sách bài viết, có thể lọc theo trạng thái và kênh, sắp xếp bài mới nhất trước. */
     @Override
     public List<SocialPostResponse> list(String status, String channel) {
         List<SocialPost> all;
@@ -159,6 +167,7 @@ public class SocialPostServiceImpl implements SocialPostService {
     // ============================================================
     //  SCHEDULER — mỗi phút quét bài tới giờ
     // ============================================================
+    /** Quét các bài SCHEDULED tới giờ đăng và publish từng bài; bài lỗi được đánh dấu FAILED kèm retryCount. */
     @Override
     @Transactional
     public void runScheduler() {
@@ -198,6 +207,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         markPublishingManual(post, "Chưa cấu hình " + post.getChannel() + " token — hãy đăng thủ công");
     }
 
+    /** Chuyển bài sang trạng thái PUBLISHING chờ đăng thủ công và gửi thông báo tới tác giả. */
     private void markPublishingManual(SocialPost post, String hint) {
         post.setStatus("PUBLISHING");
         post.setErrorMessage(hint);
@@ -226,11 +236,13 @@ public class SocialPostServiceImpl implements SocialPostService {
     // ============================================================
     //  HELPERS
     // ============================================================
+    /** Tìm bài viết theo mã, ném ngoại lệ nếu không tồn tại. */
     private SocialPost mustFind(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bài viết: " + id));
     }
 
+    /** Lấy username người dùng hiện tại từ SecurityContext, mặc định "system" nếu không xác định được. */
     private String currentUsername() {
         try {
             var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -238,6 +250,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         } catch (Exception ex) { return "system"; }
     }
 
+    /** Rút gọn tiêu đề bài viết tối đa 60 ký tự; dùng nội dung thay thế nếu không có tiêu đề. */
     private String trimTitle(SocialPost p) {
         String s = p.getTitle();
         if (s == null || s.isBlank()) s = p.getContent();
@@ -245,6 +258,7 @@ public class SocialPostServiceImpl implements SocialPostService {
         return s.length() > 60 ? s.substring(0, 60) + "…" : s;
     }
 
+    /** Chuyển đổi thực thể SocialPost sang DTO Response. */
     private SocialPostResponse toResponse(SocialPost p) {
         SocialPostResponse r = new SocialPostResponse();
         r.setId(p.getId());

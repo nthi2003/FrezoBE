@@ -19,6 +19,9 @@ public class TaxConfigServiceImpl implements TaxConfigService {
     private final TaxConfigRepository taxConfigRepository;
     private final TaxConfigMapper taxConfigMapper;
 
+    /**
+     * Lưu mới hoặc cập nhật cấu hình thuế TNCN theo bậc thuế vào hệ thống.
+     */
     @Override
     @Transactional
     public TaxConfigResponse save(TaxConfigRequest request) {
@@ -26,6 +29,9 @@ public class TaxConfigServiceImpl implements TaxConfigService {
         return taxConfigMapper.toResponse(taxConfigRepository.save(entity));
     }
 
+    /**
+     * Lấy danh sách cấu hình thuế đang hoạt động của một năm, sắp xếp theo thứ tự bậc thuế.
+     */
     @Override
     public List<TaxConfigResponse> getByYear(Integer year) {
         return taxConfigRepository.findByYearAndIsActiveTrueOrderByBracketOrderAsc(year)

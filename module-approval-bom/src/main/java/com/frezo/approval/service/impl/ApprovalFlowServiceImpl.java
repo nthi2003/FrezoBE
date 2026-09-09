@@ -27,6 +27,9 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
     private final ApprovalFlowRepository flowRepository;
     private final ApprovalFlowStepRepository flowStepRepository;
 
+    /**
+     * Liệt kê tất cả luồng phê duyệt chưa bị xóa.
+     */
     @Override
     public List<ApprovalFlowDto> list() {
         return flowRepository.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
@@ -34,6 +37,9 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
                 .toList();
     }
 
+    /**
+     * Tạo mới luồng phê duyệt, nếu là luồng active thì tắt các luồng khác cùng loại.
+     */
     @Override
     @Transactional
     public ApprovalFlowDto create(ApprovalFlowRequest req) {
@@ -54,6 +60,10 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
         return toDto(flow);
     }
 
+    /**
+     * Cập nhật luồng phê duyệt, nếu kích hoạt thì tắt các luồng cùng loại.
+     * Xóa cũ và tạo lại danh sách bước nếu có thay đổi.
+     */
     @Override
     @Transactional
     public ApprovalFlowDto update(String id, ApprovalFlowRequest req) {
@@ -91,6 +101,7 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
                 });
     }
 
+    /** Lưu các bước phê duyệt cho một luồng từ danh sách template. */
     private void saveSteps(String flowId, List<ApprovalFlowStepTemplate> steps) {
         if (steps == null) return;
         for (ApprovalFlowStepTemplate t : steps) {
@@ -105,6 +116,7 @@ public class ApprovalFlowServiceImpl implements ApprovalFlowService {
         }
     }
 
+    /** Chuyển entity luồng phê duyệt sang DTO kèm danh sách các bước. */
     private ApprovalFlowDto toDto(ApprovalFlow f) {
         List<ApprovalFlowStepTemplate> steps = flowStepRepository
                 .findByFlowIdAndIsDeletedFalseOrderByStepOrderAsc(f.getId())

@@ -33,6 +33,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
     private final EmailConfigMapper emailConfigMapper;
     private final EmailService emailService;
 
+    /**
+     * Lấy danh sách cấu hình email phân trang theo điều kiện lọc (từ khóa).
+     */
     public PageResponse<EmailConfigResponse> all(EmailConfigFilter filter) {
         Specification<EmailConfig> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
@@ -41,6 +44,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         return PageResponse.from(entities, emailConfigMapper::toResponse);
     }
 
+    /**
+     * Thêm mới cấu hình email sau khi kiểm tra trùng lặp các trường duy nhất.
+     */
     public ApiResponse<?> add(EmailConfigAddRequest request) {
         validateRequest(request);
         EmailConfig emailConfig = emailConfigMapper.toEntity(request);
@@ -53,6 +59,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
 
     }
 
+    /**
+     * Cập nhật cấu hình email theo mã định danh.
+     */
     public ApiResponse<?> edit(String id, EmailConfigEditRequest request) {
         EmailConfig exist = findEntityById(id);
         validateRequestEdit(id, request);
@@ -61,6 +70,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         return ApiResponse.ok(emailConfigMapper.toResponse(saveEmail));
     }
 
+    /**
+     * Xây dựng điều kiện truy vấn cấu hình email (loại bỏ đã xóa, tìm theo từ khóa).
+     */
     private Specification<EmailConfig> createSpecification(EmailConfigFilter filter) {
         Specification<EmailConfig> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE));
@@ -74,6 +86,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         return specification;
     }
 
+    /**
+     * Kiểm tra trùng lặp mã, tên, smtp, tên email khi thêm mới cấu hình.
+     */
     private void validateRequest(EmailConfigAddRequest request) {
         if (emailConfigRepository.existsByCode(request.getCode())) {
             throw new AppException(EmailErrorCode.CODE_EXISTS);
@@ -89,6 +104,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         }
     }
 
+    /**
+     * Kiểm tra trùng lặp (loại trừ bản ghi hiện tại) khi cập nhật cấu hình.
+     */
     private void validateRequestEdit(String id, EmailConfigEditRequest request) {
         if (emailConfigRepository.existsByCodeAndIdNot(request.getCode(), id)) {
             throw new AppException(EmailErrorCode.CODE_EXISTS);
@@ -104,6 +122,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         }
     }
 
+    /**
+     * Vô hiệu hóa (tắt) cấu hình email theo mã định danh.
+     */
     @Transactional
     public void deactivate(String id) {
 
@@ -113,6 +134,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         emailConfigRepository.save(emailConfig);
     }
 
+    /**
+     * Kích hoạt cấu hình email, đồng thời tắt các cấu hình khác đang bật.
+     */
     @Transactional
     public void activate(String id) {
         EmailConfig emailConfig = findEntityById(id);
@@ -126,11 +150,17 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         emailConfigRepository.save(emailConfig);
     }
 
+    /**
+     * Tìm cấu hình email theo id, ném lỗi nếu không tồn tại.
+     */
     protected EmailConfig findEntityById(String id) {
 
         return emailConfigRepository.findById(id).orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_ENTITY_NOT_FOUND));
     }
 
+    /**
+     * Xóa mềm cấu hình email (đánh dấu đã xóa).
+     */
     @Transactional
     public void delete(String id) {
         EmailConfig emailConfig = findEntityById(id);
@@ -138,6 +168,9 @@ public class EmailConfigServiceImpl implements EmailConfigService {
         emailConfigRepository.save(emailConfig);
     }
 
+    /**
+     * Kiểm tra kết nối đến máy chủ email theo cấu hình tương ứng.
+     */
     @Override
     public void testConnection(String id) {
         emailService.testConnection(id);

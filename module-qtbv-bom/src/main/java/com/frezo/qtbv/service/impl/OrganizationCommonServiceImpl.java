@@ -18,6 +18,7 @@ public class OrganizationCommonServiceImpl implements OrganizationCommonService 
 
     private final OrganizationRepository organizationRepository;
 
+    /** Lấy danh sách tất cả tổ chức và chuyển thành dạng OrganizationSimpleResponse. */
     @Override
     @Transactional(readOnly = true)
     public List<OrganizationSimpleResponse> getOrganizationsList() {
@@ -26,6 +27,7 @@ public class OrganizationCommonServiceImpl implements OrganizationCommonService 
                 .toList();
     }
 
+    /** Chuyển đổi một Organization thành OrganizationSimpleResponse, trả về null nếu Organization rỗng. */
     private OrganizationSimpleResponse toOrganizationResponse(Organization organization) {
         if (organization == null) {
             return null;

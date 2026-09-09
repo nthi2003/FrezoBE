@@ -45,6 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
     // Raw messaging primitives
     // ==========================================================
 
+    /** Gửi một thông điệp tới tất cả client đang subscribe vào một topic qua WebSocket. */
     @Override
     public void sendToTopic(String topic, Object payload) {
         try {
@@ -54,6 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    /** Gửi một thông điệp tới một người dùng cụ thể qua WebSocket theo destination riêng của họ. */
     @Override
     public void sendToUser(String username, String destination, Object payload) {
         try {
@@ -67,6 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
     // Legacy — kept for backward compat
     // ==========================================================
 
+    /** Thông báo cho người dùng, tự động gửi email dự phòng nếu là thông báo khẩn cấp (giữ tương thích ngược). */
     @Override
     public void notifyUserWithEmailFallback(String username, String title, String message, boolean urgent) {
         notify(username, title, message,
@@ -78,6 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
     // Rich domain notification (v1.2)
     // ==========================================================
 
+    /** Tạo và lưu thông báo đầy đủ, đẩy realtime qua WebSocket, gửi email khẩn cấp và mobile push nếu cần. */
     @Override
     @Transactional
     public void notify(String username, String title, String message,
@@ -138,6 +142,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    /** Gửi cùng một thông báo đến nhiều người dùng, loại bỏ trùng lặp và tự bỏ qua lỗi của từng người. */
     @Override
     public void notifyMany(List<String> usernames, String title, String message,
                            String type, String entityType, String entityId,
@@ -157,6 +162,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    /** Gửi email dự phòng cho thông báo khẩn cấp, dùng template nếu có, ngược lại gửi HTML thô. */
     private void trySendUrgentEmail(String username, String title, String message) {
         try {
             Optional<User> userOpt = userRepository.findByUserName(username);
@@ -184,6 +190,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
     }
 
+    /** Mã hóa các ký tự đặc biệt thành thực thể HTML để tránh lỗi khi hiển thị trong email. */
     private static String escapeHtml(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;")
@@ -196,11 +203,13 @@ public class NotificationServiceImpl implements NotificationService {
     // Reads
     // ==========================================================
 
+    /** Lấy toàn bộ thông báo của một người dùng, sắp xếp theo thời gian tạo mới nhất trước. */
     @Override
     public List<Notification> getMyNotifications(String username) {
         return notificationRepository.findByUsernameOrderByCreatedAtDesc(username);
     }
 
+    /** Lấy danh sách thông báo phân trang của người dùng, lọc theo tab, loại và từ khóa tìm kiếm. */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<Notification> getMyNotifications(String username, Integer page, Integer size,
@@ -221,6 +230,7 @@ public class NotificationServiceImpl implements NotificationService {
         return PageResponse.from(result);
     }
 
+    /** Xây dựng Specification truy vấn thông báo theo người dùng, tab, loại và từ khóa tìm kiếm. */
     private static Specification<Notification> buildMyNotificationsSpec(
             String username, String tab, String type, String search) {
         return (root, query, cb) -> {
@@ -252,6 +262,7 @@ public class NotificationServiceImpl implements NotificationService {
         };
     }
 
+    /** Đánh dấu một thông báo đã đọc nếu nó tồn tại và chưa được đọc trước đó. */
     @Override
     @Transactional
     public void markAsRead(String notificationId) {
@@ -263,6 +274,7 @@ public class NotificationServiceImpl implements NotificationService {
         });
     }
 
+    /** Đánh dấu tất cả thông báo của người dùng là đã đọc, trả về số lượng đã cập nhật. */
     @Override
     @Transactional
     public int markAllAsRead(String username) {
@@ -270,24 +282,28 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.markAllReadByUsername(username);
     }
 
+    /** Đếm số lượng thông báo chưa đọc của người dùng. */
     @Override
     public long getUnreadCount(String username) {
         if (username == null || username.isBlank()) return 0;
         return notificationRepository.countByUsernameAndIsReadFalse(username);
     }
 
+    /** Đếm tổng số thông báo (đã và chưa đọc) của người dùng. */
     @Override
     public long getTotalCount(String username) {
         if (username == null || username.isBlank()) return 0;
         return notificationRepository.countByUsername(username);
     }
 
+    /** Đếm số lượng thông báo khẩn cấp chưa đọc của người dùng. */
     @Override
     public long getUrgentUnreadCount(String username) {
         if (username == null || username.isBlank()) return 0;
         return notificationRepository.countByUsernameAndPriorityAndIsReadFalse(username, "URGENT");
     }
 
+    /** Tổng hợp số lượng thông báo: chưa đọc, tổng cộng và khẩn cấp chưa đọc của người dùng. */
     @Override
     public Map<String, Long> getNotificationSummary(String username) {
         return Map.of(

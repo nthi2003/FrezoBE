@@ -18,6 +18,9 @@ public class LeaveServiceImpl implements LeaveService {
 
     private final LeaveRecordRepository leaveRepository;
 
+    /**
+     * Tạo bản ghi nghỉ phép mới với trạng thái PENDING.
+     */
     @Override
     @Transactional
     public LeaveRecord create(LeaveRecord request) {
@@ -27,6 +30,9 @@ public class LeaveServiceImpl implements LeaveService {
         return leaveRepository.save(request);
     }
 
+    /**
+     * Phê duyệt đơn nghỉ phép: chuyển trạng thái thành APPROVED và ghi người duyệt.
+     */
     @Override
     @Transactional
     public LeaveRecord approve(String id, String managerId) {
@@ -38,6 +44,9 @@ public class LeaveServiceImpl implements LeaveService {
         return leaveRepository.save(leave);
     }
 
+    /**
+     * Lấy toàn bộ lịch sử nghỉ phép của một nhân viên.
+     */
     @Override
     public List<LeaveRecord> getByPersonId(String personId) {
         // ThiNVQ : Lấy toàn bộ lịch sử nghỉ phép của một nhân viên

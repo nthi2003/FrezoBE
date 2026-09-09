@@ -9,9 +9,5 @@ import java.util.List;
 @Repository
 public interface AssetAssignmentRepository extends JpaRepository<AssetAssignment, String> {
 
-    /** Timeline mới → cũ cho drawer chi tiết. */
     List<AssetAssignment> findByAssetIdOrderByCreatedDateDesc(String assetId);
-
-    /** Tất cả asset 1 người từng giữ (cho tab "Đang giữ" trên profile). */
-    List<AssetAssignment> findByPersonIdOrderByCreatedDateDesc(String personId);
 }

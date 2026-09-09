@@ -47,18 +47,16 @@ public class Customer extends BaseEntity implements PhoneEncryptable {
     private String taxCode;
 
     @Column(name = "type", length = 50)
-    private String type; // e.g. INDIVIDUAL, COMPANY
-
+    private String type;
     @Column(name = "status", length = 50)
-    private String status; // e.g. ACTIVE, INACTIVE
+    private String status;
 
     @Column(name = "category_code", length = 50)
-    private String categoryCode; // Ref to Category with group_code KHTN
+    private String categoryCode;
 
     @Column(name = "note", length = 1000)
     private String note;
 
-    /** URL ảnh đại diện (MinIO / CDN / demo pravatar). */
     @Column(name = "avatar_url", length = 1000)
     private String avatarUrl;
 }

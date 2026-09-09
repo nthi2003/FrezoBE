@@ -27,6 +27,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProductRepository productRepository;
     private final TaskRepository taskRepository;
 
+    /** Tổng hợp các chỉ số tổng quan dashboard: đơn hàng, doanh thu, nhân sự, kho và công việc chờ xử lý. */
     @Override
     public DashboardSummaryResponse getSummary() {
         LocalDate today = LocalDate.now();

@@ -28,16 +28,19 @@ public class PublicServiceImpl implements PublicService {
     private final ProductService productService;
     private final ArticleService articleService;
 
+    /** Lấy cấu hình landing page hiện tại cho khu vực công khai. */
     @Override
     public LandingConfig getLandingConfig() {
         return landingConfigService.getConfig();
     }
 
+    /** Lấy danh sách banner đang hoạt động cho trang công khai. */
     @Override
     public List<Banner> getActiveBanners() {
         return bannerService.findActive();
     }
 
+    /** Lấy danh sách sản phẩm công khai theo bộ lọc, luôn chỉ trả về sản phẩm đang hoạt động. */
     @Override
     public PageResponse<ProductResponse> getProducts(ProductFilterRequest filterRequest) {
         if (filterRequest == null) filterRequest = new ProductFilterRequest();
@@ -45,21 +48,25 @@ public class PublicServiceImpl implements PublicService {
         return productService.filter(filterRequest);
     }
 
+    /** Lấy chi tiết một sản phẩm công khai theo id. */
     @Override
     public ProductResponse getProductDetail(String id) {
         return productService.getById(id);
     }
 
+    /** Lấy danh sách bài viết công khai theo phân trang. */
     @Override
     public PageResponse<ArticleResponse> getArticles(int page, int size) {
         return articleService.getPublicArticles(page, size);
     }
 
+    /** Lấy chi tiết một bài viết công khai theo id. */
     @Override
     public Object getArticleDetail(String id) {
         return articleService.getPublicArticleById(id);
     }
 
+    /** Sinh file sitemap XML chứa các URL chính và URL sản phẩm, bài viết đang hoạt động để phục vụ SEO của trang công khai. */
     @Override
     public String getSitemapXml() {
         LandingConfig config = landingConfigService.getConfig();
@@ -97,6 +104,7 @@ public class PublicServiceImpl implements PublicService {
         return xml.append("</urlset>").toString();
     }
 
+    /** Thêm một URL (location) vào chuỗi XML sitemap kèm thời gian sửa đổi, tần suất thay đổi và độ ưu tiên. */
     private static void appendUrl(StringBuilder xml, String location, LocalDateTime lastModified,
                                   String changeFrequency, String priority) {
         xml.append("<url><loc>").append(escapeXml(location)).append("</loc>");
@@ -109,6 +117,7 @@ public class PublicServiceImpl implements PublicService {
                 .append("<priority>").append(priority).append("</priority></url>");
     }
 
+    /** Thoát các ký tự đặc biệt XML (&, <, >, ", ') để tránh hỏng cấu trúc sitemap. */
     private static String escapeXml(String value) {
         return value.replace("&", "&amp;")
                 .replace("<", "&lt;")

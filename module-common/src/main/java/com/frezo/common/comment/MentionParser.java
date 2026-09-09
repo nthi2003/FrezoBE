@@ -7,9 +7,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Stateless helper — parse {@code @username} từ nội dung comment.
- */
+
 public final class MentionParser {
 
     private static final Pattern MENTION = Pattern.compile("@([A-Za-z0-9._-]+)");

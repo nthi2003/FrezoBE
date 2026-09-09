@@ -57,6 +57,10 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
     @Value("${warehouse.pr.approval.required:true}")
     private boolean approvalRequired;
 
+    /**
+     * Tạo một hoặc nhiều yêu cầu mua từ các cảnh báo tồn kho, nhóm theo nhà cung cấp người dùng thích và kho;
+     * liên kết cảnh báo với dòng yêu cầu tương ứng.
+     */
     @Override
     @Transactional
     public List<PurchaseRequestDto> createFromAlerts(FromAlertsRequest req) {
@@ -130,17 +134,26 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return created;
     }
 
+    /**
+     * Liệt kê toàn bộ yêu cầu mua chưa xóa, sắp xếp theo thời gian tạo giảm dần.
+     */
     @Override
     public FePage<PurchaseRequestDto> list() {
         return FePage.all(prRepository.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
                 .map(this::toDto).toList());
     }
 
+    /**
+     * Lấy chi tiết yêu cầu mua theo id và chuyển thành dữ liệu phản hồi.
+     */
     @Override
     public PurchaseRequestDto get(String id) {
         return toDto(find(id));
     }
 
+    /**
+     * Tạo mới yêu cầu mua ở trạng thái DRAFT: sinh mã, lưu yêu cầu và các dòng chi tiết.
+     */
     @Override
     @Transactional
     public PurchaseRequestDto create(PurchaseRequestSaveRequest req) {
@@ -157,6 +170,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return toDto(pr);
     }
 
+    /**
+     * Cập nhật yêu cầu mua (chỉ cho phép khi đang DRAFT); thay thế toàn bộ dòng chi tiết cũ.
+     */
     @Override
     @Transactional
     public PurchaseRequestDto update(String id, PurchaseRequestSaveRequest req) {
@@ -176,6 +192,10 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return toDto(pr);
     }
 
+    /**
+     * Xóa mềm yêu cầu mua và các dòng chi tiết, đồng thời bỏ liên kết cảnh báo tồn kho;
+     * không cho xóa yêu cầu đang chờ duyệt.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -199,6 +219,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         });
     }
 
+    /**
+     * Trình yêu cầu mua: tạo luồng duyệt (hoặc bỏ qua nếu cấu hình không bắt buộc) và chuyển yêu cầu sang trạng thái phù hợp.
+     */
     @Override
     @Transactional
     public PurchaseRequestDto submit(String id) {
@@ -239,6 +262,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return dto;
     }
 
+    /**
+     * Lưu danh sách các dòng chi tiết vào một yêu cầu mua và liên kết cảnh báo tồn kho tương ứng nếu có.
+     */
     private void saveLines(String prId, List<PurchaseRequestSaveRequest.Line> lines) {
         if (lines == null) return;
         for (PurchaseRequestSaveRequest.Line l : lines) {
@@ -261,6 +287,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         }
     }
 
+    /**
+     * Xác định số lượng đặt hàng lại cho một cảnh báo: ưu tiên reorderQty, rồi hiệu số maxQty - tồn, rồi minQty - tồn.
+     */
     private double resolveQty(ReorderRule rule, StockAlert alert) {
         if (rule != null && rule.getReorderQty() != null && rule.getReorderQty() > 0) {
             return rule.getReorderQty();
@@ -276,16 +305,25 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         return 1.0;
     }
 
+    /**
+     * Sinh mã yêu cầu mua duy nhất dựa trên timestamp hiện tại.
+     */
     private String nextCode() {
         return "PR-" + System.currentTimeMillis();
     }
 
+    /**
+     * Tìm yêu cầu mua chưa xóa theo id; ném lỗi nếu không tồn tại.
+     */
     private PurchaseRequest find(String id) {
         return prRepository.findById(id)
                 .filter(p -> Boolean.FALSE.equals(p.getIsDeleted()) || p.getIsDeleted() == null)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "PR không tồn tại"));
     }
 
+    /**
+     * Chuyển đối tượng yêu cầu mua thành DTO phản hồi kèm các dòng, tên nhà cung cấp, kho và thông tin duyệt.
+     */
     private PurchaseRequestDto toDto(PurchaseRequest pr) {
         List<PurchaseRequestLineDto> lines = lineRepository
                 .findByPurchaseRequestIdAndIsDeletedFalse(pr.getId()).stream()
@@ -314,6 +352,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
                 .build();
     }
 
+    /**
+     * Tra tên nhà cung cấp theo id từ bảng nccs; trả null nếu không tìm thấy.
+     */
     private String resolveSupplierName(String supplierId) {
         if (supplierId == null || supplierId.isBlank()) {
             return null;
@@ -327,6 +368,9 @@ public class PurchaseRequestServiceImpl implements PurchaseRequestService {
         }
     }
 
+    /**
+     * Tra tên kho theo id; trả null nếu không tìm thấy.
+     */
     private String resolveWarehouseName(String warehouseId) {
         if (warehouseId == null || warehouseId.isBlank()) {
             return null;

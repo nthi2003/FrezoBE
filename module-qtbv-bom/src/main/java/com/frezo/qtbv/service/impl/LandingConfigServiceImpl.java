@@ -12,12 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class LandingConfigServiceImpl implements LandingConfigService {
     private final LandingConfigRepository landingConfigRepository;
 
+    /** Lấy cấu hình landing page đang hoạt động, trả về cấu hình rỗng nếu chưa có. */
     @Override
     public LandingConfig getConfig() {
         return landingConfigRepository.findByIsActiveTrue()
                 .orElse(new LandingConfig());
     }
 
+    /** Cập nhật toàn bộ các trường cấu hình landing page (thương hiệu, SEO, social, analytics...) từ dữ liệu truyền vào. */
     @Override
     @Transactional
     public LandingConfig updateConfig(LandingConfig config) {

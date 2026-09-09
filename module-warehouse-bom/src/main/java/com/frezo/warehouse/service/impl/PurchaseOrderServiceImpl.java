@@ -50,17 +50,26 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final GoodsReceiptNoteRepository grnRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Liệt kê toàn bộ đơn đặt hàng chưa xóa, sắp xếp theo thời gian tạo giảm dần.
+     */
     @Override
     public FePage<PurchaseOrderDto> list() {
         return FePage.all(poRepository.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
                 .map(this::toDto).toList());
     }
 
+    /**
+     * Lấy chi tiết đơn đặt hàng theo id và chuyển thành dữ liệu phản hồi.
+     */
     @Override
     public PurchaseOrderDto get(String id) {
         return toDto(find(id));
     }
 
+    /**
+     * Tạo mới đơn đặt hàng ở trạng thái DRAFT: sinh mã, lưu đơn và các dòng chi tiết.
+     */
     @Override
     @Transactional
     public PurchaseOrderDto create(PurchaseOrderSaveRequest req) {
@@ -78,6 +87,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return toDto(po);
     }
 
+    /**
+     * Cập nhật đơn đặt hàng (không cho sửa PO đã RECEIVED); xóa dòng cũ và lưu lại các dòng mới.
+     */
     @Override
     @Transactional
     public PurchaseOrderDto update(String id, PurchaseOrderSaveRequest req) {
@@ -97,6 +109,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return toDto(po);
     }
 
+    /**
+     * Xóa mềm đơn đặt hàng và các dòng chi tiết; không cho xóa PO đã RECEIVED.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -112,6 +127,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         });
     }
 
+    /**
+     * Tạo đơn đặt hàng từ yêu cầu mua đã APPROVED; nếu đã có PO cho PR đó thì trả về PO hiện có (đảm bảo idempotent).
+     */
     @Override
     @Transactional
     public PurchaseOrderDto createFromPr(String prId) {
@@ -161,6 +179,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return toDto(po);
     }
 
+    /**
+     * Xác nhận đã nhận hàng cho PO: ghi nhận số lượng nhận từng dòng, tăng tồn kho và đánh dấu PO là RECEIVED.
+     */
     @Override
     @Transactional
     public PurchaseOrderDto confirmReceive(String id) {
@@ -188,6 +209,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return toDto(poRepository.save(po));
     }
 
+    /**
+     * Tăng tồn kho (balance) của sản phẩm theo kho khi nhận hàng; tạo bản ghi balance mới nếu chưa có.
+     */
     private void increaseStock(String productId, String warehouseId, double qty) {
         if (productId == null || warehouseId == null || qty <= 0) return;
         StockBalance balance = stockBalanceRepository
@@ -212,6 +236,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         stockBalanceRepository.save(balance);
     }
 
+    /**
+     * Lưu danh sách các dòng chi tiết vào một đơn đặt hàng.
+     */
     private void saveLines(String poId, List<PurchaseOrderSaveRequest.Line> lines) {
         if (lines == null) return;
         for (PurchaseOrderSaveRequest.Line l : lines) {
@@ -229,16 +256,25 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
     }
 
+    /**
+     * Sinh mã đơn đặt hàng duy nhất dựa trên timestamp hiện tại.
+     */
     private String nextCode() {
         return "PO-" + System.currentTimeMillis();
     }
 
+    /**
+     * Tìm đơn đặt hàng chưa xóa theo id; ném lỗi nếu không tồn tại.
+     */
     private PurchaseOrder find(String id) {
         return poRepository.findById(id)
                 .filter(p -> Boolean.FALSE.equals(p.getIsDeleted()) || p.getIsDeleted() == null)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "PO không tồn tại"));
     }
 
+    /**
+     * Chuyển đối tượng đơn đặt hàng thành DTO phản hồi kèm các dòng, tên nhà cung cấp, kho và GRN liên kết.
+     */
     private PurchaseOrderDto toDto(PurchaseOrder po) {
         List<PurchaseOrderLineDto> lines = poLineRepository
                 .findByPurchaseOrderIdAndIsDeletedFalse(po.getId()).stream()
@@ -265,6 +301,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .build();
     }
 
+    /**
+     * Chuyển một dòng đơn đặt hàng thành DTO phản hồi kèm thông tin sản phẩm và đơn giá từ GRN.
+     */
     private PurchaseOrderLineDto toLineDto(PurchaseOrderLine l) {
         PurchaseOrderLineDto dto = PurchaseOrderLineDto.builder()
                 .id(l.getId())
@@ -282,6 +321,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return dto;
     }
 
+    /**
+     * Bổ sung mã và tên sản phẩm vào dòng phản hồi qua truy vấn JDBC.
+     */
     private void enrichProductFields(PurchaseOrderLineDto item) {
         if (item.getProductId() == null || item.getProductId().isBlank()) {
             return;
@@ -327,6 +369,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
     }
 
+    /**
+     * Truy xuất các GRN chưa xóa liên kết với một đơn đặt hàng và tóm tắt thông tin từng phiếu.
+     */
     private List<PurchaseOrderDto.LinkedGrnSummary> resolveLinkedGrns(String poId) {
         if (poId == null || poId.isBlank()) {
             return List.of();
@@ -343,6 +388,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Tra tên nhà cung cấp theo id từ bảng nccs; trả null nếu không tìm thấy.
+     */
     private String resolveSupplierName(String supplierId) {
         if (supplierId == null || supplierId.isBlank()) {
             return null;
@@ -356,6 +404,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
     }
 
+    /**
+     * Tra tên kho theo id; trả null nếu không tìm thấy.
+     */
     private String resolveWarehouseName(String warehouseId) {
         if (warehouseId == null || warehouseId.isBlank()) {
             return null;

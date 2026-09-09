@@ -22,6 +22,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
 
     private final LivestreamEventRepository repository;
 
+    /** Lấy danh sách sự kiện livestream, có thể lọc theo trạng thái, sắp xếp theo thời gian lên lịch. */
     @Override
     public List<LivestreamEventResponse> list(String status) {
         return repository.findAll().stream()
@@ -32,11 +33,13 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
                 .toList();
     }
 
+    /** Lấy thông tin chi tiết sự kiện livestream theo mã định danh. */
     @Override
     public LivestreamEventResponse get(String id) {
         return toResponse(mustFind(id));
     }
 
+    /** Tạo mới sự kiện livestream với các giá trị mặc định cho kênh, thời lượng, thông báo trước và trạng thái. */
     @Override
     @Transactional
     public LivestreamEventResponse create(LivestreamEventRequest req) {
@@ -54,6 +57,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return toResponse(repository.save(e));
     }
 
+    /** Cập nhật thông tin sự kiện livestream theo mã định danh. */
     @Override
     @Transactional
     public LivestreamEventResponse update(String id, LivestreamEventRequest req) {
@@ -70,6 +74,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return toResponse(repository.save(e));
     }
 
+    /** Xóa mềm sự kiện livestream theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -78,6 +83,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         repository.save(e);
     }
 
+    /** Đánh dấu sự kiện livestream đã gửi thông báo bằng cách ghi nhận thời gian notifiedAt hiện tại. */
     @Override
     @Transactional
     public LivestreamEventResponse markNotified(String id) {
@@ -86,6 +92,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return toResponse(repository.save(e));
     }
 
+    /** Cập nhật trạng thái sự kiện livestream, chỉ chấp nhận một trong SCHEDULED, LIVE, ENDED, CANCELLED. */
     @Override
     @Transactional
     public LivestreamEventResponse updateStatus(String id, String status) {
@@ -98,6 +105,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return toResponse(repository.save(e));
     }
 
+    /** Tổng hợp số liệu bảng điều khiển: tổng sự kiện, phân loại trạng thái, số sự kiện cần thông báo và 5 sự kiện sắp tới. */
     @Override
     public Map<String, Object> dashboard() {
         List<LivestreamEvent> all = repository.findAll().stream()
@@ -120,6 +128,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return m;
     }
 
+    /** Tìm sự kiện livestream theo mã, ném ngoại lệ nếu không tồn tại hoặc đã xóa mềm. */
     private LivestreamEvent mustFind(String id) {
         LivestreamEvent e = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy livestream"));
@@ -127,6 +136,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return e;
     }
 
+    /** Chuyển đổi thực thể LivestreamEvent sang DTO Response kèm cờ trạng thái cần thông báo. */
     private LivestreamEventResponse toResponse(LivestreamEvent e) {
         LivestreamEventResponse out = new LivestreamEventResponse();
         out.setId(e.getId());
@@ -145,6 +155,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return out;
     }
 
+    /** Kiểm tra sự kiện SCHEDULED có đang nằm trong khoảng thời gian tới hạn cần thông báo trước khi diễn ra hay không. */
     private boolean computeNeedsNotify(LivestreamEvent e) {
         if (!"SCHEDULED".equals(e.getStatus()) || e.getScheduledAt() == null || e.getNotifiedAt() != null) {
             return false;
@@ -155,6 +166,7 @@ public class LivestreamEventServiceImpl implements LivestreamEventService {
         return !now.isBefore(window) && now.isBefore(e.getScheduledAt());
     }
 
+    /** Trả về giá trị mặc định nếu chuỗi null hoặc rỗng. */
     private static String nz(String v, String def) {
         return v == null || v.isBlank() ? def : v.trim();
     }

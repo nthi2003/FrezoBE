@@ -30,6 +30,7 @@ public class ProfitCalculatorServiceImpl implements ProfitCalculatorService {
     private final StockLedgerRepository stockLedgerRepository;
     private final ProfitSettingService profitSettingService;
 
+    /** Tính toán lợi nhuận sản phẩm: doanh thu, giá vốn, chi phí rủi ro, nhân công, cố định, lãi ròng. */
     @Override
     @Transactional(readOnly = true)
     public ProfitCalculateResponse calculate(ProfitCalculateRequest req) {
@@ -83,6 +84,7 @@ public class ProfitCalculatorServiceImpl implements ProfitCalculatorService {
                 .build();
     }
 
+    /** Xác định giá vốn đơn vị: ưu tiên từ sổ kho (GRN/GIN), fallback từ lô nhập. */
     private CostSnapshot resolveUnitCost(String productId) {
         List<StockLedger> inbound = stockLedgerRepository.findByProductId(productId).stream()
                 .filter(l -> l.getUnitCost() != null && l.getUnitCost() > 0)
@@ -105,10 +107,12 @@ public class ProfitCalculatorServiceImpl implements ProfitCalculatorService {
         return new CostSnapshot(0d, "Chưa có giá vốn");
     }
 
+    /** Trả về giá trị Double an toàn, trả 0 nếu null. */
     private static double safe(Double v) {
         return v != null ? v : 0d;
     }
 
+    /** Trả về giá trị phần trăm an toàn, trả 0 nếu null. */
     private static double safePct(Double v) {
         return v != null ? v : 0d;
     }

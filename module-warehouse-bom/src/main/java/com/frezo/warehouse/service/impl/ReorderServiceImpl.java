@@ -57,6 +57,9 @@ public class ReorderServiceImpl implements ReorderService {
     private final JdbcTemplate jdbcTemplate;
     private final StockAlertNotifier stockAlertNotifier;
 
+    /**
+     * Liệt kê danh sách kho chưa xóa dưới dạng các lựa chọn cho giao diện.
+     */
     @Override
     public List<WarehouseOptionDto> listWarehouses() {
         return warehouseRepository.findAll().stream()
@@ -66,6 +69,9 @@ public class ReorderServiceImpl implements ReorderService {
                 .toList();
     }
 
+    /**
+     * Lọc danh sách quy tắc đặt hàng lại theo kho và sản phẩm, sắp xếp theo thời gian cập nhật giảm dần.
+     */
     @Override
     public FePage<ReorderRuleDto> listRules(String warehouseId, String productId) {
         List<ReorderRuleDto> list = ruleRepository.findByIsDeletedFalseOrderByUpdatedDateDesc().stream()
@@ -76,6 +82,9 @@ public class ReorderServiceImpl implements ReorderService {
         return FePage.all(list);
     }
 
+    /**
+     * Tạo mới quy tắc đặt hàng lại cho một cặp sản phẩm + kho (báo lỗi nếu quy tắc đã tồn tại).
+     */
     @Override
     @Transactional
     public ReorderRuleDto create(ReorderRuleRequest req) {
@@ -95,6 +104,9 @@ public class ReorderServiceImpl implements ReorderService {
         return toRuleDto(ruleRepository.save(r));
     }
 
+    /**
+     * Cập nhật các trường của quy tắc đặt hàng lại theo yêu cầu (chỉ cập nhật những trường được cung cấp).
+     */
     @Override
     @Transactional
     public ReorderRuleDto update(String id, ReorderRuleRequest req) {
@@ -110,6 +122,9 @@ public class ReorderServiceImpl implements ReorderService {
         return toRuleDto(ruleRepository.save(r));
     }
 
+    /**
+     * Xóa mềm (soft delete) một quy tắc đặt hàng lại theo id.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -119,6 +134,9 @@ public class ReorderServiceImpl implements ReorderService {
         ruleRepository.save(r);
     }
 
+    /**
+     * Xử lý import quy tắc từ file Excel (hiện là stub MVP, trả về kết quả rỗng).
+     */
     @Override
     public Map<String, Integer> importExcel(MultipartFile file) {
         // MVP stub — FE wizard có thể parse client-side; BE trả 0 để không 501.
@@ -128,6 +146,9 @@ public class ReorderServiceImpl implements ReorderService {
         return result;
     }
 
+    /**
+     * Lọc danh sách cảnh báo tồn kho theo trạng thái và loại, phân trang, kèm thông tin kho/sản phẩm/lô.
+     */
     @Override
     public FePage<StockAlertDto> listAlerts(String status, String alertType, int page, int size) {
         String st = (status == null || status.isBlank() || "all".equalsIgnoreCase(status))
@@ -158,6 +179,9 @@ public class ReorderServiceImpl implements ReorderService {
         return FePage.of(dtos, page, size);
     }
 
+    /**
+     * Đánh dấu một cảnh báo tồn kho là đã xem xét (DISMISSED) và ghi nhận thời điểm xem xét.
+     */
     @Override
     @Transactional
     public StockAlertDto dismiss(String id) {
@@ -169,6 +193,10 @@ public class ReorderServiceImpl implements ReorderService {
         return toAlertDto(alertRepository.save(a));
     }
 
+    /**
+     * Quét các quy tắc đặt hàng lại đang hoạt động, phát hiện sản phẩm dưới ngưỡng minQty,
+     * tạo cảnh báo LOW_STOCK duy nhất theo ngày và gửi thông báo.
+     */
     @Override
     @Transactional
     public void scanAndRaiseAlerts() {
@@ -207,6 +235,9 @@ public class ReorderServiceImpl implements ReorderService {
         log.info("[Reorder] scan done — raised {} alerts from {} rules", raised, rules.size());
     }
 
+    /**
+     * Chuyển một quy tắc đặt hàng lại thành DTO phản hồi kèm tên kho, sản phẩm và danh mục.
+     */
     private ReorderRuleDto toRuleDto(ReorderRule r) {
         Warehouse wh = warehouseRepository.findById(r.getWarehouseId()).orElse(null);
         Product p = productRepository.findById(r.getProductId()).orElse(null);
@@ -226,6 +257,9 @@ public class ReorderServiceImpl implements ReorderService {
                 .build();
     }
 
+    /**
+     * Tra tên danh mục theo id từ bảng categories; trả null nếu không tìm thấy.
+     */
     private String resolveCategoryName(String categoryId) {
         if (categoryId == null || categoryId.isBlank()) {
             return null;
@@ -244,6 +278,9 @@ public class ReorderServiceImpl implements ReorderService {
         }
     }
 
+    /**
+     * Chuyển một cảnh báo thành DTO phản hồi, tra cứu kho, sản phẩm và mã lô trực tiếp từ repository.
+     */
     private StockAlertDto toAlertDto(StockAlert a) {
         Warehouse wh = warehouseRepository.findById(a.getWarehouseId()).orElse(null);
         Product p = productRepository.findById(a.getProductId()).orElse(null);
@@ -256,6 +293,9 @@ public class ReorderServiceImpl implements ReorderService {
         return buildAlertDto(a, wh, p, batchCode);
     }
 
+    /**
+     * Chuyển một cảnh báo thành DTO phản hồi dùng các bản đồ tra cứu kho/sản phẩm/lô đã nạp sẵn.
+     */
     private StockAlertDto toAlertDto(StockAlert a,
                                      Map<String, Warehouse> whMap,
                                      Map<String, Product> prMap,
@@ -270,6 +310,9 @@ public class ReorderServiceImpl implements ReorderService {
         return buildAlertDto(a, wh, p, batchCode);
     }
 
+    /**
+     * Dựng DTO phản hồi cảnh báo từ dữ liệu cảnh báo cùng thông tin kho, sản phẩm và mã lô.
+     */
     private StockAlertDto buildAlertDto(StockAlert a, Warehouse wh, Product p, String batchCode) {
         return StockAlertDto.builder()
                 .id(a.getId())

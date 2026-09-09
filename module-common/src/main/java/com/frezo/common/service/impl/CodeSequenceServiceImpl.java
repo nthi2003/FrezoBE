@@ -9,15 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Thread-safe code generator backed by {@code code_sequences}.
- * <p>
- * Uses PostgreSQL {@code INSERT … ON CONFLICT DO UPDATE … RETURNING} so the
- * first use of a prefix never hits Hibernate's false
- * {@code OptimisticLockException} from {@code lock(PESSIMISTIC_WRITE)} on a
- * row that was not flushed yet (HHH-13659) — which surfaced as HTTP 409
- * {@code error.concurrent.modification} on POST /qtbv/articles.
- */
+
 @Service
 @RequiredArgsConstructor
 public class CodeSequenceServiceImpl implements CodeSequenceService {

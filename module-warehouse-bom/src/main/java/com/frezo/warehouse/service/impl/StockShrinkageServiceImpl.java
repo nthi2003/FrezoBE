@@ -36,6 +36,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
 
+    /** Tạo phiếu hao hụt ở trạng thái DRAFT kèm các dòng sản phẩm bị hao hụt. */
     @Override
     @Transactional
     public ShrinkageResponse create(ShrinkageCreateRequest request) {
@@ -63,6 +64,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
         return buildResponse(shrinkage);
     }
 
+    /** Xác nhận phiếu hao hụt: trừ tồn kho lô, ghi sổ cái và chuyển trạng thái sang CONFIRMED. */
     @Override
     @Transactional
     public ShrinkageResponse confirm(String id) {
@@ -114,6 +116,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
         return buildResponse(shrinkage);
     }
 
+    /** Hủy phiếu hao hụt chưa xác nhận, ghi lý do hủy vào ghi chú. */
     @Override
     @Transactional
     public void cancel(String id, String reason) {
@@ -127,6 +130,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
         shrinkageRepository.save(shrinkage);
     }
 
+    /** Lấy chi tiết phiếu hao hụt theo id. */
     @Override
     public ShrinkageResponse getById(String id) {
         StockShrinkage shrinkage = shrinkageRepository.findById(id)
@@ -135,6 +139,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
         return buildResponse(shrinkage);
     }
 
+    /** Liệt kê danh sách phiếu hao hụt, có thể lọc theo kho hoặc trạng thái. */
     @Override
     public com.frezo.common.response.FePage<ShrinkageResponse> list(String warehouseId, String status) {
         List<StockShrinkage> list;
@@ -152,6 +157,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
         return com.frezo.common.response.FePage.all(list.stream().map(this::buildResponse).toList());
     }
 
+    /** Chuyển entity phiếu hao hụt thành response kèm danh sách dòng và thông tin sản phẩm/lô. */
     private ShrinkageResponse buildResponse(StockShrinkage shrinkage) {
         Warehouse wh = warehouseRepository.findById(shrinkage.getWarehouseId()).orElse(null);
         List<StockShrinkageLine> lines = lineRepository.findByShrinkageIdAndIsDeletedFalse(shrinkage.getId());
@@ -186,6 +192,7 @@ public class StockShrinkageServiceImpl implements StockShrinkageService {
                 .build();
     }
 
+    /** Trừ số lượng tồn kho của sản phẩm tại vị trí/lô theo lượng hao hụt, kiểm tra đủ tồn trước khi trừ. */
     private void deductStockBalance(String productId, String warehouseId, String locationId,
                                     String batchId, double qty) {
         StockBalance balance = stockBalanceRepository

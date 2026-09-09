@@ -56,6 +56,10 @@ public class TicketServiceImpl implements TicketService {
 
 
 
+    /**
+     * Tạo mới ticket, gán reporter từ người dùng hiện tại và mã tự động.
+     * Tự động gán assignee nếu người dùng tạo ticket ở trạng thái RESOLVED.
+     */
     @Override
     @Transactional
     public TicketResponse create(TicketRequest request) {
@@ -87,6 +91,9 @@ public class TicketServiceImpl implements TicketService {
         return toVisibleResponse(saved);
     }
 
+    /**
+     * Cập nhật ticket, kiểm tra quyền, quy tắc trạng thái và gửi thông báo khi gán/thay đổi trạng thái.
+     */
     @Override
     @Transactional
     public TicketResponse update(String id, TicketRequest request) {
@@ -128,6 +135,9 @@ public class TicketServiceImpl implements TicketService {
         return toVisibleResponse(saved);
     }
 
+    /**
+     * Xóa vĩnh viễn ticket, chỉ người có quyền review mới được phép.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -138,12 +148,18 @@ public class TicketServiceImpl implements TicketService {
         ticketRepository.deleteById(id);
     }
 
+    /**
+     * Lấy chi tiết ticket theo mã, kiểm tra quyền trước khi trả về.
+     */
     @Override
     @Transactional(readOnly = true)
     public TicketResponse findById(String id) {
         return toVisibleResponse(requireVisibleTicket(id));
     }
 
+    /**
+     * Liệt kê tất cả ticket mà người dùng hiện tại có quyền xem, kèm số bình luận và tệp đính kèm.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TicketResponse> findAll() {
@@ -159,6 +175,9 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
+    /**
+     * Cập nhật trạng thái ticket theo chuỗi, kiểm tra quy tắc chuyển trạng thái.
+     */
     @Override
     @Transactional
     public TicketResponse updateStatus(String id, String status) {
@@ -186,6 +205,10 @@ public class TicketServiceImpl implements TicketService {
         return toVisibleResponse(saved);
     }
 
+    /**
+     * Giao ticket cho người xử lý. Chỉ admin hoặc người review được phép.
+     * Tự động chuyển trạng thái từ OPEN sang IN_PROGRESS khi gán.
+     */
     @Override
     @Transactional
     public TicketResponse assignTicket(String id, String assigneeId) {
@@ -207,6 +230,10 @@ public class TicketServiceImpl implements TicketService {
         return toVisibleResponse(saved);
     }
 
+    /**
+     * Duyệt ticket ở trạng thái RESOLVED: chấp nhận (CLOSED) hoặc trả lại (IN_PROGRESS).
+     * Ghi chú sẽ được lưu vào resolutionNote và gửi thông báo cho assignee.
+     */
     @Override
     @Transactional
     public TicketResponse review(String id, ReviewRequest request) {
@@ -254,6 +281,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
+    /** Kiểm tra quy tắc chuyển trạng thái ticket, admin được miễn trừ. */
     private void enforceStatusTransition(Ticket ticket, Ticket.TicketStatus from, Ticket.TicketStatus to) {
         if (from == to) return;
         if (accessHelper.isAdmin()) return;
@@ -287,6 +315,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
+    /** Tìm ticket và kiểm tra quyền xem, ném ngoại lệ nếu không có quyền. */
     private Ticket requireVisibleTicket(String id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_NOT_FOUND));
@@ -296,12 +325,14 @@ public class TicketServiceImpl implements TicketService {
         return ticket;
     }
 
+    /** Chuyển ticket sang response kèm thông tin đếm và cờ quyền hạn cho người dùng hiện tại. */
     private TicketResponse toVisibleResponse(Ticket ticket) {
         TicketResponse response = enrichCounts(ticketMapper.toResponse(ticket));
         enrichAccessFlags(response, ticket);
         return response;
     }
 
+    /** Gắn cờ quyền hạn (pendingReview, canReview, canComplete) lên response ticket. */
     private void enrichAccessFlags(TicketResponse response, Ticket ticket) {
         if (response == null || ticket == null) return;
         boolean pending = ticket.getStatus() == Ticket.TicketStatus.RESOLVED;
@@ -311,6 +342,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
+    /** Bổ sung số lượng bình luận, tệp đính kèm và tên danh mục cho một ticket response. */
     private TicketResponse enrichCounts(TicketResponse response) {
         if (response == null || response.getId() == null) return response;
         long comments = commentRepository.countUserComments(SUBJECT_TYPE_TICKET, response.getId());
@@ -321,6 +353,7 @@ public class TicketServiceImpl implements TicketService {
         return response;
     }
 
+    /** Bổ sung số lượng bình luận, tệp đính kèm và tên danh mục theo lô cho danh sách ticket. */
     private void enrichCountsBatch(List<TicketResponse> responses) {
         if (responses == null || responses.isEmpty()) return;
         List<String> ids = responses.stream()
@@ -344,6 +377,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
+    /** Kiểm tra mã danh mục ticket có tồn tại trên hệ thống hay không. */
     private void validateCategoryCode(String code) {
         if (code == null || code.isBlank()) {
             return;
@@ -352,6 +386,7 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new AppException(TaskErrorCode.TICKET_CATEGORY_INVALID, code));
     }
 
+    /** Tải danh sách ánh xạ mã danh mục → tên danh mục (đã xóa bị loại trừ). */
     private Map<String, String> loadCategoryNameMap() {
         Map<String, String> map = new HashMap<>();
         for (TicketCategory c : ticketCategoryRepository.findByIsDeletedFalseOrderBySortOrderAscNameAsc()) {
@@ -362,6 +397,7 @@ public class TicketServiceImpl implements TicketService {
         return map;
     }
 
+    /** Gắn tên danh mục hiển thị lên response ticket từ bản đồ mã → tên. */
     private void enrichCategoryName(TicketResponse response, Map<String, String> categoryNames) {
         if (response == null || response.getCategory() == null) return;
         String name = categoryNames.get(response.getCategory());
@@ -370,6 +406,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
+    /** Đếm số tệp đính kèm theo từng ticket trong danh sách. */
     private Map<String, Integer> attachmentCountsFor(List<String> ticketIds) {
         Map<String, Integer> out = new HashMap<>();
         if (ticketIds == null || ticketIds.isEmpty()) return out;
@@ -381,6 +418,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
 
+    /** Gửi thông báo cho người được gán mới, người bị gỡ bỏ và người báo cáo. */
     private void notifyAssignment(Ticket ticket, String prevAssigneeId, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();
         String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
@@ -432,6 +470,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
+    /** Gửi thông báo thay đổi trạng thái cho reporter và assignee. */
     private void notifyStatusChange(Ticket ticket, Ticket.TicketStatus oldStatus, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();
         String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
@@ -470,6 +509,7 @@ public class TicketServiceImpl implements TicketService {
         );
     }
 
+    /** Gửi thông báo kết quả duyệt (chấp nhận / trả lại) cho assignee. */
     private void notifyReviewResult(Ticket ticket, boolean approved, String actor) {
         String actionUrl = ACTION_URL_PREFIX + ticket.getId();
         String ticketLabel = "#" + safe(ticket.getCode()) + " – " + safe(ticket.getTitle());
@@ -491,6 +531,7 @@ public class TicketServiceImpl implements TicketService {
         );
     }
 
+    /** Giải mã personId thành username, thử tìm theo personId trước rồi theo userName. */
     private String resolveUsername(String personId) {
         if (personId == null || personId.isBlank()) return null;
         return userRepository.findByPersonId(personId)
@@ -499,6 +540,7 @@ public class TicketServiceImpl implements TicketService {
                 .orElse(null);
     }
 
+    /** Trả về nhãn hiển thị tiếng Việt cho trạng thái ticket. */
     private static String statusLabel(Ticket.TicketStatus s) {
         if (s == null) return "—";
         return switch (s) {
@@ -509,11 +551,13 @@ public class TicketServiceImpl implements TicketService {
         };
     }
 
+    /** Kiểm tra ticket có mức ưu tiên cao (URGENT hoặc HIGH) không. */
     private static boolean isUrgent(Ticket t) {
         return t.getPriority() == Ticket.TicketPriority.URGENT
                 || t.getPriority() == Ticket.TicketPriority.HIGH;
     }
 
+    /** Trả về chuỗi rỗng nếu input null để tránh lỗi hiển thị. */
     private static String safe(String s) {
         return s == null ? "" : s;
     }

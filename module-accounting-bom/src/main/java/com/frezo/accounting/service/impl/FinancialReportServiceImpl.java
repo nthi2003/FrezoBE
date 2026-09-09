@@ -30,6 +30,9 @@ public class FinancialReportServiceImpl implements FinancialReportService {
     private final GLService glService;
     private final AccountRepository accountRepository;
 
+    /**
+     * Lập bảng cân đối kế toán trong kỳ: phân loại số dư cuối kỳ các tài khoản thành Tài sản, Nợ phải trả và Vốn chủ sở hữu.
+     */
     @Override
     @Transactional(readOnly = true)
     public BalanceSheetResponse balanceSheet(LocalDate from, LocalDate to) {
@@ -81,6 +84,9 @@ public class FinancialReportServiceImpl implements FinancialReportService {
                 .build();
     }
 
+    /**
+     * Lập báo cáo kết quả kinh doanh trong kỳ: tổng hợp doanh thu, chi phí và tính lợi nhuận ròng.
+     */
     @Override
     @Transactional(readOnly = true)
     public IncomeStatementResponse incomeStatement(LocalDate from, LocalDate to) {
@@ -127,6 +133,9 @@ public class FinancialReportServiceImpl implements FinancialReportService {
                 .build();
     }
 
+    /**
+     * Tính số dư cuối kỳ của một dòng theo tính chất Nợ/Có của loại tài khoản.
+     */
     private BigDecimal closingBalance(TrialBalanceRowResponse row, AccountType type) {
         // Debit nature (ASSET/EXPENSE): closing debit - credit
         // Credit nature (LIABILITY/EQUITY/REVENUE): closing credit - debit
@@ -136,6 +145,9 @@ public class FinancialReportServiceImpl implements FinancialReportService {
         return safe(row.getClosingCredit()).subtract(safe(row.getClosingDebit()));
     }
 
+    /**
+     * Nạp toàn bộ tài khoản chưa xóa vào Map theo mã TK để tra cứu nhanh.
+     */
     private Map<String, Account> loadAccounts() {
         Map<String, Account> map = new HashMap<>();
         for (Account a : accountRepository.findByIsDeletedFalseOrderByCodeAsc()) {
@@ -144,6 +156,9 @@ public class FinancialReportServiceImpl implements FinancialReportService {
         return map;
     }
 
+    /**
+     * Trả về 0 nếu giá trị null, ngược lại trả về giá trị gốc (bảo vệ phép tính số học).
+     */
     private static BigDecimal safe(BigDecimal v) {
         return v != null ? v : BigDecimal.ZERO;
     }

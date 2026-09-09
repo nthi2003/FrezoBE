@@ -15,31 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
-/**
- * Set MDC {@code traceId} + {@code user} cho MỌI request để log tracing.
- * <p>
- * Xem chi tiết: {@code FrezoBE/AI_BACKEND_ENGINEERING_GUIDE.md §8 — Logging}.
- * <p>
- * <b>Hành vi:</b>
- * <ul>
- *   <li>Đọc {@code X-Correlation-Id} header nếu client truyền (dùng cho distributed tracing), ngược lại sinh UUID mới.</li>
- *   <li>Set MDC:
- *     <ul>
- *       <li>{@code traceId} — correlation id</li>
- *       <li>{@code user} — username từ SecurityContext (set lại lần 2 sau khi JwtAuthenticationFilter chạy — hiện tại filter này chạy trước nên chỉ có sau khi auth OK, xem NOTE bên dưới)</li>
- *     </ul>
- *   </li>
- *   <li>Set response header {@code X-Correlation-Id} — FE có thể log/debug với id này.</li>
- *   <li>{@code finally} clear MDC — TRÁNH thread pool leak MDC context.</li>
- * </ul>
- * <p>
- * <b>Order:</b> {@code HIGHEST_PRECEDENCE + 10} — chạy TRƯỚC {@code JwtAuthenticationFilter}
- * để traceId có sẵn cho auth logs. Username sẽ được set trong filter chain sau đó qua wrapper hoặc re-check trong logback pattern.
- * <p>
- * <b>NOTE:</b> vì filter này chạy TRƯỚC auth filter, {@code user} MDC ở đầu request sẽ null. Để log có username,
- * có thể refactor thành 2 filter (trước + sau auth) hoặc dùng logback converter đọc SecurityContext runtime.
- * Approach hiện tại: log user null cho pre-auth logs (chấp nhận được).
- */
+
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class TraceIdFilter extends OncePerRequestFilter {
@@ -70,7 +46,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
         }
     }
 
-    /** Set MDC {@code user} nếu SecurityContext có Authentication. Chỉ có sau JwtAuthenticationFilter. */
+
     private void resolveAndPutUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {

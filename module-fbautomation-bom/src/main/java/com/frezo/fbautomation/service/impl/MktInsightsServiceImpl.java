@@ -38,6 +38,7 @@ public class MktInsightsServiceImpl implements MktInsightsService {
     private final FacebookGroupRepository groupRepository;
     private final PageReviewRepository reviewRepository;
 
+    /** Tổng hợp toàn bộ chỉ số marketing nội bộ (leads, posts, affiliate, ads, reviews) thành một map cho bảng điều khiển. */
     @Override
     public Map<String, Object> dashboard() {
         List<FacebookLead> leads = leadRepository.findAll().stream()

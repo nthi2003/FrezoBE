@@ -32,7 +32,6 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
 
     Page<UserSession> findByIsActiveTrue(Pageable pageable);
 
-    List<UserSession> findByIsActiveTrueAndLastActiveTimeAfter(LocalDateTime since);
 
     @Query("SELECT COUNT(DISTINCT s.username) FROM UserSession s WHERE s.isActive = true AND s.lastActiveTime >= :since")
     long countDistinctOnlineUsers(@Param("since") LocalDateTime since);
@@ -53,5 +52,4 @@ public interface UserSessionRepository extends JpaRepository<UserSession, String
     @Query("UPDATE UserSession s SET s.token = :token WHERE s.username = :username AND s.isActive = true")
     int updateTokenByUsername(@Param("username") String username, @Param("token") String token);
 
-    void deleteByExpiresAtBefore(LocalDateTime dateTime);
 }

@@ -39,6 +39,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
 
     private final EmailConfigRepository emailConfigRepository;
 
+    /**
+     * Lấy danh sách thư trong hòm thư (IMAP) theo thư mục và phân trang.
+     */
     @Override
     public List<EmailInboxResponse> fetchInbox(String configId, String folder, int page, int size) {
         EmailConfig config = getConfig(configId);
@@ -83,6 +86,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         }
     }
 
+    /**
+     * Xác định tên thư mục IMAP thực tế (hỗ trợ đa ngôn ngữ và tiền tố [Gmail]).
+     */
     private String resolveFolderName(Store store, String folder) throws MessagingException {
         if (folder == null || folder.isBlank() || "inbox".equalsIgnoreCase(folder)) {
             return "INBOX";
@@ -93,7 +99,7 @@ public class EmailInboxServiceImpl implements EmailInboxService {
             return folder;
         }
 
-        // 2. Extract simple name (last part after any /) e.g. "[Gmail]/Spam" -> "Spam"
+
         String simpleName = folder.contains("/") ? folder.substring(folder.lastIndexOf("/") + 1) : folder;
 
         // 3. Build candidate names for common locales
@@ -132,6 +138,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         return "INBOX";
     }
 
+    /**
+     * Lấy nội dung chi tiết một email theo UID từ các thư mục IMAP.
+     */
     @Override
     public EmailInboxResponse fetchEmailById(String configId, long uid) {
         EmailConfig config = getConfig(configId);
@@ -162,6 +171,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         }
     }
 
+    /**
+     * Đánh dấu email đã đọc (SEEN) theo UID trong hòm thư đến.
+     */
     @Override
     public void markAsRead(String configId, long uid) {
         EmailConfig config = getConfig(configId);
@@ -190,6 +202,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         }
     }
 
+    /**
+     * Tạo phiên IMAP (imaps) với cấu hình timeout và SSL.
+     */
     private Session createImapSession() {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
@@ -201,6 +216,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         return Session.getInstance(props);
     }
 
+    /**
+     * Chuyển đổi email sang response rút gọn (không nội dung, chỉ thông tin信封).
+     */
     private EmailInboxResponse toResponseLight(Message msg) throws MessagingException {
         EmailInboxResponse.EmailInboxResponseBuilder builder = EmailInboxResponse.builder();
 
@@ -234,6 +252,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         return builder.build();
     }
 
+    /**
+     * Chuyển đổi email sang response đầy đủ kèm nội dung và tệp đính kèm.
+     */
     private EmailInboxResponse toResponse(Message msg) throws MessagingException {
         EmailInboxResponse.EmailInboxResponseBuilder builder = EmailInboxResponse.builder();
 
@@ -278,6 +299,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         return builder.build();
     }
 
+    /**
+     * Xử lý nội dung đa phần (Multipart) để trích xuất text và danh sách tệp đính kèm.
+     */
     private void processMultipart(Multipart multipart, EmailInboxResponse.EmailInboxResponseBuilder builder)
             throws MessagingException, IOException {
         StringBuilder textContent = new StringBuilder();
@@ -308,11 +332,17 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         }
     }
 
+    /**
+     * Lấy cấu hình email theo id, ném lỗi nếu không tồn tại.
+     */
     private EmailConfig getConfig(String configId) {
         return emailConfigRepository.findById(configId)
                 .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
     }
 
+    /**
+     * Suy ra địa chỉ máy chủ IMAP từ SMTP (Gmail, Outlook, Yahoo...).
+     */
     private String deriveImapHost(String smtpHost) {
         if (smtpHost == null) return "imap.gmail.com";
         String lower = smtpHost.toLowerCase();
@@ -323,6 +353,9 @@ public class EmailInboxServiceImpl implements EmailInboxService {
         return smtpHost.replace("smtp", "imap");
     }
 
+    /**
+     * Đóng kết nối IMAP và thư mục một cách an toàn (bỏ qua lỗi).
+     */
     private void closeQuietly(Folder folder, Store store) {
         try {
             if (folder != null && folder.isOpen()) folder.close(false);

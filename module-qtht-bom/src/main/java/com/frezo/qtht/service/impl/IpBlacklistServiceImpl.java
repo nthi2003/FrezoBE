@@ -19,6 +19,9 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
 
     private final IpBlacklistRepository ipBlacklistRepository;
 
+    /**
+     * Thêm một lệnh cấm IP theo số giờ, tự động hết hạn sau khoảng thời gian đã cho.
+     */
     @Override
     public IpBlacklist addBan(String ip, String reason, String bannedBy, Integer hours) {
         LocalDateTime bannedUntil = (hours != null) ? LocalDateTime.now().plusHours(hours) : null;
@@ -33,12 +36,18 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
         return ipBlacklistRepository.save(ban);
     }
 
+    /**
+     * Thêm lệnh cấm IP từ đối tượng yêu cầu BanIpRequest.
+     */
     @Override
     public IpBlacklist addBan(BanIpRequest request) {
         return addBan(request.getIpAddress(), request.getReason(),
                 request.getBannedBy(), request.getHours());
     }
 
+    /**
+     * Thêm một lệnh cấm IP theo số phút, tự động hết hạn sau khoảng thời gian đã cho.
+     */
     @Override
     public IpBlacklist addBanMinutes(String ip, String reason, String bannedBy, Integer minutes) {
         LocalDateTime bannedUntil = (minutes != null) ? LocalDateTime.now().plusMinutes(minutes) : null;
@@ -53,6 +62,9 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
         return ipBlacklistRepository.save(ban);
     }
 
+    /**
+     * Gỡ lệnh cấm IP theo mã định danh, đặt trạng thái active = false và hết hạn ngay.
+     */
     @Override
     public void unban(String id) {
         ipBlacklistRepository.findById(id).ifPresent(ban -> {
@@ -62,6 +74,9 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
         });
     }
 
+    /**
+     * Lấy danh sách tất cả lệnh cấm IP đang hoạt động (active hoặc chưa hết hạn).
+     */
     @Override
     public List<IpBlacklist> getAllActiveBans() {
         LocalDateTime now = LocalDateTime.now();
@@ -70,6 +85,9 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Lấy danh sách địa chỉ IP đang bị cấm (chỉ trả về chuỗi IP).
+     */
     @Override
     public List<String> getAllActiveBanIps() {
         return getAllActiveBans().stream()
@@ -77,6 +95,9 @@ public class IpBlacklistServiceImpl implements IpBlacklistService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Kiểm tra xem một địa chỉ IP có đang bị cấm hay không.
+     */
     @Override
     public boolean isBanned(String ip) {
         return ipBlacklistRepository.findActiveBanByIp(ip, LocalDateTime.now()).isPresent();

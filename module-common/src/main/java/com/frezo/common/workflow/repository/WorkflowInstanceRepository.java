@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface WorkflowInstanceRepository extends JpaRepository<WorkflowInstance, String> {
 
-    /** Instance đang RUNNING/COMPLETED/... của 1 entity. Mỗi entity có tối đa 1 tại 1 thời điểm. */
     Optional<WorkflowInstance> findFirstByEntityTypeAndEntityIdOrderByStartedAtDesc(String entityType, String entityId);
 }

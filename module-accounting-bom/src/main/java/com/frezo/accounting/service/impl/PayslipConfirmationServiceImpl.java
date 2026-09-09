@@ -16,12 +16,18 @@ public class PayslipConfirmationServiceImpl implements PayslipConfirmationServic
 
     private final PayslipConfirmationRepository repo;
 
+    /**
+     * Tìm thông tin xác nhận bảng lương theo mã bảng lương (payrollId).
+     */
     @Override
     @Transactional(readOnly = true)
     public Optional<PayslipConfirmation> find(String payrollId) {
         return repo.findByPayrollId(payrollId);
     }
 
+    /**
+     * Xác nhận bảng lương: tạo mới hoặc cập nhật bản ghi xác nhận, ghi lại thời gian, IP, thiết bị và ghi chú.
+     */
     @Override
     @Transactional
     public PayslipConfirmation confirm(String payrollId, String personId, String note,

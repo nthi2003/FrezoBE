@@ -42,6 +42,9 @@ public class BankStatementServiceImpl implements BankStatementService {
     private final AccountRepository accountRepository;
     private final BankMatchEngine matchEngine;
 
+    /**
+     * Liệt kê danh sách sao kê ngân hàng (chưa xóa), mới nhất trước.
+     */
     @Override
     public List<BankStatementDto> list() {
         return statementRepository.findByIsDeletedFalseOrderByImportedAtDesc().stream()
@@ -49,6 +52,10 @@ public class BankStatementServiceImpl implements BankStatementService {
                 .toList();
     }
 
+    /**
+     * Nhập file CSV sao kê cho tài khoản ngân hàng (mã TK bắt đầu 112), tạo bản sao kê mới
+     * và tự động đối chiếu từng dòng nghiệp vụ với chứng từ kế toán.
+     */
     @Override
     @Transactional
     public BankStatementDto importCsv(String accountId, MultipartFile file) {
@@ -110,6 +117,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return toDto(statementRepository.save(stmt));
     }
 
+    /**
+     * Liệt kê các dòng sao kê của một bản sao kê, lọc theo trạng thái đối chiếu (matched/unmatched/all).
+     */
     @Override
     public FePage<BankStatementLineDto> listLines(String statementId, String status) {
         List<BankStatementLineDto> all = lineRepository
@@ -121,6 +131,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return FePage.all(all);
     }
 
+    /**
+     * Đưa ra các gợi ý chứng từ khớp cho một dòng sao kê chưa đối chiếu (theo chế độ exact/fuzzy).
+     */
     @Override
     public List<MatchSuggestionDto> suggestions(String statementId, String lineId, String mode) {
         BankStatement stmt = findStmt(statementId);
@@ -130,6 +143,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return matchEngine.suggestions(stmt.getAccountId(), line, mode != null ? mode : "exact");
     }
 
+    /**
+     * Đối chiếu thủ công một dòng sao kê với một dòng chứng từ kế toán và cập nhật lại số liệu đã khớp.
+     */
     @Override
     @Transactional
     public BankStatementLineDto match(String lineId, String journalEntryLineId) {
@@ -143,6 +159,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return toLineDto(line);
     }
 
+    /**
+     * Hủy đối chiếu một dòng sao kê đã khớp và cập nhật lại số liệu khớp/chưa khớp.
+     */
     @Override
     @Transactional
     public BankStatementLineDto unmatch(String lineId) {
@@ -156,6 +175,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return toLineDto(line);
     }
 
+    /**
+     * Khóa bản sao kê để ngăn các thao tác đối chiếu/hủy đối chiếu về sau.
+     */
     @Override
     @Transactional
     public BankStatementDto lock(String id) {
@@ -164,6 +186,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return toDto(statementRepository.save(stmt));
     }
 
+    /**
+     * Mở lại bản sao kê đã khóa để có thể tiếp tục đối chiếu.
+     */
     @Override
     @Transactional
     public BankStatementDto reopen(String id) {
@@ -172,6 +197,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         return toDto(statementRepository.save(stmt));
     }
 
+    /**
+     * Ném lỗi nếu bản sao kê đang ở trạng thái LOCKED (không cho match/unmatch).
+     */
     private void assertNotLocked(BankStatement stmt) {
         if (STATUS_LOCKED.equals(stmt.getStatus())) {
             throw new AppException(CommonErrorCode.CONFLICT,
@@ -179,6 +207,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         }
     }
 
+    /**
+     * Tính lại và lưu số dòng đã khớp/chưa khớp của bản sao kê sau khi match/unmatch.
+     */
     private void refreshCounts(String statementId) {
         List<BankStatementLine> lines = lineRepository
                 .findByStatementIdAndIsDeletedFalseOrderByTxnDateAsc(statementId);
@@ -190,6 +221,9 @@ public class BankStatementServiceImpl implements BankStatementService {
         });
     }
 
+    /**
+     * Kiểm tra dòng sao kê có thỏa bộ lọc trạng thái đối chiếu được yêu cầu không.
+     */
     private boolean filterStatus(BankStatementLine l, String status) {
         if (status == null || status.isBlank() || "all".equalsIgnoreCase(status)) return true;
         if ("matched".equalsIgnoreCase(status)) return "MATCHED".equals(l.getMatchStatus());
@@ -197,18 +231,27 @@ public class BankStatementServiceImpl implements BankStatementService {
         return true;
     }
 
+    /**
+     * Tìm bản sao kê theo id, chỉ trả về bản chưa xóa; ném lỗi nếu không tồn tại.
+     */
     private BankStatement findStmt(String id) {
         return statementRepository.findById(id)
                 .filter(s -> Boolean.FALSE.equals(s.getIsDeleted()) || s.getIsDeleted() == null)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Statement không tồn tại"));
     }
 
+    /**
+     * Tìm dòng sao kê theo id, chỉ trả về dòng chưa xóa; ném lỗi nếu không tồn tại.
+     */
     private BankStatementLine findLine(String id) {
         return lineRepository.findById(id)
                 .filter(l -> Boolean.FALSE.equals(l.getIsDeleted()) || l.getIsDeleted() == null)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Line không tồn tại"));
     }
 
+    /**
+     * Chuyển entity BankStatement thành DTO phản hồi.
+     */
     private BankStatementDto toDto(BankStatement s) {
         return BankStatementDto.builder()
                 .id(s.getId())
@@ -224,6 +267,9 @@ public class BankStatementServiceImpl implements BankStatementService {
                 .build();
     }
 
+    /**
+     * Chuyển entity BankStatementLine thành DTO phản hồi.
+     */
     private BankStatementLineDto toLineDto(BankStatementLine l) {
         return BankStatementLineDto.builder()
                 .id(l.getId())

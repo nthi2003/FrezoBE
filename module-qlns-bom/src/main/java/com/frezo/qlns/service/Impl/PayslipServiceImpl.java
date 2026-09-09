@@ -37,6 +37,9 @@ public class PayslipServiceImpl implements PayslipService {
     private final DepartmentRepository departmentRepo;
     private final PayslipConfirmationService confirmationService;
 
+    /**
+     * Lấy phiếu lương của một kỳ lương theo ID, kèm thông tin nhân viên, khoản thu nhập, khấu trừ và trạng thái đã xác nhận.
+     */
     @Override
     @Transactional(readOnly = true)
     public PayslipResponse getPayslip(String payrollId) {
@@ -45,6 +48,9 @@ public class PayslipServiceImpl implements PayslipService {
         return buildPayslip(p, payrollService.getPayrollDetails(payrollId));
     }
 
+    /**
+     * Tổng hợp lũy kế theo năm (YTD) của một nhân viên: tổng gross, net, bảo hiểm, thuế TNCN theo từng tháng trong năm.
+     */
     @Override
     @Transactional(readOnly = true)
     public PayrollYtdResponse getYtd(String personId, Integer year) {
@@ -87,6 +93,9 @@ public class PayslipServiceImpl implements PayslipService {
                 .build();
     }
 
+    /**
+     * Trả về danh sách công thức tính lương mô tả các khoản thu nhập/khoản khấu trừ để hiển thị hướng dẫn cho người dùng.
+     */
     @Override
     public PayslipFormulaResponse getFormulas() {
         List<PayslipFormulaResponse.Formula> list = new ArrayList<>();
@@ -124,6 +133,9 @@ public class PayslipServiceImpl implements PayslipService {
         return PayslipFormulaResponse.builder().formulas(list).build();
     }
 
+    /**
+     * Xác nhận nhân viên đã nhận lương kỳ này (ghi nhận bản xác nhận) rồi trả về phiếu lương mới cập nhật.
+     */
     @Override
     @Transactional
     public PayslipResponse confirmReceived(String payrollId, String note, String ip, String device) {
@@ -135,6 +147,9 @@ public class PayslipServiceImpl implements PayslipService {
 
     // ---------- Helpers ----------
 
+    /**
+     * Dựng đối tượng phiếu lương đầy đủ từ bản ghi Payroll và danh sách chi tiết lương, gồm thông tin nhân viên, các khoản thu nhập, khấu trừ, chấm công và trạng thái xác nhận.
+     */
     private PayslipResponse buildPayslip(Payroll p, List<PayrollDetailResponse> details) {
         Optional<Person> personOpt = personRepo.findById(p.getPersonId());
         String personName = personOpt.map(Person::getName).orElse(null);
@@ -217,15 +232,24 @@ public class PayslipServiceImpl implements PayslipService {
                 .build();
     }
 
+    /**
+     * Tạo nhanh một đối tượng Formula chứa key, nhãn, biểu thức và giải thích cho danh sách công thức lương.
+     */
     private static PayslipFormulaResponse.Formula f(String key, String label, String formula, String explain) {
         return PayslipFormulaResponse.Formula.builder()
                 .key(key).label(label).formula(formula).explanation(explain).build();
     }
 
+    /**
+     * Trả về giá trị BigDecimal an toàn, thay null bằng 0 để tránh lỗi tính toán.
+     */
     private static BigDecimal safe(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
     }
 
+    /**
+     * Chuyển mã trạng thái lương (0/1/2) thành nhãn tiếng Việt hiển thị trên phiếu lương.
+     */
     private static String statusLabel(Integer status) {
         if (status == null) return "Chưa xác định";
         return switch (status) {

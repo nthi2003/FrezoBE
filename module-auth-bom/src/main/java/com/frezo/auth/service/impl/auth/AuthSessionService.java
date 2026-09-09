@@ -4,10 +4,11 @@ import com.frezo.auth.entity.LoginHistory;
 import com.frezo.auth.entity.TokenBlacklist;
 import com.frezo.auth.entity.UserSession;
 import com.frezo.auth.repository.LoginHistoryRepository;
+import com.frezo.auth.mapper.UserSessionMapper;
+import com.frezo.auth.model.CreateUserSession;
 import com.frezo.auth.repository.TokenBlacklistRepository;
 import com.frezo.auth.repository.UserSessionRepository;
 import com.frezo.auth.security.JwtTokenProvider;
-import com.frezo.common.exception.AuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ public class AuthSessionService {
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final LoginHistoryRepository loginHistoryRepository;
     private final JwtTokenProvider tokenProvider;
+    private final UserSessionMapper userSessionMapper;
 
     /** Ghi lịch sử login (SUCCESS / FAILED / 2FA_REQUIRED). */
     public void saveLoginHistory(String username, String ip, String userAgent, String status) {
@@ -62,10 +64,7 @@ public class AuthSessionService {
         log.info("User {} logged out successfully", username);
     }
 
-    /**
-     * Admin / user revoke — deactivate session và blacklist cả access + refresh token
-     * để JWT vẫn còn hạn cũng bị từ chối ngay ở filter.
-     */
+
     public void revokeSessionRecord(UserSession session, String revokedBy) {
         session.setIsActive(false);
         session.setRevokedAt(LocalDateTime.now());
@@ -130,21 +129,17 @@ public class AuthSessionService {
                 .build());
     }
 
-    /**
-     * Tạo session stub trước khi sinh JWT — trả {@code sessionId} để embed vào access/refresh token.
-     */
+
     public String beginSession(String username, String ip, String userAgent) {
         try {
-            UserSession session = UserSession.builder()
+            CreateUserSession request = CreateUserSession.builder()
                     .username(username)
                     .ipAddress(ip)
                     .userAgent(userAgent)
                     .deviceInfo(parseDeviceInfo(userAgent))
-                    .loginTime(LocalDateTime.now())
-                    .lastActiveTime(LocalDateTime.now())
-                    .expiresAt(LocalDateTime.now().plusHours(24))
-                    .isActive(true)
+                    .now(LocalDateTime.now())
                     .build();
+            UserSession session = userSessionMapper.toEntity(request);
             userSessionRepository.save(session);
             return session.getId();
         } catch (Exception e) {

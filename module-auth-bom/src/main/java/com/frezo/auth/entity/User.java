@@ -38,7 +38,6 @@ public class User extends BaseEntity {
     private Integer status;
 
     @Basic(fetch = FetchType.LAZY)
-    /** Hash SHA-256 của OTP / reset token, kèm prefix stage ("OTP:" | "TOK:") — không lưu mã thô. */
     @Column(name = "reset_key", length = 128)
     private String resetKey;
 

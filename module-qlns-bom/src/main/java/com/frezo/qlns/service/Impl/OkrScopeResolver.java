@@ -35,6 +35,9 @@ public class OkrScopeResolver {
     private final PersonRepository personRepository;
     private final DepartmentRepository departmentRepository;
 
+    /**
+     * Lấy personId của user đăng nhập (rỗng nếu chưa liên kết hồ sơ nhân sự).
+     */
     public Optional<String> currentPersonId() {
         String username = SystemUtils.getCurrentUsername();
         if (username == null || username.isBlank()) return Optional.empty();
@@ -43,6 +46,9 @@ public class OkrScopeResolver {
                 .filter(id -> id != null && !id.isBlank());
     }
 
+    /**
+     * Kiểm tra current user là admin hay không (dựa trên flag isAdmin trên hồ sơ nhân sự).
+     */
     public boolean isAdmin() {
         return currentPersonId()
                 .flatMap(personRepository::findByIdAndIsDeletedFalse)
@@ -57,6 +63,10 @@ public class OkrScopeResolver {
     }
 
     /** Person IDs cấp dưới (phòng QL trực tiếp + phòng con), không gồm chính manager. */
+    /**
+     * Trả về danh sách personId cấp dưới (trong phòng quản lý trực tiếp + các phòng con),
+     * không bao gồm chính người quản lý.
+     */
     public List<String> subordinatePersonIds(String managerPersonId) {
         if (managerPersonId == null || managerPersonId.isBlank()) return List.of();
 
@@ -72,6 +82,10 @@ public class OkrScopeResolver {
         return personRepository.findActivePersonIdsByDepartmentIds(deptIds, managerPersonId);
     }
 
+    /**
+     * Kiểm tra quyền xem theo phạm vi: chỉ admin xem "all", chỉ admin/quản lý xem "team",
+     * nếu không đủ quyền sẽ ném lỗi FORBIDDEN.
+     */
     public void assertScopeAllowed(String scope, String currentPersonId) {
         boolean admin = isAdmin();
         boolean manager = isManager(currentPersonId);
@@ -84,6 +98,10 @@ public class OkrScopeResolver {
         }
     }
 
+    /**
+     * Kiểm tra current user có quyền xem OKR của {@code ownerPersonId}
+     * (chính chủ, admin hoặc quản lý cấp trên), nếu không ném lỗi FORBIDDEN.
+     */
     public void assertCanView(String ownerPersonId) {
         String me = currentPersonId().orElse(null);
         if (me == null) {
@@ -104,6 +122,10 @@ public class OkrScopeResolver {
         throw new AppException(CommonErrorCode.FORBIDDEN, "Chỉ chủ OKR hoặc admin được cập nhật");
     }
 
+    /**
+     * Kiểm tra current user được phép gán OKR cho {@code targetOwnerPersonId}
+     * (chính mình, admin hoặc quản lý cấp trên của người được gán).
+     */
     public void assertCanAssignOwner(String targetOwnerPersonId) {
         String me = currentPersonId().orElse(null);
         if (me == null) {
@@ -145,11 +167,17 @@ public class OkrScopeResolver {
         throw new AppException(CommonErrorCode.FORBIDDEN, "Không được công bố OKR ngoài phạm vi quản lý");
     }
 
+    /**
+     * Chuẩn hoá scope về dạng chữ thường không khoảng trắng, rỗng trả về "mine".
+     */
     public static String normalizeScope(String scope) {
         if (scope == null || scope.isBlank()) return "mine";
         return scope.trim().toLowerCase();
     }
 
+    /**
+     * Thu thập toàn bộ id phòng ban của cây phòng (root + các phòng con theo path) vào {@code out}.
+     */
     private void collectDeptTreeIds(Department root, Set<String> out) {
         if (root == null || root.getId() == null) return;
         out.add(root.getId());

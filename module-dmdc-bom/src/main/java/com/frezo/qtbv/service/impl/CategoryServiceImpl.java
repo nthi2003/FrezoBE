@@ -29,6 +29,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
+    /** Liệt kê danh mục theo bộ lọc (nhóm, từ khóa) với phân trang, sắp xếp theo orderIndex. */
     public PageResponse<CategoryResponse> all(CategoryFilter filter) {
         Specification<Category> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.ASC , "orderIndex");
@@ -37,6 +38,7 @@ public class CategoryServiceImpl implements CategoryService {
         return PageResponse.from(entities, categoryMapper::toResponse);
     }
 
+    /** Tạo mới danh mục sau khi kiểm tra trùng mã và tên. */
     @Transactional
     public ApiResponse<?> add(CategoryRequest request) {
         validateRequest(request, null);
@@ -47,6 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     }
 
+    /** Cập nhật danh mục, kiểm tra trùng mã/tên với danh mục khác. */
     @Transactional
     public ApiResponse<?> edit(String id, CategoryRequest request) {
         Category category = findEntityById(id);
@@ -56,16 +59,19 @@ public class CategoryServiceImpl implements CategoryService {
         return ApiResponse.ok(categoryMapper.toResponse(save));
     }
 
+    /** Xem chi tiết danh mục theo ID. */
     public CategoryResponse view (String id) {
         Category category = findEntityById(id);
         return  categoryMapper.toResponse(category);
     }
+    /** Xóa mềm danh mục bằng cách đánh dấu isDeleted = true. */
     public void delete (String id) {
         Category category = findEntityById(id);
         category.setIsDeleted(true);
         categoryRepository.save(category);
     }
 
+    /** Kiểm tra trùng mã, tên và tên tiếng Anh khi tạo/sửa danh mục. */
     private void validateRequest(CategoryRequest request, String excludeId) {
         boolean codeExists = excludeId == null
                 ? categoryRepository.existsByCodeAndIsDeletedFalse(request.getCode())
@@ -91,10 +97,12 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
+    /** Tìm danh mục theo ID, ném ngoại lệ nếu không tồn tại. */
     protected Category findEntityById(String id) {
 
         return categoryRepository.findById(id).orElseThrow(() -> new AppException(DmdcErrorCode.ENTITY_NOT_FOUND));
     }
+    /** Tạo JPA Specification từ bộ lọc danh mục (nhóm, từ khóa). */
     private Specification<Category> createSpecification (CategoryFilter filter) {
         Specification<Category> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted" , Boolean.FALSE));

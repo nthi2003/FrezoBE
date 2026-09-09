@@ -34,6 +34,7 @@ public class StockTakeServiceImpl implements StockTakeService {
     private final StockBalanceRepository stockBalanceRepository;
     private final WarehouseRepository warehouseRepository;
 
+    /** Liệt kê danh sách phiếu kiểm kê, có thể lọc theo kho. */
     @Override
     public List<StockTakeResponse> list(String warehouseId) {
         List<StockTake> list = warehouseId != null
@@ -42,11 +43,13 @@ public class StockTakeServiceImpl implements StockTakeService {
         return list.stream().map(this::toDto).toList();
     }
 
+    /** Lấy chi tiết một phiếu kiểm kê theo id. */
     @Override
     public StockTakeResponse get(String id) {
         return toDto(find(id));
     }
 
+    /** Tạo phiếu kiểm kê mới ở trạng thái DRAFT, tự động ghi lượng tồn hệ thống cho từng dòng sản phẩm. */
     @Override
     @Transactional
     public StockTakeResponse create(StockTakeRequest req) {
@@ -79,6 +82,7 @@ public class StockTakeServiceImpl implements StockTakeService {
         return toDto(st);
     }
 
+    /** Bắt đầu kiểm kê: chuyển trạng thái phiếu từ DRAFT sang IN_PROGRESS. */
     @Override
     @Transactional
     public StockTakeResponse start(String id) {
@@ -91,6 +95,7 @@ public class StockTakeServiceImpl implements StockTakeService {
         return toDto(stockTakeRepository.save(st));
     }
 
+    /** Nhập và lưu số lượng kiểm đếm thực tế cho các dòng, tính chênh lệch và chuyển phiếu sang SUBMITTED. */
     @Override
     @Transactional
     public StockTakeResponse submitCounted(String id, List<StockTakeLineRequest> lines) {
@@ -116,6 +121,7 @@ public class StockTakeServiceImpl implements StockTakeService {
         return toDto(stockTakeRepository.save(st));
     }
 
+    /** Đăng chênh lệch kiểm kê: ghi nhận các dòng có chênh lệch và chuyển phiếu sang POSTED (hiện nghiệp vụ điều chỉnh sẽ mở rộng sau). */
     @Override
     @Transactional
     public StockTakeResponse postVariance(String id) {
@@ -136,12 +142,14 @@ public class StockTakeServiceImpl implements StockTakeService {
         return toDto(stockTakeRepository.save(st));
     }
 
+    /** Tìm phiếu kiểm kê chưa bị xóa theo id, ném lỗi nếu không tồn tại. */
     private StockTake find(String id) {
         return stockTakeRepository.findById(id)
                 .filter(s -> Boolean.FALSE.equals(s.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Stock take không tồn tại"));
     }
 
+    /** Chuyển entity phiếu kiểm kê thành response kèm danh sách dòng và thông tin kho. */
     private StockTakeResponse toDto(StockTake st) {
         List<StockTakeLineResponse> lines = lineRepository.findByStockTakeIdAndIsDeletedFalse(st.getId())
                 .stream()
@@ -158,14 +166,17 @@ public class StockTakeServiceImpl implements StockTakeService {
                 .lines(lines).build();
     }
 
+    /** Lấy tên kho theo id cho response. */
     private String resolveWarehouseName(String warehouseId) {
         return resolveWarehouse(warehouseId).map(Warehouse::getName).orElse(null);
     }
 
+    /** Lấy mã kho theo id cho response. */
     private String resolveWarehouseCode(String warehouseId) {
         return resolveWarehouse(warehouseId).map(Warehouse::getCode).orElse(null);
     }
 
+    /** Truy vấn kho theo id, trả về Optional rỗng nếu warehouseId không hợp lệ. */
     private java.util.Optional<Warehouse> resolveWarehouse(String warehouseId) {
         if (warehouseId == null || warehouseId.isBlank()) {
             return java.util.Optional.empty();

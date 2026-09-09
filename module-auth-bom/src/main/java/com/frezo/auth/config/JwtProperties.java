@@ -33,9 +33,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class JwtProperties {
 
-    /**
-     * HMAC secret key. Tối thiểu 64 bytes cho HS512. KHÔNG hardcode default — bắt buộc set env.
-     */
+
     @NotBlank(message = "JWT secret must be provided via APP_SECURITY_JWT_SECRET env var (min 64 bytes)")
     @Size(min = 64, message = "JWT secret must be at least 64 bytes for HS512 (received: {actualLength})")
     private String secret;

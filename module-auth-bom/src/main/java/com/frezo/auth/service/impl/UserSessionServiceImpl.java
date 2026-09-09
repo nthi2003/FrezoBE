@@ -4,7 +4,7 @@ import com.frezo.auth.entity.UserSession;
 import com.frezo.auth.repository.UserSessionRepository;
 import com.frezo.auth.service.UserSessionService;
 import com.frezo.auth.service.impl.auth.AuthSessionService;
-import com.frezo.common.exception.AuthException;
+import com.frezo.common.exception.QTHTException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,21 +24,24 @@ public class UserSessionServiceImpl implements UserSessionService {
     private final UserSessionRepository userSessionRepository;
     private final AuthSessionService authSessionService;
 
+
     @Override
     public List<UserSession> getActiveSessions(String username) {
         return userSessionRepository.findByUsernameAndIsActiveTrue(username);
     }
+
 
     @Override
     public Page<UserSession> getActiveSessions(String username, Pageable pageable) {
         return userSessionRepository.findByUsernameAndIsActiveTrue(username, pageable);
     }
 
+
     @Override
     @Transactional
     public void revokeSession(String sessionId, String revokedBy) {
         UserSession session = userSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new AuthException("Session not found"));
+                .orElseThrow(() -> new QTHTException("Session not found"));
         authSessionService.revokeSessionRecord(session, revokedBy);
     }
 
@@ -63,6 +66,7 @@ public class UserSessionServiceImpl implements UserSessionService {
         return revoked;
     }
 
+
     @Override
     @Transactional
     public void revokeAllOtherSessions(String username, String currentSessionId, String revokedBy) {
@@ -74,10 +78,12 @@ public class UserSessionServiceImpl implements UserSessionService {
         log.info("Revoked {} other sessions for user {}", otherSessions.size(), username);
     }
 
+
     @Override
     public long countActiveSessions(String username) {
         return userSessionRepository.countByUsernameAndIsActiveTrue(username);
     }
+
 
     @Override
     @Transactional
@@ -121,16 +127,19 @@ public class UserSessionServiceImpl implements UserSessionService {
         return false;
     }
 
+
     @Override
     public long countAllActiveSessions() {
         return userSessionRepository.countByIsActiveTrue();
     }
+
 
     @Override
     public long countOnlineUsers(int onlineSeconds) {
         int seconds = onlineSeconds <= 0 ? 90 : Math.min(onlineSeconds, 3600);
         return userSessionRepository.countDistinctOnlineUsers(LocalDateTime.now().minusSeconds(seconds));
     }
+
 
     @Override
     public Page<UserSession> getAllActiveSessions(Pageable pageable) {

@@ -4,7 +4,7 @@ import com.frezo.auth.entity.User;
 import com.frezo.auth.repository.UserRepository;
 import com.frezo.common.audit.AuditLogService;
 import com.frezo.common.constant.BlockReason;
-import com.frezo.common.exception.AuthException;
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.service.IpBlockService;
 import com.frezo.common.service.NotificationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,16 +48,16 @@ public class AuthPasswordResetService {
     private static final int MAX_VERIFY_ATTEMPTS = 5;
     private static final int RESEND_COOLDOWN_SECONDS = 60;
 
-    /** Prefix phân tách 2 giai đoạn trong cùng cột {@code reset_key} — OTP không dùng thay token được. */
+
     private static final String OTP_PREFIX = "OTP:";
     private static final String TOKEN_PREFIX = "TOK:";
     private static final int STATUS_ACTIVE = 1;
     private static final String LOCKED_MESSAGE = "Bạn đã nhập sai OTP quá " + MAX_VERIFY_ATTEMPTS
             + " lần. Tài khoản đã bị khóa, vui lòng liên hệ quản trị viên.";
 
-    /** Đếm số lần nhập OTP sai theo email, reset khi OTP mới được phát hành hoặc khi verify thành công. */
+
     private final Map<String, AttemptCounter> verifyAttempts = new ConcurrentHashMap<>();
-    /** Thời điểm phát hành OTP gần nhất theo email — chặn spam gửi mail. */
+
     private final Map<String, LocalDateTime> lastOtpSentAt = new ConcurrentHashMap<>();
 
     private final UserRepository userRepository;
@@ -66,24 +66,20 @@ public class AuthPasswordResetService {
     private final IpBlockService ipBlockService;
     private final AuditLogService auditLogService;
 
-    /**
-     * Sinh OTP 6 số, lưu {@code resetKey}/{@code resetDate}, gửi email.
-     * Luôn trả success (không tiết lộ email có tồn tại hay không).
-     */
+
     public void forgotPassword(String email) {
         if (!StringUtils.hasText(email)) {
-            throw new AuthException("Email không được để trống");
+            throw new QTHTException("email.required");
         }
         String normalized = normalizeEmail(email);
 
         LocalDateTime lastSent = lastOtpSentAt.get(normalized);
         if (lastSent != null && lastSent.plusSeconds(RESEND_COOLDOWN_SECONDS).isAfter(LocalDateTime.now())) {
-            throw new AuthException("Vui lòng đợi " + RESEND_COOLDOWN_SECONDS + " giây trước khi yêu cầu mã mới");
+            throw new QTHTException("Vui lòng đợi " + RESEND_COOLDOWN_SECONDS + " giây trước khi yêu cầu mã mới");
         }
         lastOtpSentAt.put(normalized, LocalDateTime.now());
 
         userRepository.findByEmailIgnoreCase(normalized).ifPresentOrElse(user -> {
-            // Tài khoản đang bị khóa thì không phát OTP — vẫn trả success để không dò được trạng thái.
             if (user.getStatus() != null && user.getStatus() != STATUS_ACTIVE) {
                 log.warn("Forgot-password requested for locked account {}", user.getUserName());
                 return;
@@ -110,50 +106,42 @@ public class AuthPasswordResetService {
             } catch (Exception e) {
                 log.error("Failed to send password-reset OTP email to {}: {}", user.getEmail(), e.getMessage());
             }
-            // Không log mã OTP ở bất kỳ level nào — chỉ email của chủ tài khoản mới thấy mã.
             log.info("Password reset OTP generated for user {}", user.getUserName());
         }, () -> log.info("Forgot-password requested for unknown email: {}", normalized));
     }
 
-    /**
-     * Xác thực OTP của riêng email đó. Thành công thì OTP bị tiêu huỷ ngay và thay bằng
-     * reset token dùng 1 lần — client phải gửi token này khi đặt mật khẩu mới.
-     *
-     * @return reset token (dùng cho {@link #resetPassword(String, String, String)})
-     */
     public String verifyResetOtp(String email, String otp) {
         if (!StringUtils.hasText(email)) {
-            throw new AuthException("Email không được để trống");
+            throw new QTHTException("email.required");
         }
         if (!StringUtils.hasText(otp)) {
-            throw new AuthException("Mã OTP không được để trống");
+            throw new QTHTException("otp.required");
         }
         String normalized = normalizeEmail(email);
         String candidate = otp.trim();
 
         AttemptCounter counter = verifyAttempts.computeIfAbsent(normalized, k -> new AttemptCounter());
         if (counter.isExhausted()) {
-            throw new AuthException(LOCKED_MESSAGE);
+            throw new QTHTException(LOCKED_MESSAGE);
         }
 
         User user = userRepository.findByEmailIgnoreCase(normalized).orElse(null);
-        // Email lạ / user chưa xin OTP: trả cùng thông báo với OTP sai để không dò được email
         if (user == null || !StringUtils.hasText(user.getResetKey()) || user.getResetDate() == null) {
             counter.increment();
-            throw new AuthException("Mã OTP không hợp lệ");
+            throw new QTHTException("otp.invalid");
         }
         if (user.getResetDate().isBefore(LocalDateTime.now())) {
-            throw new AuthException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.");
+            throw new QTHTException("otp.exp");
         }
         if (!constantTimeEquals(user.getResetKey(), OTP_PREFIX + sha256(candidate))) {
             counter.increment();
             int remaining = Math.max(0, MAX_VERIFY_ATTEMPTS - counter.getCount());
             if (remaining > 0) {
                 log.warn("Wrong reset OTP for user {} ({} attempts left)", user.getUserName(), remaining);
-                throw new AuthException("Mã OTP không đúng. Bạn còn " + remaining + " lần thử.");
+                throw new QTHTException("otp.incorrect");
             }
             lockAfterBruteForce(user, counter.getCount());
-            throw new AuthException(LOCKED_MESSAGE);
+            throw new QTHTException(LOCKED_MESSAGE);
         }
 
         String resetToken = generateResetToken();
@@ -166,10 +154,6 @@ public class AuthPasswordResetService {
         return resetToken;
     }
 
-    /**
-     * Sai OTP quá {@link #MAX_VERIFY_ATTEMPTS} lần: huỷ OTP, khóa tài khoản, đưa IP vào
-     * blacklist và ghi audit log để admin theo dõi ở trang Bảo mật hệ thống.
-     */
     private void lockAfterBruteForce(User user, int attempts) {
         user.setResetKey(null);
         user.setResetDate(null);
@@ -194,28 +178,28 @@ public class AuthPasswordResetService {
                 user.getUserName(), attempts, ip);
     }
 
-    /** Đặt mật khẩu mới bằng reset token đã cấp ở bước verify OTP. */
+
     public void resetPassword(String email, String resetToken, String newPassword) {
         if (!StringUtils.hasText(email)) {
-            throw new AuthException("Email không được để trống");
+            throw new QTHTException("email.required");
         }
         if (!StringUtils.hasText(resetToken)) {
-            throw new AuthException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại.");
+            throw new QTHTException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại.");
         }
         if (!StringUtils.hasText(newPassword) || newPassword.length() < MIN_PASSWORD_LENGTH) {
-            throw new AuthException("Mật khẩu mới phải có ít nhất " + MIN_PASSWORD_LENGTH + " ký tự");
+            throw new QTHTException("Mật khẩu mới phải có ít nhất " + MIN_PASSWORD_LENGTH + " ký tự");
         }
 
         String normalized = normalizeEmail(email);
         User user = userRepository.findByEmailIgnoreCase(normalized)
-                .orElseThrow(() -> new AuthException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại."));
+                .orElseThrow(() -> new QTHTException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại."));
 
         if (!StringUtils.hasText(user.getResetKey())
                 || !constantTimeEquals(user.getResetKey(), TOKEN_PREFIX + sha256(resetToken.trim()))) {
-            throw new AuthException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại.");
+            throw new QTHTException("Phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực OTP lại.");
         }
         if (user.getResetDate() == null || user.getResetDate().isBefore(LocalDateTime.now())) {
-            throw new AuthException("Phiên đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu mã mới.");
+            throw new QTHTException("Phiên đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu mã mới.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -231,19 +215,18 @@ public class AuthPasswordResetService {
         return email.trim().toLowerCase();
     }
 
-    /** 6 số từ {@link SecureRandom} — mọi mã 000000–999999 đều có thể ra, kể cả số 0 đứng đầu. */
+
     private static String generateOtp() {
         return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
     }
 
-    /** Token 32 hex ký tự (128 bit) — không đoán được, chỉ lưu hash trong DB. */
+
     private static String generateResetToken() {
         byte[] bytes = new byte[16];
         SECURE_RANDOM.nextBytes(bytes);
         return HexFormat.of().formatHex(bytes);
     }
 
-    /** Lưu hash thay vì mã thô: DB bị đọc cũng không dùng lại được OTP/token. */
     private static String sha256(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -266,7 +249,6 @@ public class AuthPasswordResetService {
                 actual.getBytes(StandardCharsets.UTF_8));
     }
 
-    /** Bộ đếm số lần nhập sai, tự hết hiệu lực sau khi OTP hết hạn. */
     private static final class AttemptCounter {
         private int count;
         private LocalDateTime firstAttemptAt = LocalDateTime.now();

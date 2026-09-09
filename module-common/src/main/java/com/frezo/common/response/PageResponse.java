@@ -34,36 +34,28 @@ import java.util.function.Function;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PageResponse<T> {
 
-    /** 0-based page number. */
+
     private int pageNumber;
 
     private int pageSize;
 
-    /** Total elements across all pages. */
     private long total;
 
-    /** Total pages. */
     private int totalPages;
 
     private boolean hasNext;
 
     private boolean hasPrevious;
 
-    /** Optional — field đang sort. */
+
     private String sortBy;
 
-    /** Optional — direction: "asc" hoặc "desc". */
+
     private String sortDir;
 
     private List<T> items;
 
-    // ----------------------------------------------------------------
-    // Factory — khuyến nghị dùng
-    // ----------------------------------------------------------------
 
-    /**
-     * Tạo {@code PageResponse<T>} từ Spring {@link Page} — dữ liệu đã đúng type T.
-     */
     public static <T> PageResponse<T> from(Page<T> page) {
         return PageResponse.<T>builder()
                 .pageNumber(page.getNumber())
@@ -78,9 +70,7 @@ public class PageResponse<T> {
                 .build();
     }
 
-    /**
-     * Tạo {@code PageResponse<T>} từ {@code Page<E>} + mapper — thường dùng khi entity → DTO trong service.
-     */
+
     public static <E, T> PageResponse<T> from(Page<E> page, Function<E, T> mapper) {
         return PageResponse.<T>builder()
                 .pageNumber(page.getNumber())
@@ -95,9 +85,7 @@ public class PageResponse<T> {
                 .build();
     }
 
-    /**
-     * PageResponse rỗng — dùng khi input filter không hợp lệ / không có kết quả.
-     */
+
     public static <T> PageResponse<T> empty(int pageNumber, int pageSize) {
         return PageResponse.<T>builder()
                 .pageNumber(pageNumber)
@@ -110,14 +98,7 @@ public class PageResponse<T> {
                 .build();
     }
 
-    // ----------------------------------------------------------------
-    // Backward-compat factory
-    // ----------------------------------------------------------------
 
-    /**
-     * @deprecated dùng {@link #from(Page)} hoặc {@link #from(Page, Function)}.
-     * Factory cũ để backward-compat với code đang gọi.
-     */
     @Deprecated(since = "1.1", forRemoval = false)
     public static <T> PageResponse<T> of(int pageNumber, int pageSize, Page<?> page, List<T> items) {
         return PageResponse.<T>builder()
@@ -131,9 +112,6 @@ public class PageResponse<T> {
                 .build();
     }
 
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
 
     private static String extractSortBy(Sort sort) {
         if (sort == null || sort.isUnsorted()) return null;

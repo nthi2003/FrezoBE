@@ -34,6 +34,9 @@ public class OkrServiceImpl implements OkrService {
     private final OkrKeyResultRepository keyResultRepository;
     private final OkrScopeResolver scopeResolver;
 
+    /**
+     * Lấy danh sách OKR theo phạm vi (của tôi / team / tất cả) kèm ngữ cảnh quyền của người xem.
+     */
     @Override
     public OkrListResponse list(String scope, String ownerPersonId) {
         String me = scopeResolver.currentPersonId()
@@ -57,6 +60,9 @@ public class OkrServiceImpl implements OkrService {
                 .build();
     }
 
+    /**
+     * Lấy danh sách OKR của toàn bộ nhân viên (hoặc theo chủ sở hữu nếu có chỉ định).
+     */
     private List<Okr> listAll(String ownerPersonId) {
         if (ownerPersonId != null && !ownerPersonId.isBlank()) {
             return okrRepository.findByOwnerPersonIdAndIsDeletedFalse(ownerPersonId);
@@ -64,6 +70,9 @@ public class OkrServiceImpl implements OkrService {
         return okrRepository.findByIsDeletedFalseOrderByCreatedDateDesc();
     }
 
+    /**
+     * Lấy danh sách OKR của nhân viên trong team do người xem quản lý (kiểm tra quyền nếu lọc theo owner).
+     */
     private List<Okr> listTeam(String me, boolean admin, String ownerPersonId) {
         List<String> subIds = scopeResolver.subordinatePersonIds(me);
         if (ownerPersonId != null && !ownerPersonId.isBlank()) {
@@ -76,6 +85,9 @@ public class OkrServiceImpl implements OkrService {
         return okrRepository.findByOwnerPersonIdInAndIsDeletedFalseOrderByCreatedDateDesc(subIds);
     }
 
+    /**
+     * Dựng ngữ cảnh hiển thị (các phạm vi được phép xem) cho người dùng hiện tại.
+     */
     private OkrViewerContext buildViewer(String personId, boolean admin, boolean manager) {
         List<String> scopes = new ArrayList<>();
         scopes.add("mine");
@@ -89,6 +101,9 @@ public class OkrServiceImpl implements OkrService {
                 .build();
     }
 
+    /**
+     * Lấy chi tiết một OKR theo id sau khi kiểm tra quyền xem.
+     */
     @Override
     public OkrResponse get(String id) {
         Okr okr = find(id);
@@ -96,6 +111,9 @@ public class OkrServiceImpl implements OkrService {
         return toResponse(okr);
     }
 
+    /**
+     * Tạo mới OKR: xác thực dữ liệu, gán chủ sở hữu, lưu key results, tính tiến độ và publish nếu được yêu cầu.
+     */
     @Override
     @Transactional
     public OkrResponse create(OkrRequest req) {
@@ -136,6 +154,9 @@ public class OkrServiceImpl implements OkrService {
         return toResponse(okr);
     }
 
+    /**
+     * Cập nhật OKR: sửa các trường được gửi, thay thế key results và tính lại tiến độ.
+     */
     @Override
     @Transactional
     public OkrResponse update(String id, OkrRequest req) {
@@ -172,6 +193,9 @@ public class OkrServiceImpl implements OkrService {
         return toResponse(okr);
     }
 
+    /**
+     * Xoá mềm một OKR theo id.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -181,6 +205,9 @@ public class OkrServiceImpl implements OkrService {
         okrRepository.save(okr);
     }
 
+    /**
+     * Cập nhật giá trị hiện tại của các key result (check-in) và tính lại tiến độ OKR.
+     */
     @Override
     @Transactional
     public OkrResponse checkIn(String id, OkrCheckInRequest req) {
@@ -203,6 +230,9 @@ public class OkrServiceImpl implements OkrService {
         return toResponse(okr);
     }
 
+    /**
+     * Publish OKR để chia sẻ cho các bên liên quan.
+     */
     @Override
     @Transactional
     public OkrResponse publish(String id) {
@@ -211,6 +241,9 @@ public class OkrServiceImpl implements OkrService {
         return toResponse(okr);
     }
 
+    /**
+     * Thực hiện publish: kiểm tra quyền, đánh dấu published và ghi thông tin người publish.
+     */
     private void publishInternal(Okr okr) {
         scopeResolver.assertCanPublish(okr.getScopeType(), okr.getOwnerPersonId(), okr.getDepartmentId());
         okr.setPublished(true);
@@ -220,6 +253,9 @@ public class OkrServiceImpl implements OkrService {
         okrRepository.save(okr);
     }
 
+    /**
+     * Lưu danh sách key results mới cho một OKR kèm thứ tự sắp xếp và tiến độ khởi tạo.
+     */
     private void saveKeyResults(String okrId, List<OkrKeyResultRequest> list, boolean createNew) {
         if (list == null) return;
         int order = 0;
@@ -238,6 +274,9 @@ public class OkrServiceImpl implements OkrService {
         }
     }
 
+    /**
+     * Tính lại tiến độ OKR bằng trung bình tiến độ các key results và lưu xuống DB.
+     */
     private void recalculateProgress(Okr okr) {
         List<OkrKeyResult> krs = keyResultRepository.findByOkrIdAndIsDeletedFalseOrderBySortOrderAsc(okr.getId());
         if (krs.isEmpty()) {
@@ -251,18 +290,27 @@ public class OkrServiceImpl implements OkrService {
         okrRepository.save(okr);
     }
 
+    /**
+     * Tính phần trăm tiến độ của một key result (giới hạn tối đa 100%).
+     */
     private static Double calcKrProgress(Double current, Double target) {
         if (target == null || target == 0) return 0.0;
         double cur = current != null ? current : 0.0;
         return Math.min(100.0, Math.round((cur / target) * 1000.0) / 10.0);
     }
 
+    /**
+     * Tìm OKR theo id và ném lỗi nếu không tồn tại hoặc đã bị xoá.
+     */
     private Okr find(String id) {
         return okrRepository.findById(id)
                 .filter(o -> Boolean.FALSE.equals(o.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "OKR không tồn tại"));
     }
 
+    /**
+     * Chuyển đổi entity OKR sang DTO response kèm danh sách key results.
+     */
     private OkrResponse toResponse(Okr okr) {
         List<OkrKeyResultResponse> krs = keyResultRepository
                 .findByOkrIdAndIsDeletedFalseOrderBySortOrderAsc(okr.getId())
@@ -300,6 +348,9 @@ public class OkrServiceImpl implements OkrService {
                 .build();
     }
 
+    /**
+     * Xác thực dữ liệu OKR: mục tiêu bắt buộc, khoảng thời gian hợp lệ, không trùng OKR cha với liên kết chéo.
+     */
     private void validateRequest(OkrRequest req, boolean creating) {
         if (creating && (req.getTitle() == null || req.getTitle().isBlank())) {
             throw new AppException(CommonErrorCode.VALIDATION_FAILED, "Mục tiêu là bắt buộc");
@@ -314,6 +365,9 @@ public class OkrServiceImpl implements OkrService {
         }
     }
 
+    /**
+     * Chuẩn hoá loại OKR (COMMITTED/STRETCH), mặc định COMMITTED.
+     */
     private String normalizeObjectiveType(String value) {
         String normalized = value == null ? "COMMITTED" : value.trim().toUpperCase();
         if (!List.of("COMMITTED", "STRETCH").contains(normalized)) {
@@ -322,6 +376,9 @@ public class OkrServiceImpl implements OkrService {
         return normalized;
     }
 
+    /**
+     * Chuẩn hoá phạm vi OKR (PERSONAL/TEAM/DEPARTMENT/COMPANY), mặc định PERSONAL.
+     */
     private String normalizeScopeType(String value) {
         String normalized = value == null ? "PERSONAL" : value.trim().toUpperCase();
         if (!List.of("PERSONAL", "TEAM", "DEPARTMENT", "COMPANY").contains(normalized)) {
@@ -330,10 +387,16 @@ public class OkrServiceImpl implements OkrService {
         return normalized;
     }
 
+    /**
+     * Nối danh sách id liên kết chéo thành chuỗi phân tách bằng dấu phẩy.
+     */
     private String join(List<String> values) {
         return values == null || values.isEmpty() ? null : String.join(",", values);
     }
 
+    /**
+     * Tách chuỗi liên kết chéo thành danh sách id.
+     */
     private List<String> split(String value) {
         return value == null || value.isBlank() ? List.of() : Arrays.asList(value.split(","));
     }

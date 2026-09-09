@@ -29,6 +29,9 @@ public class IPTrustServiceImpl implements IPTrustService {
     private final IpTrustMapper ipTrustMapper;
 
 
+    /**
+     * Truy vấn danh sách IP đáng tin cậy phân trang theo bộ lọc và sắp xếp ngày tạo giảm dần.
+     */
     public PageResponse<IpTrustResponse> all(IpTrustFilter filter) {
         Specification<IPTrust> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC , "createdDate");
@@ -37,6 +40,9 @@ public class IPTrustServiceImpl implements IPTrustService {
         return PageResponse.from(entities, ipTrustMapper::toResponse);
     }
 
+    /**
+     * Tạo JPA Specification từ bộ lọc để tìm kiếm IP theo tên hoặc số IP.
+     */
     private Specification<IPTrust> createSpecification (IpTrustFilter filter) {
         Specification<IPTrust> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted" , Boolean.FALSE));
@@ -50,6 +56,9 @@ public class IPTrustServiceImpl implements IPTrustService {
 
     }
 
+    /**
+     * Thêm mới một IP đáng tin cậy sau khi kiểm tra trùng lặp tên và số IP.
+     */
     public ApiResponse<IpTrustResponse> add(IpTrustAddRequest request) {
 
         validateRequest(request);
@@ -59,6 +68,9 @@ public class IPTrustServiceImpl implements IPTrustService {
 
     }
 
+    /**
+     * Kiểm tra trùng lặp tên IP và số IP trước khi thêm mới.
+     */
     private void validateRequest(IpTrustAddRequest request) {
         if (ipTrustRepository.existsByIpName(request.getIpName())) {
             throw new AppException(QthtErrorCode.IP_NAME_ALREADY_USED);
@@ -68,6 +80,9 @@ public class IPTrustServiceImpl implements IPTrustService {
         }
 
     }
+    /**
+     * Cập nhật thông tin IP đáng tin cậy theo mã định danh.
+     */
     public ApiResponse<IpTrustResponse> edit(String id, IpTrustEditRequest request) {
         IPTrust exist = findEntityById(id);
         validateRequest(request);
@@ -76,16 +91,25 @@ public class IPTrustServiceImpl implements IPTrustService {
         return ApiResponse.ok(ipTrustMapper.toResponse(saveipTrust));
     }
 
+    /**
+     * Xem chi tiết một IP đáng tin cậy theo mã định danh.
+     */
     public IpTrustResponse view (String id) {
         IPTrust ipTrust = findEntityById(id);
         return  ipTrustMapper.toResponse(ipTrust);
     }
 
+    /**
+     * Xoá mềm một IP đáng tin cậy theo mã định danh.
+     */
     public ApiResponse<?> delete(String id) {
         IPTrust exits = findEntityById(id);
         exits.setIsDeleted(true);
         return ApiResponse.ok(ipTrustRepository.save(exits));
     }
+    /**
+     * Tìm thực thể IPTrust theo ID, ném ngoại lệ nếu không tồn tại.
+     */
     private IPTrust findEntityById(String id) {
         return ipTrustRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.ENTITY_NOT_FOUND));
     }

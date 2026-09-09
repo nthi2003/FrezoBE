@@ -32,6 +32,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    /** Liệt kê danh sách cấu hình lợi nhuận, có thể lọc theo phạm vi (GLOBAL/CATEGORY/PRODUCT). */
     @Override
     @Transactional(readOnly = true)
     public List<ProfitSettingDto> list(String scope) {
@@ -41,12 +42,14 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return rows.stream().map(this::toDto).toList();
     }
 
+    /** Lấy chi tiết cấu hình lợi nhuận theo ID. */
     @Override
     @Transactional(readOnly = true)
     public ProfitSettingDto getById(String id) {
         return toDto(findActive(id));
     }
 
+    /** Tạo mới cấu hình lợi nhuận, kiểm tra trùng phạm vi. */
     @Override
     @Transactional
     public ProfitSettingDto create(ProfitSettingRequest req) {
@@ -60,6 +63,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return toDto(repository.save(entity));
     }
 
+    /** Cập nhật cấu hình lợi nhuận, kiểm tra trùng phạm vi với cấu hình khác. */
     @Override
     @Transactional
     public ProfitSettingDto update(String id, ProfitSettingRequest req) {
@@ -75,6 +79,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return toDto(repository.save(entity));
     }
 
+    /** Xóa mềm cấu hình lợi nhuận. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -83,6 +88,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         repository.save(entity);
     }
 
+    /** Xác định cấu hình lợi nhuận áp dụng cho sản phẩm: ưu tiên PRODUCT > CATEGORY > GLOBAL. */
     @Override
     @Transactional(readOnly = true)
     public ProfitSettingDto resolveForProduct(String productId) {
@@ -93,6 +99,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return toDto(resolved);
     }
 
+    /** Xác định entity cấu hình lợi nhuận theo thứ tự ưu tiên: PRODUCT → CATEGORY → GLOBAL. */
     Optional<ProfitSetting> resolveEntity(Product product) {
         Optional<ProfitSetting> productSetting = repository
                 .findByScopeAndScopeRefIdAndIsDeletedFalse(SCOPE_PRODUCT, product.getId())
@@ -112,6 +119,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
                 .filter(s -> Boolean.TRUE.equals(s.getActive()));
     }
 
+    /** Tạo cấu hình lợi nhuận mặc định khi database chưa có bản ghi. */
     private ProfitSetting defaultGlobalSetting() {
         return ProfitSetting.builder()
                 .scope(SCOPE_GLOBAL)
@@ -130,12 +138,14 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
                 .build();
     }
 
+    /** Tìm cấu hình lợi nhuận active theo ID, ném ngoại lệ nếu không tồn tại. */
     private ProfitSetting findActive(String id) {
         return repository.findById(id)
                 .filter(s -> s.getIsDeleted() == null || !s.getIsDeleted())
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Không tìm thấy cấu hình"));
     }
 
+    /** Ánh xạ dữ liệu từ request vào entity cấu hình lợi nhuận. */
     private ProfitSetting mapToEntity(ProfitSetting entity, ProfitSettingRequest req, String scope, String scopeRefId) {
         entity.setScope(scope);
         entity.setScopeRefId(scopeRefId);
@@ -154,6 +164,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return entity;
     }
 
+    /** Chuyển entity cấu hình lợi nhuận sang DTO response kèm nhãn phạm vi. */
     private ProfitSettingDto toDto(ProfitSetting s) {
         return ProfitSettingDto.builder()
                 .id(s.getId())
@@ -176,6 +187,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
                 .build();
     }
 
+    /** Xác định nhãn hiển thị cho phạm vi cấu hình (Toàn hệ thống / Danh mục / SP). */
     private String resolveScopeLabel(ProfitSetting s) {
         if (SCOPE_GLOBAL.equals(s.getScope())) {
             return "Toàn hệ thống";
@@ -197,6 +209,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return s.getScope();
     }
 
+    /** Chuẩn hóa phạm vi: trim, uppercase, kiểm tra bắt buộc. */
     private static String normalizeScope(String scope) {
         if (scope == null || scope.isBlank()) {
             throw new AppException(CommonErrorCode.INVALID_REQUEST, "scope bắt buộc (GLOBAL|CATEGORY|PRODUCT)");
@@ -204,6 +217,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return scope.trim().toUpperCase();
     }
 
+    /** Chuẩn hóa scopeRefId: null nếu GLOBAL, trim nếu CATEGORY/PRODUCT. */
     private static String normalizeScopeRef(String scope, String scopeRefId) {
         if (SCOPE_GLOBAL.equals(scope)) {
             return null;
@@ -214,6 +228,7 @@ public class ProfitSettingServiceImpl implements ProfitSettingService {
         return scopeRefId.trim();
     }
 
+    /** Trả về giá trị Double với giá trị mặc định nếu null. */
     private static double defaultDouble(Double v, double fallback) {
         return v != null ? v : fallback;
     }

@@ -17,16 +17,6 @@ import java.security.Key;
 import java.util.Date;
 import java.util.List;
 
-/**
- * JWT sign / parse / validate.
- * <p>
- * <b>v1.1 fixes:</b>
- * <ul>
- *   <li>Secret & TTL đọc từ {@link JwtProperties} (validated) — KHÔNG hardcode default trong {@code @Value}.</li>
- *   <li>Issuer + audience thêm vào token.</li>
- *   <li>Log lỗi qua {@code log.warn} thay {@code log.error} cho các trường hợp client (invalid signature, expired).</li>
- * </ul>
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -36,40 +26,6 @@ public class JwtTokenProvider {
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(props.getSecret().getBytes(StandardCharsets.UTF_8));
-    }
-
-    public String generateToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + props.getExpiration());
-
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuer(props.getIssuer())
-                .setAudience(props.getAudience())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
-    }
-
-    public String generateToken(String username, List<String> roles) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + props.getExpiration());
-
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuer(props.getIssuer())
-                .setAudience(props.getAudience())
-                .claim("roles", roles)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
-                .compact();
-    }
-
-    public String generateToken(String username, List<String> roles, Short dataAction, String orgId,
-                                 String appCode, Boolean isAdmin) {
-        return generateToken(username, roles, dataAction, orgId, appCode, isAdmin, null);
     }
 
     public String generateToken(String username, List<String> roles, Short dataAction, String orgId,

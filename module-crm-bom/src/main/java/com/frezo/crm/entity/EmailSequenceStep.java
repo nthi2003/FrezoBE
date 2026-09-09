@@ -26,7 +26,7 @@ public class EmailSequenceStep extends BaseEntity {
     @Column(name = "step_order", nullable = false)
     private Integer stepOrder;
 
-    /** Delay ngày sau enroll / bước trước. */
+
     @Column(name = "delay_days")
     private Integer delayDays;
 

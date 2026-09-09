@@ -23,12 +23,18 @@ public class ApiLogServiceImpl implements ApiLogService {
     private final ApiLogRepository apiLogRepository;
     private final ApiLogMapper apiLogMapper;
 
+    /**
+     * Lưu một bản ghi log API vào cơ sở dữ liệu.
+     */
     @Override
     @Transactional
     public void saveLog(ApiLog log) {
         apiLogRepository.save(log);
     }
 
+    /**
+     * Truy vấn danh sách log API phân trang theo bộ lọc, sắp xếp theo ngày tạo giảm dần.
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ApiLogResponse> all(ApilogFilter filter) {
@@ -39,6 +45,9 @@ public class ApiLogServiceImpl implements ApiLogService {
         return PageResponse.from(entities, apiLogMapper::toResponse);
     }
 
+    /**
+     * Xoá tất cả các bản ghi log API cũ hơn số ngày được chỉ định.
+     */
     @Override
     @Transactional
     public void deleteLogs(int days) {
@@ -46,6 +55,9 @@ public class ApiLogServiceImpl implements ApiLogService {
         apiLogRepository.deleteOlderThan(cutoffDate);
     }
 
+    /**
+     * Tìm một bản ghi log API theo mã định danh, ném ngoại lệ nếu không tồn tại.
+     */
     @Override
     @Transactional(readOnly = true)
     public ApiLog findById(String id) {
@@ -53,12 +65,18 @@ public class ApiLogServiceImpl implements ApiLogService {
                 .orElseThrow(() -> new RuntimeException("Log not found"));
     }
 
+    /**
+     * Xoá một bản ghi log API theo mã định danh.
+     */
     @Override
     @Transactional
     public void delete(String id) {
         apiLogRepository.deleteById(id);
     }
 
+    /**
+     * Thống kê số lượng log: tổng, thành công, thất bại và thời lượng trung bình theo bộ lọc.
+     */
     @Override
     @Transactional(readOnly = true)
     public ApiLogStatsResponse getStats(ApilogFilter filter) {
@@ -90,6 +108,9 @@ public class ApiLogServiceImpl implements ApiLogService {
                 .build();
     }
 
+    /**
+     * Tạo JPA Specification từ bộ lọc để xây dựng truy vấn động cho log API.
+     */
     private Specification<ApiLog> createSpecification(ApilogFilter filter) {
         return (root, query, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
@@ -155,6 +176,9 @@ public class ApiLogServiceImpl implements ApiLogService {
         };
     }
 
+    /**
+     * Áp dụng điều kiện lọc theo nhóm mã trạng thái HTTP (2xx, 3xx, 4xx, 5xx).
+     */
     private void applyStatusGroup(
             ApilogFilter filter,
             jakarta.persistence.criteria.Root<ApiLog> root,

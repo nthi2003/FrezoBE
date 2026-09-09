@@ -15,7 +15,7 @@ public interface CommentRepository extends JpaRepository<Comment, String> {
     Page<Comment> findBySubjectTypeAndSubjectIdAndIsDeletedFalseOrderByCreatedDateAsc(
             String subjectType, String subjectId, Pageable pageable);
 
-    /** User comments only (exclude soft-deleted + system activity). */
+
     @Query("""
             SELECT COUNT(c) FROM Comment c
             WHERE c.subjectType = :subjectType

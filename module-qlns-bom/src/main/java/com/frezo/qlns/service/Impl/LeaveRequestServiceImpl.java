@@ -47,6 +47,10 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private static final String STATUS_CANCELLED = "CANCELLED";
     private static final String STATUS_LEGACY_PENDING = "PENDING";
 
+    /**
+     * Tạo đơn nghỉ phép mới: gán trạng thái chờ manager duyệt, khởi động Approval
+     * LEAVE_STANDARD và gửi thông báo cho người duyệt.
+     */
     @Override
     @Transactional
     public LeaveRequestResponse create(LeaveRequestAddRequest request) {
@@ -71,6 +75,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         return enrich(saved);
     }
 
+    /**
+     * API duyệt đơn đã ngừng — chuyển sang dùng Approval.
+     */
     @Override
     @Transactional
     public LeaveRequestResponse approve(String id) {
@@ -78,6 +85,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 "API duyệt leave đã ngừng — dùng POST /approvals/{id}/approve");
     }
 
+    /**
+     * API từ chối đơn đã ngừng — chuyển sang dùng Approval.
+     */
     @Override
     @Transactional
     public LeaveRequestResponse reject(String id, String reason) {
@@ -85,6 +95,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 "API từ chối leave đã ngừng — dùng POST /approvals/{id}/reject");
     }
 
+    /**
+     * Huỷ đơn nghỉ phép đang chờ duyệt (chỉ chủ đơn hoặc admin), ghi lịch sử và thông báo cho người duyệt.
+     */
     @Override
     @Transactional
     public LeaveRequestResponse cancel(String id) {
@@ -118,6 +131,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         return enrich(saved);
     }
 
+    /**
+     * Lấy danh sách đơn nghỉ phép của hợp đồng hiện tại (chống IDOR).
+     */
     @Override
     public List<LeaveRequestResponse> getMyRequests(String contractId) {
         // Chống IDOR: chỉ chủ HĐ (hoặc admin/HR/người duyệt) mới đọc được đơn của HĐ này.
@@ -126,6 +142,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         return all.stream().map(this::enrich).toList();
     }
 
+    /**
+     * Lấy danh sách đơn đang chờ duyệt theo vai trò người xem (admin thấy tất cả, HR thấy bước HR, người khác thấy đơn chờ mình duyệt).
+     */
     @Override
     public Map<String, Object> allPending(int page, int size) {
         String currentUser = SystemUtils.getCurrentUsername();
@@ -159,6 +178,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 "items", responses);
     }
 
+    /**
+     * Lấy timeline lịch sử duyệt của một đơn nghỉ phép (chống IDOR).
+     */
     @Override
     public List<LeaveRequestHistoryResponse> getHistory(String requestId) {
         // Chống IDOR: timeline chứa lý do nghỉ + comment duyệt — không cho đọc đơn người khác.
@@ -182,10 +204,16 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .toList();
     }
 
+    /**
+     * Chuẩn hoá trạng thái cũ "PENDING" thành "PENDING_MANAGER".
+     */
     private String normalizeStatus(String raw) {
         return STATUS_LEGACY_PENDING.equals(raw) ? STATUS_PENDING_MANAGER : raw;
     }
 
+    /**
+     * Ghi dòng lịch sử cho đơn nghỉ phép; bỏ qua ngoại lệ nếu ghi lỗi.
+     */
     private void writeHistory(String requestId, String action, String from, String to,
                               String actor, String role, String comment) {
         try {
@@ -203,16 +231,25 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         }
     }
 
+    /**
+     * Dựng chuỗi mô tả khoảng thời gian nghỉ (một ngày hoặc từ ngày đến ngày).
+     */
     private String buildDateRange(LeaveRequest e) {
         if (e.getStartDate() == null) return "";
         if (e.getEndDate() == null || e.getStartDate().equals(e.getEndDate())) return e.getStartDate().toString();
         return e.getStartDate() + " → " + e.getEndDate();
     }
 
+    /**
+     * Dựng deep-link tới trang danh sách đơn nghỉ phép để nhúng vào thông báo.
+     */
     private String deepLink(String id) {
         return "/qlns/leaves?highlight=" + id;
     }
 
+    /**
+     * Gửi thông báo cho manager khi có đơn nghỉ phép mới cần duyệt.
+     */
     private void notifyManagerPending(LeaveRequest e) {
         if (e.getManagerUsername() == null) return;
         String range = buildDateRange(e);
@@ -225,11 +262,17 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 deepLink(e.getId()), e.getCreatedBy(), false);
     }
 
+    /**
+     * Cắt ngắn chuỗi về tối đa n ký tự để dùng trong thông báo.
+     */
     private String trunc(String s, int n) {
         if (s == null) return "";
         return s.length() > n ? s.substring(0, n) + "..." : s;
     }
 
+    /**
+     * Bổ sung các trường quản lý duyệt/đính kèm vào DTO response của đơn nghỉ phép.
+     */
     private LeaveRequestResponse enrich(LeaveRequest e) {
         LeaveRequestResponse r = leaveRequestMapper.toResponse(e);
         r.setManagerUsername(e.getManagerUsername());

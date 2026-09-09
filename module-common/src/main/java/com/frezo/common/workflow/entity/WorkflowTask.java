@@ -41,19 +41,18 @@ public class WorkflowTask extends BaseEntity {
     @Column(name = "step_name", length = 255, nullable = false)
     private String stepName;
 
-    /** USER | ROLE | MANAGER | ADMIN — snapshot lúc tạo task. */
+
     @Column(name = "approver_type", length = 30, nullable = false)
     private String approverType;
 
-    /** Nullable — cho role/admin pool. */
+
     @Column(name = "assignee_username", length = 100)
     private String assigneeUsername;
 
-    /** Nullable — role code khi type=ROLE. */
+
     @Column(name = "assignee_role", length = 100)
     private String assigneeRole;
 
-    /** PENDING | APPROVED | REJECTED | SKIPPED */
     @Column(name = "status", length = 30, nullable = false)
     private String status;
 
@@ -66,7 +65,6 @@ public class WorkflowTask extends BaseEntity {
     @Column(name = "comment", length = 1000)
     private String comment;
 
-    /** SLA deadline (nếu step có slaHours). Null = không tính. */
     @Column(name = "deadline")
     private LocalDateTime deadline;
 }

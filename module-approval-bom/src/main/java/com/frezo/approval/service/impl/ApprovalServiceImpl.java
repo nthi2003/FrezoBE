@@ -38,6 +38,10 @@ public class ApprovalServiceImpl implements ApprovalService {
     private final ApprovalCreator approvalCreator;
     private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * Liệt kê các yêu cầu phê duyệt liên quan đến người dùng hiện tại.
+     * Mặc định chỉ hiển thị các yêu cầu đang chờ (PENDING).
+     */
     @Override
     public FePage<ApprovalRequestDto> listMy(String status) {
         String me = SystemUtils.getCurrentUsername();
@@ -53,18 +57,27 @@ public class ApprovalServiceImpl implements ApprovalService {
         return FePage.all(mine);
     }
 
+    /**
+     * Phê duyệt yêu cầu ở bước hiện tại, nếu là bước cuối thì đóng yêu cầu.
+     */
     @Override
     @Transactional
     public ApprovalRequestDto approve(String id, String comment) {
         return action(id, comment, true);
     }
 
+    /**
+     * Từ chối yêu cầu phê duyệt, cập nhật trạng thái REJECTED.
+     */
     @Override
     @Transactional
     public ApprovalRequestDto reject(String id, String comment) {
         return action(id, comment, false);
     }
 
+    /**
+     * Lấy dòng thời gian các bước phê duyệt của một yêu cầu.
+     */
     @Override
     public List<ApprovalStepDto> timeline(String id) {
         findRequest(id);
@@ -72,6 +85,9 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .stream().map(this::toStepDto).toList();
     }
 
+    /**
+     * Lấy dòng thời gian phê duyệt theo đối tượng (subjectType + subjectId).
+     */
     @Override
     public List<ApprovalStepDto> timelineBySubject(String subjectType, String subjectId) {
         return requestRepository
@@ -80,6 +96,9 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .orElse(List.of());
     }
 
+    /**
+     * Tạo mới yêu cầu phê duyệt và phát sự kiện ASSIGNED để thông báo bước đầu tiên.
+     */
     @Override
     @Transactional
     public ApprovalRequestDto create(CreateApprovalRequest req) {
@@ -92,6 +111,9 @@ public class ApprovalServiceImpl implements ApprovalService {
         return toDto(saved);
     }
 
+    /**
+     * Tìm yêu cầu phê duyệt theo đối tượng (subjectType + subjectId), lấy bản gần nhất.
+     */
     @Override
     public ApprovalRequestDto findBySubject(String subjectType, String subjectId) {
         return requestRepository
@@ -101,6 +123,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                         "Không có approval cho subject"));
     }
 
+    /** Xử lý chung cho approve/reject: kiểm tra quyền, cập nhật bước và chuyển tiếp yêu cầu. */
     private ApprovalRequestDto action(String id, String comment, boolean approve) {
         String me = SystemUtils.getCurrentUsername();
         ApprovalRequest req = findRequest(id);
@@ -156,6 +179,7 @@ public class ApprovalServiceImpl implements ApprovalService {
         return toDto(req);
     }
 
+    /** Kiểm tra người dùng có phải approver hợp lệ của bước hiện tại không. */
     private boolean isCurrentApprover(ApprovalRequest r, String username) {
         if (!"PENDING".equals(r.getStatus())) return false;
         return stepRepository
@@ -167,6 +191,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .orElse(false);
     }
 
+    /** Kiểm tra người dùng có liên quan đến yêu cầu (người yêu cầu hoặc approver ở bất kỳ bước nào). */
     private boolean isRelated(ApprovalRequest r, String username) {
         if (username != null && username.equalsIgnoreCase(r.getRequestedBy())) return true;
         return stepRepository.findByRequestIdAndIsDeletedFalseOrderByStepOrderAsc(r.getId()).stream()
@@ -175,12 +200,14 @@ public class ApprovalServiceImpl implements ApprovalService {
                                 || approverResolver.userHasRole(username, s.getApproverRole())));
     }
 
+    /** Tìm yêu cầu phê duyệt theo mã, ném ngoại lệ nếu không tồn tại hoặc đã bị xóa. */
     private ApprovalRequest findRequest(String id) {
         return requestRepository.findById(id)
                 .filter(r -> Boolean.FALSE.equals(r.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Approval request không tồn tại"));
     }
 
+    /** Chuyển entity yêu cầu phê duyệt sang DTO kèm tên người yêu cầu hiển thị. */
     private ApprovalRequestDto toDto(ApprovalRequest r) {
         return ApprovalRequestDto.builder()
                 .id(r.getId())
@@ -197,6 +224,7 @@ public class ApprovalServiceImpl implements ApprovalService {
                 .build();
     }
 
+    /** Chuyển entity bước phê duyệt sang DTO. */
     private ApprovalStepDto toStepDto(ApprovalStep s) {
         return ApprovalStepDto.builder()
                 .id(s.getId())

@@ -26,6 +26,9 @@ public class UsageAnalyticsServiceImpl implements UsageAnalyticsService {
 
     private final ErpPageViewRepository pageViewRepository;
 
+    /**
+     * Ghi nhận lượt truy cập trang — lưu route, moduleCode, username (nếu có) và thời điểm truy cập.
+     */
     @Override
     @Transactional
     public void trackPageView(String route, String moduleCode) {
@@ -54,6 +57,9 @@ public class UsageAnalyticsServiceImpl implements UsageAnalyticsService {
                 .build());
     }
 
+    /**
+     * Lấy thống kê lượt xem trang trong N ngày gần nhất — tổng lượt, top modules và top routes.
+     */
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> topPageViews(int days) {
@@ -76,6 +82,9 @@ public class UsageAnalyticsServiceImpl implements UsageAnalyticsService {
         return data;
     }
 
+    /**
+     * Chuyển đổi mảng kết quả query (key, count) sang Map có trường "key" và "count".
+     */
     private static Map<String, Object> namedCount(String key, Object[] row) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put(key, row[0] != null ? row[0].toString() : "—");
@@ -83,6 +92,9 @@ public class UsageAnalyticsServiceImpl implements UsageAnalyticsService {
         return m;
     }
 
+    /**
+     * Cắt chuỗi nếu vượt quá độ dài tối đa, trả về nguyên bản nếu ngắn hơn.
+     */
     private static String truncate(String value, int max) {
         return value.length() > max ? value.substring(0, max) : value;
     }

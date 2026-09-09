@@ -18,7 +18,6 @@ public interface CustomerService {
 
     void delete(String id);
 
-    // Xuất SĐT thật – yêu cầu role cao / audit log
     String revealPhone(String id);
 
     // Import từ Excel
@@ -30,6 +29,6 @@ public interface CustomerService {
     // Đồng bộ khách hàng tiềm năng từ AI Scraper
     int syncLeadsFromAi(String keyword, String city, String ward, Integer limit);
 
-    /** Upload avatar → MinIO, lưu URL vào khách hàng, trả về URL public. */
+
     String uploadAvatar(String id, MultipartFile file);
 }

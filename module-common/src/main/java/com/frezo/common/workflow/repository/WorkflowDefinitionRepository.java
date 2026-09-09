@@ -14,7 +14,6 @@ public interface WorkflowDefinitionRepository extends JpaRepository<WorkflowDefi
 
     boolean existsByCode(String code);
 
-    /** Lấy tất cả active definitions cho 1 module — cho FE picker khi start instance. */
     List<WorkflowDefinition> findByModuleCodeAndActiveTrueAndIsDeletedFalseOrderByCreatedDateDesc(String moduleCode);
 
     List<WorkflowDefinition> findByIsDeletedFalseOrderByModuleCodeAscCreatedDateDesc();

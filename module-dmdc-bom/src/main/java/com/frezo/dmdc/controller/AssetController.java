@@ -27,9 +27,7 @@ public class AssetController {
 
     private final AssetService assetService;
 
-    // ---- Query ----
-
-    @Operation(summary = "Danh sách tài sản (có filter + phân trang)")
+    @Operation(summary = "Danh sách tài sản")
     @GetMapping
     @CheckPermission(api = "/qlts/asset", action = "VIEW")
     public ApiResponse<?> list(@RequestParam(required = false) String keyword,
@@ -62,7 +60,7 @@ public class AssetController {
         return ApiResponse.success(assetService.stats());
     }
 
-    // ---- CRUD ----
+
 
     @Operation(summary = "Tạo tài sản mới")
     @PostMapping
@@ -86,7 +84,6 @@ public class AssetController {
         return ApiResponse.success(null);
     }
 
-    // ---- Workflow transitions ----
 
     @Operation(summary = "Cấp phát tài sản cho nhân viên")
     @PostMapping("/{id}/assign")
@@ -132,12 +129,7 @@ public class AssetController {
         return ApiResponse.success(assetService.dispose(id, note));
     }
 
-    // ============================================================
-    // Workflow ticket — cấp phát / thu hồi qua approval
-    // ------------------------------------------------------------
-    // Đây là API primary — thay cho /assign trực tiếp (vẫn giữ /assign
-    // cho admin quick action nội bộ, nhưng UI mặc định đi qua workflow).
-    // ============================================================
+
 
     @Operation(summary = "Tạo ticket cấp phát / thu hồi tài sản (PENDING)")
     @PostMapping("/{id}/transfer-requests")
@@ -169,7 +161,6 @@ public class AssetController {
     }
 
 
-    // Note handle lại api sài chung
 
     @Operation(summary = "Duyệt ticket ")
     @PostMapping("/transfer-requests/{reqId}/approve")

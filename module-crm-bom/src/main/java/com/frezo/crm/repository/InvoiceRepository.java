@@ -10,9 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface InvoiceRepository extends JpaRepository<Invoice, String> {
-    Optional<Invoice> findByCode(String code);
-    List<Invoice> findByCustomerIdAndIsDeletedFalseOrderByIssuedDateDesc(String customerId);
-    List<Invoice> findByStatusAndIsDeletedFalseOrderByIssuedDateDesc(InvoiceStatus status);
     List<Invoice> findByIsDeletedFalseOrderByIssuedDateDesc();
-    long countByIsDeletedFalse();
+
 }

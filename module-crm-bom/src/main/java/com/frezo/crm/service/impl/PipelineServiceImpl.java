@@ -22,6 +22,12 @@ public class PipelineServiceImpl implements PipelineService {
     private final PipelineRepository pipelineRepo;
     private final StageRepository stageRepo;
 
+    /**
+     * Tạo mới một pipeline bán hàng kèm các stage.
+     *
+     * @param r yêu cầu chứa thông tin pipeline và danh sách stage
+     * @return pipeline vừa được tạo
+     */
     @Override
     @Transactional
     public Pipeline create(PipelineRequest r) {
@@ -41,6 +47,13 @@ public class PipelineServiceImpl implements PipelineService {
         return saved;
     }
 
+    /**
+     * Cập nhật thông tin pipeline: tên, mô tả, trạng thái mặc định/kích hoạt và danh sách stage.
+     *
+     * @param id mã pipeline
+     * @param r yêu cầu cập nhật
+     * @return pipeline đã cập nhật
+     */
     @Override
     @Transactional
     public Pipeline update(String id, PipelineRequest r) {
@@ -56,6 +69,7 @@ public class PipelineServiceImpl implements PipelineService {
         return p;
     }
 
+    /** Xóa mềm pipeline theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -64,6 +78,7 @@ public class PipelineServiceImpl implements PipelineService {
         pipelineRepo.save(p);
     }
 
+    /** Lấy thông tin pipeline theo mã định danh, ném ngoại lệ nếu không tìm thấy. */
     @Override
     @Transactional(readOnly = true)
     public Pipeline get(String id) {
@@ -71,18 +86,26 @@ public class PipelineServiceImpl implements PipelineService {
                 .orElseThrow(() -> new AppException(CrmErrorCode.PIPELINE_NOT_FOUND, id));
     }
 
+    /** Lấy danh sách tất cả pipeline đang hoạt động, sắp xếp theo ngày tạo tăng dần. */
     @Override
     @Transactional(readOnly = true)
     public List<Pipeline> list() {
         return pipelineRepo.findByIsDeletedFalseOrderByCreatedDateAsc();
     }
 
+    /** Lấy danh sách stage theo pipeline, sắp xếp theo thứ tự tăng dần. */
     @Override
     @Transactional(readOnly = true)
     public List<Stage> stages(String pipelineId) {
         return stageRepo.findByPipelineIdAndIsDeletedFalseOrderByOrderNoAsc(pipelineId);
     }
 
+    /**
+     * Đảm bảo luôn có pipeline mặc định: nếu chưa có thì tạo mới pipeline mặc định
+     * kèm 6 stage chuẩn (Tiềm năng, Đủ điều kiện, Đề xuất/Báo giá, Đàm phán, Chốt Won, Mất Lost).
+     *
+     * @return pipeline mặc định
+     */
     @Override
     @Transactional
     public Pipeline ensureDefault() {
@@ -107,6 +130,7 @@ public class PipelineServiceImpl implements PipelineService {
         });
     }
 
+    /** Lưu stage vào cơ sở dữ liệu: cập nhật nếu đã tồn tại (có id), tạo mới nếu chưa. */
     private void saveStage(String pipelineId, PipelineRequest.StageInline s) {
         Stage entity;
         if (s.getId() != null) {
@@ -123,6 +147,7 @@ public class PipelineServiceImpl implements PipelineService {
         stageRepo.save(entity);
     }
 
+    /** Tạo stage mặc định (seed data) cho pipeline mới. */
     private void createSeedStage(String pipelineId, String name, int order, int prob, Boolean won) {
         Stage s = Stage.builder()
                 .pipelineId(pipelineId)

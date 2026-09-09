@@ -37,23 +37,23 @@ public class WorkflowStep extends BaseEntity {
     @Column(name = "step_name", length = 255, nullable = false)
     private String stepName;
 
-    /** USER | ROLE | MANAGER | ADMIN */
+
     @Column(name = "approver_type", length = 30, nullable = false)
     private String approverType;
 
-    /** username hoặc role code. Null cho MANAGER / ADMIN. */
+
     @Column(name = "approver_value", length = 255)
     private String approverValue;
 
-    /** Cho phép bỏ qua bước này (VD: MANAGER nếu requester không có manager). */
+
     @Column(name = "allow_skip", nullable = false)
     private Boolean allowSkip;
 
-    /** SLA giờ — cảnh báo/escalate nếu quá hạn. Null = không tính. */
+
     @Column(name = "sla_hours")
     private Integer slaHours;
 
-    /** Ghi chú/help text hiển thị cho approver. */
+
     @Column(name = "description", length = 500)
     private String description;
 }

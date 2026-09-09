@@ -34,6 +34,7 @@ public class StockTransferServiceImpl implements StockTransferService {
     private final StockBalanceRepository stockBalanceRepository;
     private final StockTransferMapper transferMapper;
 
+    /** Lấy chi tiết phiếu chuyển kho theo id. */
     @Override
     public TransferResponse getById(String id) {
         StockTransfer transfer = transferRepository.findById(id)
@@ -41,6 +42,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return buildResponse(transfer);
     }
 
+    /** Lấy chi tiết phiếu chuyển kho theo mã phiếu. */
     @Override
     public TransferResponse getByCode(String transferCode) {
         StockTransfer transfer = transferRepository.findByTransferCode(transferCode)
@@ -48,6 +50,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return buildResponse(transfer);
     }
 
+    /** Lọc danh sách phiếu chuyển kho theo trạng thái, trả về phân trang. */
     @Override
     public PageResponse<TransferResponse> filter(String status, String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -62,6 +65,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return PageResponse.of(page, size, transferPage, responses);
     }
 
+    /** Tạo phiếu chuyển kho giữa hai kho khác nhau ở trạng thái DRAFT, lưu các dòng item và tính tổng giá trị. */
     @Override
     @Transactional
     public TransferResponse create(TransferCreateRequest request) {
@@ -90,6 +94,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return buildResponse(transfer);
     }
 
+    /** Xác nhận phiếu chuyển kho: trừ tồn kho kho đi, cộng tồn kho kho đến, ghi sổ cái và phiếu giao dịch. */
     @Override
     @Transactional
     public TransferResponse confirm(String id, TransferConfirmRequest request) {
@@ -183,6 +188,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return buildResponse(transfer);
     }
 
+    /** Hủy phiếu chuyển kho chưa xác nhận, ghi lý do hủy vào ghi chú. */
     @Override
     @Transactional
     public void cancel(String id, String reason) {
@@ -198,6 +204,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         transferRepository.save(transfer);
     }
 
+    /** Xóa phiếu chuyển kho chưa xác nhận kèm toàn bộ dòng item. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -210,6 +217,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         transferRepository.delete(transfer);
     }
 
+    /** Chuyển entity phiếu chuyển kho thành response kèm danh sách dòng item. */
     private TransferResponse buildResponse(StockTransfer transfer) {
         TransferResponse response = transferMapper.toResponse(transfer);
         List<StockTransferItem> items = transferItemRepository.findByTransferId(transfer.getId());
@@ -217,6 +225,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         return response;
     }
 
+    /** Tìm thông tin xác nhận của một dòng item trong request xác nhận. */
     private TransferConfirmRequest.TransferConfirmItem findConfirmItem(TransferConfirmRequest request, String itemId) {
         if (request.getItems() == null) return null;
         return request.getItems().stream()
@@ -224,6 +233,7 @@ public class StockTransferServiceImpl implements StockTransferService {
                 .findFirst().orElse(null);
     }
 
+    /** Trừ số lượng tồn kho tại kho đi, kiểm tra đủ tồn trước khi trừ. */
     private void deductStockBalance(String productId, String warehouseId, String locationId, String batchId, double qty) {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(
@@ -239,6 +249,7 @@ public class StockTransferServiceImpl implements StockTransferService {
         stockBalanceRepository.save(balance);
     }
 
+    /** Cộng số lượng tồn kho tại kho đến, tự tạo bản ghi tồn mới nếu chưa có. */
     private void addStockBalance(String productId, String warehouseId, String locationId, String batchId, double qty) {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(

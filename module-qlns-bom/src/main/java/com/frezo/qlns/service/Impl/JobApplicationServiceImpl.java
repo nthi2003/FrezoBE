@@ -54,6 +54,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Value("${qlns.recruitment.hire.require-user-account:true}")
     private boolean requireUserAccount;
 
+    /**
+     * Tạo mới một đơn ứng tuyển cho ứng viên vào vị trí tuyển dụng; kiểm tra yêu cầu còn mở và chưa trùng đơn.
+     */
     @Override
     @Transactional
     public JobApplicationResponse create(JobApplicationRequest req) {
@@ -86,6 +89,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         return toResponse(applicationRepository.save(e), candidate, requisition);
     }
 
+    /**
+     * Liệt kê các đơn ứng tuyển theo vị trí tuyển dụng và giai đoạn, sắp xếp theo ngày nộp mới nhất.
+     */
     @Override
     public List<JobApplicationResponse> list(String requisitionId, String stage) {
         return applicationRepository.findAll().stream()
@@ -98,6 +104,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .toList();
     }
 
+    /**
+     * Chuyển đơn ứng tuyển sang giai đoạn tiếp theo theo quy tắc chuyển trạng thái; tự đóng yêu cầu nếu đủ nhân sự.
+     */
     @Override
     @Transactional
     public JobApplicationResponse moveStage(String id, String targetStage) {
@@ -121,6 +130,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         return toResponseLight(saved);
     }
 
+    /**
+     * Từ chối một đơn ứng tuyển: đổi giai đoạn sang REJECTED và lưu lý do từ chối.
+     */
     @Override
     @Transactional
     public JobApplicationResponse reject(String id, String reason) {
@@ -134,17 +146,26 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         return toResponseLight(applicationRepository.save(app));
     }
 
+    /**
+     * Lấy chi tiết một đơn ứng tuyển theo id.
+     */
     @Override
     public JobApplicationResponse getById(String id) {
         return toResponseLight(findOrThrow(id));
     }
 
+    /**
+     * Đánh dấu ứng viên trúng tuyển (hire) mà không cần tạo tài khoản kèm theo.
+     */
     @Override
     @Transactional
     public JobApplicationResponse markHired(String id) {
         return markHired(id, null);
     }
 
+    /**
+     * Đánh dấu ứng viên trúng tuyển; nếu policy yêu cầu tài khoản (A) sẽ tạo/gán User+Role cho ứng viên.
+     */
     @Override
     @Transactional
     public JobApplicationResponse markHired(String id, HireRequest hireRequest) {
@@ -215,6 +236,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 username, roleCode, candidate.getId());
     }
 
+    /**
+     * Tự động đóng yêu cầu tuyển dụng (FILLED) khi số người đã trúng tuyển đạt đủ số lượng cần tuyển.
+     */
     private void autoCloseRequisitionIfFilled(String requisitionId) {
         Requisition req = requisitionRepository.findById(requisitionId).orElse(null);
         if (req == null || Objects.equals(RecruitmentConstants.REQ_FILLED, req.getStatus())) return;
@@ -229,12 +253,18 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
     }
 
+    /**
+     * Tra cứu đơn ứng tuyển chưa xoá theo id, không tìm thấy thì ném AppException APPLICATION_NOT_FOUND.
+     */
     private JobApplication findOrThrow(String id) {
         return applicationRepository.findById(id)
                 .filter(a -> Boolean.FALSE.equals(a.getIsDeleted()))
                 .orElseThrow(() -> new AppException(RecruitmentErrorCode.APPLICATION_NOT_FOUND, id));
     }
 
+    /**
+     * Chuyển entity JobApplication sang DTO, kèm tên ứng viên và tiêu đề yêu cầu tuyển dụng.
+     */
     private JobApplicationResponse toResponseLight(JobApplication e) {
         String candidateName = candidateRepository.findById(e.getCandidateId())
                 .map(Candidate::getFullName).orElse(null);
@@ -253,6 +283,9 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .build();
     }
 
+    /**
+     * Chuyển entity JobApplication cùng thông tin ứng viên và yêu cầu tuyển dụng thành DTO đầy đủ.
+     */
     private JobApplicationResponse toResponse(JobApplication e, Candidate candidate, Requisition requisition) {
         return JobApplicationResponse.builder()
                 .id(e.getId())

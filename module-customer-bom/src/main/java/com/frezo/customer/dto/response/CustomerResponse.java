@@ -7,7 +7,7 @@ public class CustomerResponse {
     private String id;
     private String name;
     private String code;
-    private String phoneLast4;   // hiển thị 4 số cuối (****1234)
+    private String phoneLast4;
     private String email;
     private String address;
     private String taxCode;

@@ -60,6 +60,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
     private final ProfitSettingRepository profitSettingRepository;
     private final ProfitContractSalaryResolver contractSalaryResolver;
 
+    /** Liệt kê danh mục chi phí, có thể lọc theo mã thị trường. */
     @Override
     @Transactional(readOnly = true)
     public List<ProfitCostCategoryDto> listCategories(String marketCode) {
@@ -69,6 +70,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return rows.stream().map(this::toCategoryDto).toList();
     }
 
+    /** Tạo mới danh mục chi phí, kiểm tra trùng mã trong cùng thị trường. */
     @Override
     @Transactional
     public ProfitCostCategoryDto createCategory(ProfitCostCategoryRequest req) {
@@ -81,6 +83,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return toCategoryDto(categoryRepository.save(entity));
     }
 
+    /** Cập nhật danh mục chi phí, kiểm tra trùng mã với danh mục khác. */
     @Override
     @Transactional
     public ProfitCostCategoryDto updateCategory(String id, ProfitCostCategoryRequest req) {
@@ -95,6 +98,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return toCategoryDto(categoryRepository.save(entity));
     }
 
+    /** Xóa mềm danh mục chi phí. */
     @Override
     @Transactional
     public void deleteCategory(String id) {
@@ -103,6 +107,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         categoryRepository.save(entity);
     }
 
+    /** Liệt kê chi phí cố định theo năm/tháng kèm tên danh mục chi phí. */
     @Override
     @Transactional(readOnly = true)
     public List<ProfitFixedOverheadDto> listFixedOverhead(Integer year, Integer month) {
@@ -115,6 +120,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .toList();
     }
 
+    /** Tạo mới hoặc cập nhật chi phí cố định theo danh mục + năm + tháng. */
     @Override
     @Transactional
     public ProfitFixedOverheadDto upsertFixedOverhead(ProfitFixedOverheadRequest req) {
@@ -133,6 +139,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return toOverheadDto(saved, catName);
     }
 
+    /** Xóa mềm chi phí cố định. */
     @Override
     @Transactional
     public void deleteFixedOverhead(String id) {
@@ -143,6 +150,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         overheadRepository.save(entity);
     }
 
+    /** Liệt kê phân bổ nhân sự kèm thông tin lương thực tế và mục tiêu doanh thu. */
     @Override
     @Transactional(readOnly = true)
     public List<ProfitEmployeeAllocationDto> listEmployeeAllocations() {
@@ -152,6 +160,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .toList();
     }
 
+    /** Tạo mới phân bổ nhân sự với mục tiêu doanh thu tự động hoặc thủ công. */
     @Override
     @Transactional
     public ProfitEmployeeAllocationDto createEmployeeAllocation(ProfitEmployeeAllocationRequest req) {
@@ -161,6 +170,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return toAllocationDto(allocationRepository.save(entity), now.getYear(), now.getMonthValue());
     }
 
+    /** Cập nhật phân bổ nhân sự với kiểm tra nhân viên tồn tại. */
     @Override
     @Transactional
     public ProfitEmployeeAllocationDto updateEmployeeAllocation(String id, ProfitEmployeeAllocationRequest req) {
@@ -171,6 +181,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return toAllocationDto(allocationRepository.save(entity), now.getYear(), now.getMonthValue());
     }
 
+    /** Xóa mềm phân bổ nhân sự. */
     @Override
     @Transactional
     public void deleteEmployeeAllocation(String id) {
@@ -179,6 +190,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         allocationRepository.save(entity);
     }
 
+    /** Xem trước mục tiêu doanh thu cần đạt để cover lương 3P sau khi trừ COGS/rủi ro/HH. */
     @Override
     @Transactional(readOnly = true)
     public ProfitSalesTargetPreviewDto previewSalesTarget(ProfitSalesTargetPreviewRequest req) {
@@ -217,6 +229,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .build();
     }
 
+    /** Lấy cài đặt lợi nhuận toàn cục (GLOBAL), dùng giá trị mặc định nếu chưa có. */
     private ProfitSetting resolveGlobalSetting() {
         return profitSettingRepository.findByScopeAndScopeRefIdAndIsDeletedFalse("GLOBAL", null)
                 .orElseGet(() -> ProfitSetting.builder()
@@ -228,28 +241,33 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                         .build());
     }
 
+    /** Trả về giá trị Double với giá trị mặc định nếu null. */
     private static double pct(Double v, double fallback) {
         return v != null ? v : fallback;
     }
 
+    /** Tìm danh mục chi phí theo ID, ném ngoại lệ nếu không tồn tại. */
     private ProfitCostCategory findCategory(String id) {
         return categoryRepository.findById(id)
                 .filter(c -> c.getIsDeleted() == null || !c.getIsDeleted())
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Không tìm thấy danh mục chi phí"));
     }
 
+    /** Tìm phân bổ nhân sự theo ID, ném ngoại lệ nếu không tồn tại. */
     private ProfitEmployeeAllocation findAllocation(String id) {
         return allocationRepository.findById(id)
                 .filter(a -> a.getIsDeleted() == null || !a.getIsDeleted())
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Không tìm thấy phân bổ nhân sự"));
     }
 
+    /** Kiểm tra nhân viên tồn tại và chưa bị xóa. */
     private void validatePerson(String personId) {
         personRepository.findById(personId)
                 .filter(p -> p.getIsDeleted() == null || !p.getIsDeleted())
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Không tìm thấy nhân viên"));
     }
 
+    /** Ánh xạ dữ liệu từ request vào entity danh mục chi phí. */
     private ProfitCostCategory mapCategory(ProfitCostCategory entity, ProfitCostCategoryRequest req, String market) {
         entity.setCode(req.getCode());
         entity.setName(req.getName());
@@ -263,6 +281,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return entity;
     }
 
+    /** Ánh xạ dữ liệu từ request vào entity phân bổ nhân sự, tự động tính mục tiêu doanh thu nếu cần. */
     private ProfitEmployeeAllocation mapAllocation(ProfitEmployeeAllocation entity, ProfitEmployeeAllocationRequest req) {
         entity.setPersonId(req.getPersonId());
         entity.setContractId(req.getContractId());
@@ -290,6 +309,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return entity;
     }
 
+    /** Chuyển entity danh mục chi phí sang DTO response. */
     private ProfitCostCategoryDto toCategoryDto(ProfitCostCategory c) {
         return ProfitCostCategoryDto.builder()
                 .id(c.getId())
@@ -305,6 +325,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .build();
     }
 
+    /** Chuyển entity chi phí cố định sang DTO response kèm tên danh mục. */
     private ProfitFixedOverheadDto toOverheadDto(ProfitFixedOverhead o, String categoryName) {
         return ProfitFixedOverheadDto.builder()
                 .id(o.getId())
@@ -318,6 +339,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .build();
     }
 
+    /** Chuyển entity phân bổ nhân sự sang DTO response kèm lương 3P và mục tiêu tự tính. */
     private ProfitEmployeeAllocationDto toAllocationDto(ProfitEmployeeAllocation a, int year, int month) {
         double resolved = resolveSalary(a, year, month);
         Salary3P salary = contractSalaryResolver.resolve3P(a.getPersonId(), a.getContractId());
@@ -348,6 +370,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
                 .build();
     }
 
+    /** Xác định lương thực tế: lấy từ bảng lương nếu dùng payrollSource, nếu không lấy từ manually salary. */
     private double resolveSalary(ProfitEmployeeAllocation alloc, int year, int month) {
         if (Boolean.TRUE.equals(alloc.getUsePayrollSource())) {
             return payrollRepository
@@ -362,6 +385,7 @@ public class ProfitCostStructureServiceImpl implements ProfitCostStructureServic
         return alloc.getMonthlySalary() != null ? alloc.getMonthlySalary() : 0d;
     }
 
+    /** Tra cứu tên nhân viên theo personId, trả về personId nếu không tìm thấy. */
     private String resolvePersonName(String personId) {
         return personRepository.findById(personId)
                 .filter(p -> p.getIsDeleted() == null || !p.getIsDeleted())

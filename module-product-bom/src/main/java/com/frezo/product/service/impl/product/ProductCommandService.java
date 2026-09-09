@@ -33,6 +33,7 @@ public class ProductCommandService {
     private final ProductMapper productMapper;
     private final ProductPricingService pricingService;
 
+    /** Phân lọc sản phẩm theo từ khóa, danh mục, trạng thái hoạt động với phân trang. */
     public PageResponse<ProductResponse> filter(ProductFilterRequest request) {
         int pageNum = request.getPage() != null ? request.getPage() : 0;
         int pageSize = request.getSize() != null ? request.getSize() : 10;
@@ -42,6 +43,7 @@ public class ProductCommandService {
         return PageResponse.of(pageNum, pageSize, page, responses);
     }
 
+    /** Lấy chi tiết sản phẩm theo ID và tăng bộ đếm lượt xem. */
     @Transactional
     public ProductResponse getById(String id) {
         Product product = productRepository.findById(id)
@@ -55,6 +57,7 @@ public class ProductCommandService {
         return productMapper.toResponse(product);
     }
 
+    /** Tạo mới sản phẩm, chuẩn hóa mã và ghi lịch sử giá ban đầu nếu có. */
     @Transactional
     @AuditAction(value = "Thêm mới sản phẩm", entity = "Product", action = "CREATE")
     public ProductResponse create(ProductCreateRequest request) {
@@ -70,6 +73,7 @@ public class ProductCommandService {
         return productMapper.toResponse(saved);
     }
 
+    /** Cập nhật thông tin sản phẩm, kiểm tra trùng mã và ghi nhận thay đổi giá bán. */
     @Transactional
     @AuditAction(value = "Cập nhật sản phẩm", entity = "Product", action = "UPDATE")
     public ProductResponse update(String id, ProductUpdateRequest request) {
@@ -93,6 +97,7 @@ public class ProductCommandService {
         return productMapper.toResponse(saved);
     }
 
+    /** Xóa mềm sản phẩm: đánh dấu isDeleted = true và isActive = false. */
     @Transactional
     @AuditAction(value = "Xóa sản phẩm", entity = "Product", action = "DELETE")
     public void delete(String id) {
@@ -103,6 +108,7 @@ public class ProductCommandService {
         productRepository.save(product);
     }
 
+    /** Chuẩn hóa mã sản phẩm:trim và kiểm tra không được để trống. */
     private String normalizeRequiredCode(String raw) {
         if (raw == null || raw.isBlank()) {
             throw new AppException("product.code.required", HttpStatus.BAD_REQUEST);
@@ -110,6 +116,7 @@ public class ProductCommandService {
         return raw.trim();
     }
 
+    /** Tạo JPA Specification từ bộ lọc để query sản phẩm. */
     private Specification<Product> createSpecification(ProductFilterRequest f) {
         Specification<Product> spec = Specification.where(GenericSpecification.hasFieldIs("isDeleted", false));
 

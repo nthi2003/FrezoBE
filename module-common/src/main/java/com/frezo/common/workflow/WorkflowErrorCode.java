@@ -5,10 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
-/**
- * Error codes cho workflow engine (module-common).
- * Giữ nguyên i18n key đang dùng trong {@code messages*.properties}.
- */
+
 @Getter
 @RequiredArgsConstructor
 public enum WorkflowErrorCode implements ErrorCode {

@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-/**
- * Kiểm tra access token còn hợp lệ sau khi JWT signature OK:
- * blacklist → sessionId claim → fallback tra token string trên DB.
- */
+
 @Service
 @RequiredArgsConstructor
 public class SessionValidationService {

@@ -26,6 +26,9 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     private final PerformanceReviewRepository reviewRepository;
     private final OkrScopeResolver scopeResolver;
 
+    /**
+     * Liệt kê các đánh giá hiệu quả công việc, lọc theo kỳ đánh giá hoặc nhân viên, chỉ trả về những bản ghi người dùng được phép xem.
+     */
     @Override
     public List<PerformanceReviewResponse> list(String cycleId, String personId) {
         String me = currentPerson();
@@ -38,6 +41,9 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .map(this::toDto).toList();
     }
 
+    /**
+     * Tạo mới một bản đánh giá hiệu quả công việc, kiểm tra quyền quản lý của người đánh giá và hợp lệ điểm tự đánh giá.
+     */
     @Override
     @Transactional
     public PerformanceReviewResponse create(PerformanceReviewRequest req) {
@@ -67,6 +73,9 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         return toDto(reviewRepository.save(r));
     }
 
+    /**
+     * Nhân viên gửi (submit) bản tự đánh giá của mình, chuyển trạng thái từ DRAFT sang SUBMITTED.
+     */
     @Override
     @Transactional
     public PerformanceReviewResponse submit(String id) {
@@ -83,6 +92,9 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         return toDto(reviewRepository.save(r));
     }
 
+    /**
+     * Quản lý xác nhận điểm/lời nhận xét cho đánh giá, chuyển trạng thái sang SCORED khi nhân viên đã submit.
+     */
     @Override
     @Transactional
     public PerformanceReviewResponse managerScore(String id, ManagerScoreRequest req) {
@@ -104,12 +116,18 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         return toDto(reviewRepository.save(r));
     }
 
+    /**
+     * Tìm bản đánh giá theo ID và đảm bảo nó chưa bị xóa, nếu không có thì ném lỗi NOT_FOUND.
+     */
     private PerformanceReview find(String id) {
         return reviewRepository.findById(id)
                 .filter(r -> Boolean.FALSE.equals(r.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Review không tồn tại"));
     }
 
+    /**
+     * Chuyển đổi entity PerformanceReview sang DTO response phục vụ hiển thị.
+     */
     private PerformanceReviewResponse toDto(PerformanceReview r) {
         return PerformanceReviewResponse.builder()
                 .id(r.getId())
@@ -126,6 +144,9 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .build();
     }
 
+    /**
+     * Kiểm tra người dùng hiện tại có quyền xem bản đánh giá (admin, chính nhân viên, người đánh giá, hoặc quản lý trực tiếp).
+     */
     private boolean canView(String me, PerformanceReview review) {
         return scopeResolver.isAdmin()
                 || me.equals(review.getPersonId())
@@ -133,11 +154,17 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 || scopeResolver.subordinatePersonIds(me).contains(review.getPersonId());
     }
 
+    /**
+     * Lấy personId của người dùng đang đăng nhập, ném lỗi nếu tài khoản chưa liên kết hồ sơ nhân sự.
+     */
     private String currentPerson() {
         return scopeResolver.currentPersonId()
                 .orElseThrow(() -> new AppException(CommonErrorCode.FORBIDDEN, "Tài khoản chưa liên kết nhân sự"));
     }
 
+    /**
+     * Kiểm tra điểm đánh giá nằm trong khoảng hợp lệ 0-100, ném lỗi validation nếu vượt phạm vi.
+     */
     private void validateScore(Double score, String field) {
         if (score != null && (score < 0 || score > 100)) {
             throw new AppException(CommonErrorCode.VALIDATION_FAILED, field + " phải từ 0 đến 100%");

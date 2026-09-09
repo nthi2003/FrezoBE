@@ -38,7 +38,7 @@ public class AuditLogAspect {
                     .userAgent(userAgent)
                     .build();
             
-            // Set auditing fields manually if JPA auditing is not picked up in this context
+
             auditLog.setCreatedBy(username != null ? username : "anonymous");
             auditLog.setCreatedDate(LocalDateTime.now());
 

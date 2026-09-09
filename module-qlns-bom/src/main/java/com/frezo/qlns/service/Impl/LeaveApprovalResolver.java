@@ -188,6 +188,10 @@ public class LeaveApprovalResolver {
         return isCurrentUserAdmin() || isCurrentUserHr() || hasAnyPermissionCode(LEAVE_VIEW_OTHERS_CODES);
     }
 
+    /**
+     * Chuẩn hoá permission code để so khớp đồng nhất giữa {@code .} và {@code _},
+     * bỏ qua phân biệt hoa/thường.
+     */
     private static String normalizeCode(String code) {
         return code.replace('.', '_').toUpperCase();
     }

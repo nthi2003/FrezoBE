@@ -26,6 +26,12 @@ public class QuoteServiceImpl implements QuoteService {
     private final QuoteRepository quoteRepo;
     private final QuoteItemRepository itemRepo;
 
+    /**
+     * Tạo mới báo giá (quote) kèm các mục, tự động tính tổng tiền chưa thuế, thuế và tổng cộng.
+     *
+     * @param r yêu cầu chứa thông tin báo giá và danh sách mục
+     * @return báo giá vừa được tạo
+     */
     @Override
     @Transactional
     public Quote create(QuoteRequest r) {
@@ -50,6 +56,14 @@ public class QuoteServiceImpl implements QuoteService {
         return quoteRepo.save(q);
     }
 
+    /**
+     * Cập nhật báo giá: thông tin chung và danh sách mục.
+     * Xóa cũ rồi tạo lại các mục nếu danh sách mới được cung cấp.
+     *
+     * @param id mã báo giá
+     * @param r yêu cầu cập nhật
+     * @return báo giá đã cập nhật
+     */
     @Override
     @Transactional
     public Quote update(String id, QuoteRequest r) {
@@ -69,6 +83,7 @@ public class QuoteServiceImpl implements QuoteService {
         return quoteRepo.save(q);
     }
 
+    /** Xóa mềm báo giá theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -77,6 +92,7 @@ public class QuoteServiceImpl implements QuoteService {
         quoteRepo.save(q);
     }
 
+    /** Lấy thông tin báo giá theo mã định danh, ném ngoại lệ nếu không tìm thấy. */
     @Override
     @Transactional(readOnly = true)
     public Quote get(String id) {
@@ -84,36 +100,43 @@ public class QuoteServiceImpl implements QuoteService {
                 .orElseThrow(() -> new AppException(CrmErrorCode.QUOTE_NOT_FOUND, id));
     }
 
+    /** Lấy danh sách tất cả báo giá đang hoạt động, sắp xếp theo ngày phát hành giảm dần. */
     @Override
     @Transactional(readOnly = true)
     public List<Quote> list() {
         return quoteRepo.findByIsDeletedFalseOrderByIssuedDateDesc();
     }
 
+    /** Lấy danh sách mục (items) của báo giá, sắp xếp theo số thứ tự dòng. */
     @Override
     @Transactional(readOnly = true)
     public List<QuoteItem> items(String quoteId) {
         return itemRepo.findByQuoteIdOrderByLineNoAsc(quoteId);
     }
 
+    /** Đánh dấu báo giá đã gửi cho khách hàng, chuyển trạng thái sang SENT. */
     @Override
     @Transactional
     public Quote send(String id) { return changeStatus(id, QuoteStatus.SENT); }
 
+    /** Đánh dấu báo giá đã được khách hàng chấp nhận, chuyển trạng thái sang ACCEPTED. */
     @Override
     @Transactional
     public Quote accept(String id) { return changeStatus(id, QuoteStatus.ACCEPTED); }
 
+    /** Đánh dấu báo giá bị khách hàng từ chối, chuyển trạng thái sang REJECTED. */
     @Override
     @Transactional
     public Quote reject(String id) { return changeStatus(id, QuoteStatus.REJECTED); }
 
+    /** Thay đổi trạng thái báo giá theo mã định danh. */
     private Quote changeStatus(String id, QuoteStatus st) {
         Quote q = get(id);
         q.setStatus(st);
         return quoteRepo.save(q);
     }
 
+    /** Lưu danh sách mục vào cơ sở dữ liệu cho báo giá đã cho, áp dụng giảm giá theo dòng. */
     private void saveItems(Quote q, List<QuoteRequest.Item> items) {
         if (items == null) return;
         int lineNo = 1;
@@ -141,6 +164,7 @@ public class QuoteServiceImpl implements QuoteService {
         }
     }
 
+    /** Tính lại tổng cộng báo giá: tổng tiền chưa thuế, thuế và tổng cộng. */
     private void recalcTotals(Quote q) {
         List<QuoteItem> items = itemRepo.findByQuoteIdOrderByLineNoAsc(q.getId());
         BigDecimal sub = BigDecimal.ZERO;
@@ -157,8 +181,10 @@ public class QuoteServiceImpl implements QuoteService {
         q.setTotal(sub.add(tax));
     }
 
+    /** Trả về BigDecimal.ZERO nếu giá trị null. */
     private static BigDecimal safe(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 
+    /** Tạo mã báo giá tự động theo định dạng Q-{năm}-{6 ký tự ngẫu nhiên}. */
     private String nextCode() {
         return "Q-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }

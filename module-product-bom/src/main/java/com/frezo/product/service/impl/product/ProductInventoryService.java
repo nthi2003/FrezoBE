@@ -19,9 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Nhập kho nhanh theo chuyến xe — tạo batch + ghi inventory log.
- */
 @Component
 @RequiredArgsConstructor
 public class ProductInventoryService {
@@ -30,6 +27,7 @@ public class ProductInventoryService {
     private final BatchRepository batchRepository;
     private final InventoryLogRepository inventoryLogRepository;
 
+    /** Nhập kho theo chuyến xe: tạo lô hàng và ghi nhật ký nhập kho cho từng sản phẩm. */
     @Transactional
     public void importBatch(BatchImportRequest request) {
         for (BatchImportRequest.BatchItem item : request.getItems()) {

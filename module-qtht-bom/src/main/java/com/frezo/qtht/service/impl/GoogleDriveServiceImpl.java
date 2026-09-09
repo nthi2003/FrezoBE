@@ -28,6 +28,9 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
     @Value("${google.drive.credentials.path:service-account.json}")
     private String credentialsPath;
 
+    /**
+     * Kiểm tra xem cấu hình Google Drive (tệp credentials) đã được thiết lập chưa.
+     */
     @Override
     public boolean isConfigured() {
         return credentialsPath != null
@@ -35,11 +38,17 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
                 && new java.io.File(credentialsPath).isFile();
     }
 
+    /**
+     * Trả về đường dẫn đến tệp Service Account credentials của Google Drive.
+     */
     @Override
     public String getCredentialsPath() {
         return credentialsPath;
     }
 
+    /**
+     * Upload một tệp lên Google Drive vào thư mục được cấu hình và trả về File ID.
+     */
     @Override
     public String uploadFile(java.io.File localFile, String mimeType) throws IOException, GeneralSecurityException {
         Drive driveService = getDriveService();
@@ -59,6 +68,9 @@ public class GoogleDriveServiceImpl implements GoogleDriveService {
         return file.getId();
     }
 
+    /**
+     * Khởi tạo và trả về đối tượng Drive service từ Service Account credentials.
+     */
     private Drive getDriveService() throws IOException, GeneralSecurityException {
         GoogleCredentials credentials = GoogleCredentials.fromStream(new FileInputStream(credentialsPath))
                 .createScoped(Collections.singletonList(DriveScopes.DRIVE_FILE));

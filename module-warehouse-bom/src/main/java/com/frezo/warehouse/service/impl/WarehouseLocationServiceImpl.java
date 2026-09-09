@@ -23,6 +23,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
     private final WarehouseLocationRepository locationRepository;
     private final WarehouseZoneRepository zoneRepository;
 
+    /** Lấy danh sách vị trí lưu kho của một kho, nhóm theo từng khu vực (zone). */
     @Override
     public List<WarehouseLocationResponse> getByWarehouseId(String warehouseId) {
         List<WarehouseZone> zones = zoneRepository.findByWarehouseId(warehouseId);
@@ -37,6 +38,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         return result;
     }
 
+    /** Lấy thông tin một vị trí lưu kho theo id. */
     @Override
     public WarehouseLocationResponse getById(String id) {
         WarehouseLocation loc = locationRepository.findById(id)
@@ -44,11 +46,13 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         return toResponse(loc);
     }
 
+    /** Lấy danh sách vị trí lưu kho thuộc một khu vực. */
     @Override
     public List<WarehouseLocationResponse> getByZoneId(String zoneId) {
         return locationRepository.findByZoneId(zoneId).stream().map(this::toResponse).toList();
     }
 
+    /** Lấy thông tin vị trí lưu kho theo mã vạch. */
     @Override
     public WarehouseLocationResponse getByBarcode(String barcode) {
         WarehouseLocation loc = locationRepository.findByBarcode(barcode)
@@ -56,6 +60,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         return toResponse(loc);
     }
 
+    /** Tạo mới một vị trí lưu kho trong kho. */
     @Override
     @Transactional
     public WarehouseLocationResponse create(WarehouseLocationRequest request) {
@@ -73,6 +78,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         return toResponse(loc);
     }
 
+    /** Cập nhật thông tin vị trí lưu kho (chỉ các trường được cung cấp). */
     @Override
     @Transactional
     public WarehouseLocationResponse update(String id, WarehouseLocationRequest request) {
@@ -90,6 +96,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         return toResponse(loc);
     }
 
+    /** Xóa một vị trí lưu kho theo id. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -98,6 +105,7 @@ public class WarehouseLocationServiceImpl implements WarehouseLocationService {
         locationRepository.delete(loc);
     }
 
+    /** Chuyển entity vị trí lưu kho thành response. */
     private WarehouseLocationResponse toResponse(WarehouseLocation loc) {
         WarehouseLocationResponse r = new WarehouseLocationResponse();
         r.setId(loc.getId());

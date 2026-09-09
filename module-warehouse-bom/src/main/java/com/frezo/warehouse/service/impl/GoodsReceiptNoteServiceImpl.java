@@ -50,6 +50,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Lấy thông tin phiếu nhập kho theo id và trả về dữ liệu phản hồi; báo lỗi nếu không tìm thấy.
+     */
     @Override
     public GrnResponse getById(String id) {
         GoodsReceiptNote grn = grnRepository.findById(id)
@@ -57,6 +60,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Lấy thông tin phiếu nhập kho theo mã phiếu và trả về dữ liệu phản hồi; báo lỗi nếu không tìm thấy.
+     */
     @Override
     public GrnResponse getByCode(String grnCode) {
         GoodsReceiptNote grn = grnRepository.findByGrnCode(grnCode)
@@ -64,6 +70,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Lọc danh sách phiếu nhập kho theo trạng thái và từ khóa, phân trang; trả về trang phản hồi.
+     */
     @Override
     public PageResponse<GrnResponse> filter(String status, String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -88,6 +97,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return PageResponse.of(page, size, grnPage, responses);
     }
 
+    /**
+     * Tạo mới phiếu nhập kho: sinh mã phiếu, lưu phiếu cùng các dòng và tính tổng giá trị.
+     */
     @Override
     @Transactional
     public GrnResponse create(GrnCreateRequest request) {
@@ -116,6 +128,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Cập nhật thông tin phiếu nhập kho (hóa đơn, ngày, ghi chú) nếu phiếu chưa CONFIRMED/CANCELLED.
+     */
     @Override
     @Transactional
     public GrnResponse update(String id, GrnUpdateRequest request) {
@@ -138,6 +153,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Trình phiếu nhập kho từ DRAFT sang PENDING_APPROVAL.
+     */
     @Override
     @Transactional
     public GrnResponse submit(String id) {
@@ -151,6 +169,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Duyệt phiếu nhập kho: chuyển trạng thái sang APPROVED và ghi nhận người duyệt, thời điểm duyệt.
+     */
     @Override
     @Transactional
     public GrnResponse approve(String id) {
@@ -167,6 +188,10 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Xác nhận nhập kho: ghi nhận số lượng thực nhận/vị trí, tạo lô mới nếu cần, tăng tồn kho, ghi sổ cái,
+     * phiếu giao dịch, phát sự kiện đã nhập và cập nhật trạng thái phiếu thành CONFIRMED.
+     */
     @Override
     @Transactional
     public GrnResponse confirm(String id, GrnConfirmRequest request) {
@@ -271,6 +296,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return buildResponse(grn);
     }
 
+    /**
+     * Hủy phiếu nhập kho (không cho hủy phiếu đã CONFIRMED) và ghi lý do hủy.
+     */
     @Override
     @Transactional
     public void cancel(String id, String reason) {
@@ -286,6 +314,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         grnRepository.save(grn);
     }
 
+    /**
+     * Xóa phiếu nhập kho kèm các dòng chi tiết; không cho xóa phiếu đã CONFIRMED.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -298,6 +329,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         grnRepository.delete(grn);
     }
 
+    /**
+     * Truy xuất lịch sử giá nhập của sản phẩm từ các phiếu GRN đã nhận, trả về danh sách điểm giá theo thời gian.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ProductPriceHistoryPoint> getProductPriceHistory(String productId) {
@@ -329,6 +363,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return points;
     }
 
+    /**
+     * Dựng đối tượng phản hồi phiếu nhập kho kèm tên kho, nhà cung cấp, mã PO, người thực hiện và danh sách dòng.
+     */
     private GrnResponse buildResponse(GoodsReceiptNote grn) {
         GrnResponse response = grnMapper.toResponse(grn);
         if (grn.getWarehouseId() != null) {
@@ -354,6 +391,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         return response;
     }
 
+    /**
+     * Bổ sung mã và tên sản phẩm vào dòng phản hồi chi tiết qua truy vấn JDBC.
+     */
     private void enrichProductFields(GrnResponse.GrnItemResponse item) {
         if (item.getProductId() == null || item.getProductId().isBlank()) {
             return;
@@ -371,6 +411,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         }
     }
 
+    /**
+     * Tra tên nhà cung cấp theo id từ bảng nccs; trả null nếu không tìm thấy.
+     */
     private String resolveSupplierName(String supplierId) {
         if (supplierId == null || supplierId.isBlank()) {
             return null;
@@ -417,6 +460,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         }
     }
 
+    /**
+     * Tìm phần tử xác nhận tương ứng với một dòng phiếu trong yêu cầu xác nhận; trả null nếu không có.
+     */
     private GrnConfirmRequest.GrnConfirmItem findConfirmItem(GrnConfirmRequest request, String itemId) {
         if (request.getItems() == null) return null;
         return request.getItems().stream()
@@ -433,6 +479,9 @@ public class GoodsReceiptNoteServiceImpl implements GoodsReceiptNoteService {
         }
     }
 
+    /**
+     * Tăng tồn kho (balance) của sản phẩm theo kho/vị trí/lô; tạo mới bản ghi balance nếu chưa tồn tại.
+     */
     private void updateStockBalance(String productId, String warehouseId, String locationId, String batchId, double qty) {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(

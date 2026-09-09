@@ -23,6 +23,13 @@ public class MeetingServiceImpl implements MeetingService {
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private final MeetingRepository meetingRepository;
 
+    /**
+     * Lấy danh sách cuộc họp, có thể lọc theo mã thương vụ.
+     * Nếu không có dealId thì trả về tất cả cuộc họp.
+     *
+     * @param dealId mã thương vụ (có thể null)
+     * @return danh sách cuộc họp dưới dạng DTO
+     */
     @Override
     public List<MeetingResponse> list(String dealId) {
         List<Meeting> list = dealId != null
@@ -31,11 +38,13 @@ public class MeetingServiceImpl implements MeetingService {
         return list.stream().map(this::toDto).toList();
     }
 
+    /** Lấy thông tin cuộc họp theo mã định danh dưới dạng DTO. */
     @Override
     public MeetingResponse get(String id) {
         return toDto(find(id));
     }
 
+    /** Tạo mới một cuộc họp từ thông tin trong MeetingRequest. */
     @Override
     @Transactional
     public MeetingResponse create(MeetingRequest req) {
@@ -55,6 +64,14 @@ public class MeetingServiceImpl implements MeetingService {
         return toDto(meetingRepository.save(m));
     }
 
+    /**
+     * Cập nhật thông tin cuộc họp theo mã định danh.
+     * Chỉ cập nhật các trường có giá trị khác null.
+     *
+     * @param id mã cuộc họp
+     * @param req yêu cầu cập nhật
+     * @return cuộc họp đã cập nhật dưới dạng DTO
+     */
     @Override
     @Transactional
     public MeetingResponse update(String id, MeetingRequest req) {
@@ -72,6 +89,7 @@ public class MeetingServiceImpl implements MeetingService {
         return toDto(meetingRepository.save(m));
     }
 
+    /** Xóa mềm cuộc họp theo mã định danh và ghi nhận người thực hiện. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -80,12 +98,14 @@ public class MeetingServiceImpl implements MeetingService {
         meetingRepository.save(m);
     }
 
+    /** Tìm cuộc họp theo mã, kiểm tra chưa bị xóa mềm và tồn tại. */
     private Meeting find(String id) {
         return meetingRepository.findById(id)
                 .filter(m -> Boolean.FALSE.equals(m.getIsDeleted()))
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Meeting không tồn tại"));
     }
 
+    /** Chuyển đổi thực thể Meeting sang DTO Response. */
     private MeetingResponse toDto(Meeting m) {
         return MeetingResponse.builder()
                 .id(m.getId()).title(m.getTitle())

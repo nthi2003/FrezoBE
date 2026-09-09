@@ -35,6 +35,10 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
     private final JdbcTemplate jdbcTemplate;
     private final StockAlertNotifier stockAlertNotifier;
 
+    /**
+     * Quét toàn bộ lô hàng đang hoạt động, phát hiện các lô sắp hết hạn (số ngày còn lại ≤ ngưỡng cảnh báo),
+     * tạo cảnh báo hết hạn duy nhất theo ngày và gửi thông báo. Trả về số cảnh báo đã tạo.
+     */
     @Override
     @Transactional
     public int scanAndRaiseExpiryAlerts() {
@@ -79,6 +83,10 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
         return raised;
     }
 
+    /**
+     * Xác định số ngày cảnh báo hết hạn cho sản phẩm: ưu tiên ngưỡng cấu hình trên sản phẩm,
+     * nếu không có thì dùng ngưỡng mặc định theo loại danh mục (rau lá = 1, còn lại = 3).
+     */
     private int resolveExpiryAlertDays(String productId) {
         Product p = productRepository.findById(productId).orElse(null);
         if (p != null && p.getExpiryAlertDays() != null && p.getExpiryAlertDays() > 0) {
@@ -91,6 +99,9 @@ public class ExpiryAlertServiceImpl implements ExpiryAlertService {
         return DEFAULT_ALERT_ROOT;
     }
 
+    /**
+     * Tra mã của danh mục theo id qua truy vấn JDBC; trả null nếu không tìm thấy hoặc danh mục không hợp lệ.
+     */
     private String resolveCategoryCode(String categoryId) {
         if (categoryId == null || categoryId.isBlank()) return null;
         try {

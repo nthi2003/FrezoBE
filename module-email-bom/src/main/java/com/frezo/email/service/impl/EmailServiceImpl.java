@@ -56,6 +56,9 @@ public class EmailServiceImpl implements EmailService {
     private final SendEmailRepository sendEmailRepository;
     private final CustomerRepository customerRepository;
 
+    /**
+     * Gửi một email đơn lẻ qua cấu hình SMTP được chỉ định.
+     */
     @Override
     public void sendEmail(EmailConfig config, String to, String subject, String body) {
         JavaMailSenderImpl mailSender = createMailSender(config);
@@ -75,6 +78,9 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * Gửi email cho nhiều người nhận dựa trên mã mẫu, thay thế tham số và ghi log.
+     */
     @Override
     public void sendByTemplate(String templateCode, Map<String, Object> params, List<String> recipients) {
         EmailTemplate template = emailTemplateRepository.findByCode(templateCode)
@@ -111,6 +117,9 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * Gửi email HTML đơn giản dùng cấu hình đang hoạt động và ghi log kết quả.
+     */
     @Override
     public void sendSimple(String to, String subject, String htmlBody) {
         EmailConfig config = resolveActiveConfig();
@@ -124,6 +133,9 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
+    /**
+     * Lấy cấu hình email đang hoạt động và chưa bị xóa (mới nhất).
+     */
     private EmailConfig resolveActiveConfig() {
         return emailConfigRepository.findByActivatedTrue().stream()
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
@@ -132,6 +144,9 @@ public class EmailServiceImpl implements EmailService {
                 .orElseThrow(() -> new AppException(EmailErrorCode.CONFIG_NOT_FOUND));
     }
 
+    /**
+     * Gửi email hàng loạt cho danh sách người nhận và khách hàng theo nhóm, trả về kết quả.
+     */
     @Override
     public BulkEmailResponse sendBulk(BulkEmailRequest request) {
         EmailConfig config = resolveActiveConfig();
@@ -227,6 +242,9 @@ public class EmailServiceImpl implements EmailService {
                 .build();
     }
 
+    /**
+     * Gửi email hàng loạt theo các mã nhóm khách hàng, dùng mẫu hoặc nội dung truyền vào.
+     */
     @Override
     public BulkEmailResponse sendBulkByCategoryCodes(String templateCode, String subject, String body, List<String> categoryCodes, String description) {
         BulkEmailRequest request = BulkEmailRequest.builder()
@@ -239,6 +257,9 @@ public class EmailServiceImpl implements EmailService {
         return sendBulk(request);
     }
 
+    /**
+     * Lấy lịch sử gửi email phân trang theo bộ lọc (trạng thái, loại, ngày, từ khóa).
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<SendEmailLogResponse> getSendLogs(SendEmailLogFilter filter) {
@@ -248,6 +269,9 @@ public class EmailServiceImpl implements EmailService {
         return PageResponse.from(page, EmailServiceImpl::toSendLogResponse);
     }
 
+    /**
+     * Xây dựng điều kiện truy vấn lịch sử gửi email từ bộ lọc.
+     */
     private static Specification<SendEmail> buildSendLogSpec(SendEmailLogFilter filter) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -278,6 +302,9 @@ public class EmailServiceImpl implements EmailService {
         };
     }
 
+    /**
+     * Chuyển đổi bản ghi lịch sử gửi email sang response.
+     */
     private static SendEmailLogResponse toSendLogResponse(SendEmail entity) {
         return SendEmailLogResponse.builder()
                 .id(entity.getId())
@@ -293,6 +320,9 @@ public class EmailServiceImpl implements EmailService {
                 .build();
     }
 
+    /**
+     * Kiểm tra kết nối SMTP đến máy chủ email theo cấu hình.
+     */
     @Override
     public void testConnection(String configId) {
         EmailConfig config = emailConfigRepository.findById(configId)
@@ -306,6 +336,9 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    /**
+     * Ghi log một lần gửi email (thành công/thất bại) vào cơ sở dữ liệu.
+     */
     private void logSendEmail(String templateId, String topic, List<String> recipients,
                               String description, String status, String errorMessage) {
         try {
@@ -325,6 +358,9 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
+    /**
+     * Tạo mô tả lỗi gửi email từ nguyên nhân gốc và cấu hình SMTP.
+     */
     private static String describeFailure(EmailConfig config, Throwable e) {
         Throwable root = e;
         while (root.getCause() != null && root.getCause() != root) {
@@ -334,11 +370,17 @@ public class EmailServiceImpl implements EmailService {
         return target + " — " + root.getClass().getSimpleName() + ": " + root.getMessage();
     }
 
+    /**
+     * Cắt chuỗi lỗi nếu vượt quá độ dài tối đa cho phép.
+     */
     private static String truncate(String value, int max) {
         if (value == null) return null;
         return value.length() <= max ? value : value.substring(0, max);
     }
 
+    /**
+     * Tạo đối tượng gửi mail từ cấu hình email (host, port, auth, TLS).
+     */
     private JavaMailSenderImpl createMailSender(EmailConfig config) {
         String host = config.getSmtp() == null ? "" : config.getSmtp().trim();
         if (host.isEmpty() || host.contains("@")) {
@@ -364,6 +406,9 @@ public class EmailServiceImpl implements EmailService {
         return mailSender;
     }
 
+    /**
+     * Thay thế các biến {{key}} trong nội dung mẫu bằng giá trị tham số.
+     */
     private String processTemplate(String content, Map<String, Object> params) {
         if (content == null)
             return "";

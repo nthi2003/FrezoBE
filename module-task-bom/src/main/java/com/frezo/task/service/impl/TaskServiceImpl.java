@@ -33,6 +33,10 @@ public class TaskServiceImpl implements TaskService {
     private final TaskMapper taskMapper;
     private final TaskAccessHelper accessHelper;
 
+    /**
+     * Tạo mới task, gán tag và mặc định trạng thái OPEN.
+     * Chỉ admin mới có thể tạo task ở trạng thái CLOSED.
+     */
     @Override
     @Transactional
     public TaskResponse create(TaskRequest request) {
@@ -52,6 +56,9 @@ public class TaskServiceImpl implements TaskService {
         return toVisibleResponse(savedTask);
     }
 
+    /**
+     * Cập nhật task, kiểm tra quyền truy cập và ràng buộc chuyển trạng thái.
+     */
     @Override
     @Transactional
     public TaskResponse update(String id, TaskRequest request) {
@@ -69,6 +76,9 @@ public class TaskServiceImpl implements TaskService {
         return toVisibleResponse(savedTask);
     }
 
+    /**
+     * Xóa mềm task, chỉ người có quyền review mới được phép xóa.
+     */
     @Override
     @Transactional
     public Void delete(String id) {
@@ -81,12 +91,18 @@ public class TaskServiceImpl implements TaskService {
         return null;
     }
 
+    /**
+     * Lấy chi tiết task theo mã, kiểm tra quyền truy cập trước khi trả về.
+     */
     @Override
     @Transactional(readOnly = true)
     public TaskResponse findById(String id) {
         return toVisibleResponse(requireVisibleTask(id));
     }
 
+    /**
+     * Liệt kê tất cả task mà người dùng hiện tại có quyền xem.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll() {
@@ -97,6 +113,9 @@ public class TaskServiceImpl implements TaskService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Giao task cho một người xử lý. Chỉ người review hoặc admin mới được phép.
+     */
     @Override
     @Transactional
     public TaskResponse assignTask(String taskId, String assigneeId) {
@@ -109,6 +128,9 @@ public class TaskServiceImpl implements TaskService {
         return toVisibleResponse(savedTask);
     }
 
+    /**
+     * Cập nhật trạng thái task theo chuỗi, kiểm tra quy tắc chuyển trạng thái.
+     */
     @Override
     @Transactional
     public TaskResponse updateStatus(String taskId, String status) {
@@ -126,6 +148,9 @@ public class TaskServiceImpl implements TaskService {
         return toVisibleResponse(savedTask);
     }
 
+    /**
+     * Duyệt task: chấp nhận (CLOSED) hoặc trả lại (IN_PROGRESS) từ trạng thái DONE.
+     */
     @Override
     @Transactional
     public TaskResponse review(String id, ReviewRequest request) {
@@ -142,6 +167,7 @@ public class TaskServiceImpl implements TaskService {
         return toVisibleResponse(saved);
     }
 
+    /** Kiểm tra quy tắc chuyển trạng thái, trừ admin đều phải tuân thủ. */
     private void enforceStatusTransition(Task task, TaskStatusEnum from, TaskStatusEnum to) {
         if (from == to) return;
         if (accessHelper.isAdmin()) return;
@@ -172,6 +198,7 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
+    /** Tìm task và kiểm tra quyền xem, ném ngoại lệ nếu không có quyền. */
     private Task requireVisibleTask(String id) {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(TaskErrorCode.TASK_NOT_FOUND, id));
@@ -181,6 +208,7 @@ public class TaskServiceImpl implements TaskService {
         return task;
     }
 
+    /** Chuyển task sang response có gắn cờ quyền review/completes cho người dùng hiện tại. */
     private TaskResponse toVisibleResponse(Task task) {
         TaskResponse response = taskMapper.toResponse(task);
         boolean pending = task.getStatus() == TaskStatusEnum.DONE;

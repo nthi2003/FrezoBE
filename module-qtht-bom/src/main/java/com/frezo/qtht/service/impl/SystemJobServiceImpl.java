@@ -52,6 +52,9 @@ public class SystemJobServiceImpl implements SystemJobService {
     private final SystemJobHistoryRepository historyRepository;
     private final DynamicJobScheduler scheduler;
 
+    /**
+     * Lấy danh sách tất cả công việc hệ thống (system jobs) chưa bị xóa, sắp xếp theo module và tên.
+     */
     @Override
     public List<SystemJobDto> listJobs() {
         return jobRepository.findByIsDeletedFalseOrderByModuleCodeAscJobNameAsc()
@@ -60,6 +63,9 @@ public class SystemJobServiceImpl implements SystemJobService {
                 .toList();
     }
 
+    /**
+     * Cập nhật biểu thức cron hoặc trạng thái bật/tắt của job — kiểm tra hợp lệ cron và áp dụng lịch trình mới.
+     */
     @Override
     @Transactional
     public SystemJobDto updateJob(String code, SystemJobUpdateRequest request) {
@@ -91,6 +97,9 @@ public class SystemJobServiceImpl implements SystemJobService {
         return toDto(job);
     }
 
+    /**
+     * Chạy ngay lập tức một job theo mã (bypass lịch cron), ghi lại người kích hoạt.
+     */
     @Override
     public SystemJobDto runNow(String code) {
         SystemJob job = findJob(code);
@@ -99,6 +108,9 @@ public class SystemJobServiceImpl implements SystemJobService {
         return toDto(job);
     }
 
+    /**
+     * Lấy lịch sử thực thi của job theo mã — hỗ trợ lọc theo trạng thái, khoảng ngày và phân trang.
+     */
     @Override
     public FePage<SystemJobHistoryDto> history(String code, Integer pageNumber, Integer pageSize,
                                                String status, LocalDateTime fromDate, LocalDateTime toDate) {
@@ -116,6 +128,9 @@ public class SystemJobServiceImpl implements SystemJobService {
                 .build();
     }
 
+    /**
+     * Xem trước các thời điểm chạy tiếp theo của biểu thức cron — trả về danh sách timestamp (tối đa 10).
+     */
     @Override
     public List<String> previewCron(String expression, Integer count) {
         if (expression == null || expression.isBlank()) {
@@ -146,11 +161,17 @@ public class SystemJobServiceImpl implements SystemJobService {
     // Helpers
     // ------------------------------------------------------------
 
+    /**
+     * Tìm job hệ thống theo mã job, ném ngoại lệ nếu không tìm thấy hoặc đã bị xóa.
+     */
     private SystemJob findJob(String code) {
         return jobRepository.findByJobCodeAndIsDeletedFalse(code)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, code));
     }
 
+    /**
+     * Xây dựng Specification lọc lịch sử job theo mã, trạng thái và khoảng thời gian.
+     */
     private Specification<SystemJobHistory> historySpecification(String code, String status,
                                                                  LocalDateTime fromDate, LocalDateTime toDate) {
         return (root, query, cb) -> {
@@ -170,6 +191,9 @@ public class SystemJobServiceImpl implements SystemJobService {
         };
     }
 
+    /**
+     * Chuyển đổi entity SystemJob sang DTO SystemJobDto, bao gồm trạng thái vận hành và thông tin sẵn sàng.
+     */
     private SystemJobDto toDto(SystemJob job) {
         String readiness = scheduler.readinessMessage(job.getJobCode());
         return SystemJobDto.builder()
@@ -190,6 +214,9 @@ public class SystemJobServiceImpl implements SystemJobService {
                 .build();
     }
 
+    /**
+     * Xác định trạng thái vận hành của job (RUNNING, DISABLED, NOT_READY, ENABLED) dựa trên trạng thái hiện tại và thông tin sẵn sàng.
+     */
     private String resolveStatus(SystemJob job, String readinessMessage) {
         if (scheduler.isRunning(job.getJobCode())) {
             return STATUS_RUNNING;
@@ -203,6 +230,9 @@ public class SystemJobServiceImpl implements SystemJobService {
         return STATUS_ENABLED;
     }
 
+    /**
+     * Chuyển đổi entity SystemJobHistory sang DTO SystemJobHistoryDto.
+     */
     private SystemJobHistoryDto toHistoryDto(SystemJobHistory history) {
         return SystemJobHistoryDto.builder()
                 .id(history.getId())

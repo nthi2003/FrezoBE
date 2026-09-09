@@ -53,6 +53,13 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
     // ============================================================
     //  CRUD
     // ============================================================
+    /**
+     * Tạo mới link affiliate với mã code duy nhất.
+     * Nếu không cung cấp code thì tự sinh slug ngẫu nhiên 8 ký tự.
+     *
+     * @param req yêu cầu chứa thông tin link affiliate
+     * @return link affiliate vừa được tạo dưới dạng DTO
+     */
     @Override
     @Transactional
     public AffiliateLinkResponse create(AffiliateLinkRequest req) {
@@ -82,6 +89,7 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         return toResponse(link);
     }
 
+    /** Cập nhật thông tin link affiliate theo mã định danh. */
     @Override
     @Transactional
     public AffiliateLinkResponse update(String id, AffiliateLinkRequest req) {
@@ -101,9 +109,11 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         return toResponse(linkRepository.save(link));
     }
 
+    /** Lấy thông tin link affiliate theo mã định danh. */
     @Override
     public AffiliateLinkResponse get(String id) { return toResponse(mustFind(id)); }
 
+    /** Xóa mềm link affiliate theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -112,6 +122,7 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         linkRepository.save(link);
     }
 
+    /** Lấy danh sách link affiliate, có thể lọc theo campaign, trạng thái và tên KOL. */
     @Override
     public List<AffiliateLinkResponse> list(String campaign, String status, String kolName) {
         var stream = linkRepository.findAll().stream()
@@ -132,6 +143,16 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
     // ============================================================
     //  TRACKING
     // ============================================================
+    /**
+     * Theo dõi lượt nhấp chuột và trả về URL đích với tham số UTM.
+     * Kiểm tra link còn ACTIVE và chưa hết hạn, ghi nhận click, cập nhật bộ đếm unique.
+     *
+     * @param code mã code link affiliate
+     * @param ip địa chỉ IP người nhấp
+     * @param userAgent chuỗi user-agent của trình duyệt
+     * @param referer URL giới thiệu
+     * @return URL đích đã gắn tham số UTM
+     */
     @Override
     @Transactional
     public String trackAndResolve(String code, String ip, String userAgent, String referer) {
@@ -170,6 +191,14 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         return buildFinalUrl(link);
     }
 
+    /**
+     * Ghi nhận chuyển đổi (conversion) cho link affiliate theo mã code.
+     * Áp dụng mô hình last-click attribution trong cửa sổ 30 ngày.
+     *
+     * @param code mã link affiliate
+     * @param value giá trị chuyển đổi
+     * @return true nếu ghi nhận thành công
+     */
     @Override
     @Transactional
     public boolean recordConversion(String code, BigDecimal value) {
@@ -194,6 +223,12 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         return true;
     }
 
+    /**
+     * Tổng hợp dữ liệu bảng điều khiển affiliate: tổng link, lượt nhấp, chuyển đổi,
+     * doanh thu, hoa hồng ước tính và top KOL/campaign.
+     *
+     * @return map chứa tổng quan và xếp hạng
+     */
     @Override
     public Map<String, Object> dashboard() {
         var links = linkRepository.findAll().stream()
@@ -251,11 +286,13 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
     // ============================================================
     //  HELPERS
     // ============================================================
+    /** Tìm link affiliate theo mã định danh, ném ngoại lệ nếu không tồn tại. */
     private AffiliateLink mustFind(String id) {
         return linkRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Link không tồn tại: " + id));
     }
 
+    /** Sinh slug ngẫu nhiên 8 ký tự từ bảng chữ cái an toàn, thử tối đa 5 lần để tìm mã duy nhất. */
     private String generateUniqueSlug() {
         for (int attempt = 0; attempt < 5; attempt++) {
             StringBuilder sb = new StringBuilder(SLUG_LEN);
@@ -266,10 +303,12 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         throw new IllegalStateException("Không sinh được slug duy nhất sau 5 lần thử");
     }
 
+    /** Trả về giá trị mặc định nếu chuỗi null hoặc rỗng. */
     private String nz(String v, String fallback) {
         return v != null && !v.isBlank() ? v : fallback;
     }
 
+    /** Ghép tham số UTM và mã affiliate vào URL đích để tạo link theo dõi hoàn chỉnh. */
     private String buildFinalUrl(AffiliateLink link) {
         StringBuilder url = new StringBuilder(link.getTargetUrl());
         url.append(link.getTargetUrl().contains("?") ? "&" : "?");
@@ -285,11 +324,13 @@ public class AffiliateLinkServiceImpl implements AffiliateLinkService {
         return url.toString();
     }
 
+    /** Nối thêm tham số UTM (đã mã hóa UTF-8) vào URL nếu giá trị không rỗng. */
     private void appendUtm(StringBuilder url, String key, String value) {
         if (value == null || value.isBlank()) return;
         url.append(key).append('=').append(URLEncoder.encode(value, StandardCharsets.UTF_8)).append('&');
     }
 
+    /** Chuyển đổi thực thể AffiliateLink sang DTO Response kèm chỉ số hiệu suất (click, chuyển đổi, hoa hồng). */
     private AffiliateLinkResponse toResponse(AffiliateLink l) {
         AffiliateLinkResponse r = new AffiliateLinkResponse();
         r.setId(l.getId());

@@ -21,6 +21,9 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
     private final EmployeeDependentRepository employeeDependentRepository;
     private final EmployeeDependentMapper employeeDependentMapper;
 
+    /**
+     * Tạo mới một người phụ thuộc (giảm trừ gia cảnh) cho nhân viên.
+     */
     @Override
     @Transactional
     public EmployeeDependentResponse create(EmployeeDependentRequest request) {
@@ -28,6 +31,9 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
         return employeeDependentMapper.toResponse(employeeDependentRepository.save(entity));
     }
 
+    /**
+     * Cập nhật thông tin người phụ thuộc theo id (thông tin, thời hạn, trạng thái hoạt động).
+     */
     @Override
     @Transactional
     public EmployeeDependentResponse update(String id, EmployeeDependentRequest request) {
@@ -45,6 +51,9 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
         return employeeDependentMapper.toResponse(employeeDependentRepository.save(entity));
     }
 
+    /**
+     * Xoá mềm (soft-delete) một người phụ thuộc theo id.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -54,6 +63,9 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
         employeeDependentRepository.save(entity);
     }
 
+    /**
+     * Lấy chi tiết một người phụ thuộc theo id, không tồn tại thì báo lỗi DEPENDENT_NOT_FOUND.
+     */
     @Override
     public EmployeeDependentResponse getById(String id) {
         return employeeDependentRepository.findById(id)
@@ -61,6 +73,9 @@ public class EmployeeDependentServiceImpl implements EmployeeDependentService {
                 .orElseThrow(() -> new AppException(QlnsErrorCode.DEPENDENT_NOT_FOUND));
     }
 
+    /**
+     * Lấy danh sách người phụ thuộc đang hoạt động của một nhân viên theo personId.
+     */
     @Override
     public List<EmployeeDependentResponse> getByPersonId(String personId) {
         return employeeDependentRepository.findByPersonIdAndIsActiveTrue(personId)

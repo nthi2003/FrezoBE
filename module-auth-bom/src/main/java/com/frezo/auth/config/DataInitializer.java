@@ -21,23 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Bootstrap admin/superadmin users + seed menu/role/permission mặc định.
- * <p>
- * <b>Nguyên tắc "User luôn map với Person":</b>
- * <ul>
- *   <li>Mọi {@link User} PHẢI có {@code personId} để authorization (menu, permission, feature check)
- *       lookup được {@code Person.isAdmin}. Nếu {@code personId} rỗng → user sẽ KHÔNG bao giờ được coi
- *       là admin dù đúng nghĩa, vì {@code CheckPermissionAspect}, {@code MenuServiceImpl},
- *       {@code RequireFeatureAspect} đều đọc admin flag qua {@code Person.isAdmin}.</li>
- *   <li>{@link #ensureUserWithPerson} là single source of truth: tạo/rehash User, tạo Person nếu chưa có,
- *       link 2 chiều, set {@code Person.isAdmin} đúng flag mong muốn. Dùng cho cả seed admin, superadmin,
- *       và mọi user "hệ thống" tương lai.</li>
- *   <li>{@link #backfillOrphanUserPersonLinks} chạy 1 lần lúc boot: mọi user cũ có {@code person_id IS NULL}
- *       sẽ được tạo Person tương ứng (mặc định {@code is_admin=false}) và link. Không lỡ để user login xong
- *       bị deny quyền do lookup Person fail.</li>
- * </ul>
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -54,9 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            // 0. Schema guard: password column phải ≥ 100 (DelegatingPasswordEncoder = "{bcrypt}" + 60).
-            // Hibernate ddl-auto=update KHÔNG widen cột cũ → rehash bị fail (varchar(50)) và password
-            // plain text còn lại → login lỗi "no PasswordEncoder mapped for the id null".
+
             ensurePasswordColumnWidth();
 
             // 1. Seed 2 built-in super users: admin + superadmin (Person.isAdmin=true)

@@ -22,6 +22,9 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
     private final TicketCategoryMapper ticketCategoryMapper;
     private final TicketCategoryRepository ticketCategoryRepository;
 
+    /**
+     * Thêm mới danh mục ticket, kiểm tra trùng mã và mã hóa dữ liệu.
+     */
     @Override
     @Transactional
     public TicketCategoryResponse add(TicketCategoryRequest request) {
@@ -41,6 +44,9 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
         return ticketCategoryMapper.toResponse(ticketCategoryRepository.save(entity));
     }
 
+    /**
+     * Cập nhật danh mục ticket, kiểm tra trùng mã nếu mã thay đổi.
+     */
     @Override
     @Transactional
     public TicketCategoryResponse edit(String id, TicketCategoryRequest request) {
@@ -60,6 +66,9 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
         return ticketCategoryMapper.toResponse(ticketCategoryRepository.save(exist));
     }
 
+    /**
+     * Xóa mềm danh mục ticket và tắt trạng thái kích hoạt.
+     */
     @Override
     @Transactional
     public Void delete(String id) {
@@ -70,6 +79,9 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
         return null;
     }
 
+    /**
+     * Lấy tất cả danh mục ticket chưa xóa, sắp xếp theo thứ tự và tên.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TicketCategoryResponse> findAll() {
@@ -77,6 +89,9 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
                 ticketCategoryRepository.findByIsDeletedFalseOrderBySortOrderAscNameAsc());
     }
 
+    /**
+     * Lấy danh sách danh mục ticket đang kích hoạt.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<TicketCategoryResponse> findActive() {
@@ -84,6 +99,7 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
                 ticketCategoryRepository.findByActiveTrueAndIsDeletedFalseOrderBySortOrderAscNameAsc());
     }
 
+    /** Kiểm tra mã và tên danh mục không được để trống. */
     private void validateRequest(TicketCategoryRequest request) {
         if (request.getCode() == null || request.getCode().isBlank()) {
             throw new AppException(TaskErrorCode.TICKET_CATEGORY_CODE_REQUIRED);
@@ -93,10 +109,12 @@ public class TicketCategoryServiceImpl implements TicketCategoryService {
         }
     }
 
+    /** Chuẩn hóa mã danh mục bằng cách loại bỏ khoảng trắng thừa. */
     private String normalizeCode(String code) {
         return code == null ? null : code.trim();
     }
 
+    /** Tìm entity danh mục theo mã, ném ngoại lệ nếu không tồn tại hoặc đã bị xóa. */
     @Transactional(readOnly = true)
     protected TicketCategory findEntityById(String id) {
         return ticketCategoryRepository.findByIdAndIsDeletedFalse(id)

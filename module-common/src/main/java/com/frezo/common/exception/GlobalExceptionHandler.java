@@ -89,21 +89,8 @@ public class GlobalExceptionHandler {
                 buildErrorBody(status.value(), messageKey, resolved, request.getRequestURI()));
     }
 
-    @SuppressWarnings("removal")
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiResponse<Void>> handleLegacyAuth(
-            AuthException ex, HttpServletRequest request, Locale locale) {
-        HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.UNAUTHORIZED;
-        String resolved = resolveMessage(ex.getMessage(), null, locale, ex.getMessage());
-        log.warn("[LEGACY] AuthException at {}: {} — migrate to AppException + CommonErrorCode.UNAUTHORIZED",
-                request.getRequestURI(), resolved);
-        return ResponseEntity.status(status).body(
-                buildErrorBody(status.value(), CommonErrorCode.UNAUTHORIZED.getKey(), resolved, request.getRequestURI()));
-    }
 
-    // ================================================================
-    // VALIDATION — @Valid trong @RequestBody
-    // ================================================================
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleBeanValidation(
@@ -133,9 +120,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.validationError(errors, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // REQUEST FORMAT — 400
-    // ================================================================
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnreadableBody(
@@ -167,9 +151,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.REQUEST_PARAM_TYPE_INVALID, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // SECURITY — 401 / 403
-    // ================================================================
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(
@@ -191,9 +172,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.FORBIDDEN, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // ROUTING / METHOD — 404 / 405
-    // ================================================================
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoResource(
@@ -215,9 +193,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.METHOD_NOT_ALLOWED, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // DATA — 409
-    // ================================================================
 
     @ExceptionHandler({ObjectOptimisticLockingFailureException.class, OptimisticLockException.class})
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
@@ -249,9 +224,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.SQL_ERROR, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // UPLOAD — 413
-    // ================================================================
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleUploadSize(
@@ -263,9 +235,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.UPLOAD_SIZE_EXCEEDED, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // FALLBACK — 500
-    // ================================================================
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(
@@ -277,9 +246,6 @@ public class GlobalExceptionHandler {
                 ApiResponse.error(CommonErrorCode.INTERNAL_ERROR, resolved, request.getRequestURI()));
     }
 
-    // ================================================================
-    // Helpers
-    // ================================================================
 
     private String resolveMessage(String key, Object[] args, Locale locale, String fallback) {
         if (key == null) return fallback;

@@ -25,7 +25,6 @@ public record Salary3P(double p1Position, double p2Person, double p3Performance)
         return new Salary3P(p1, p2, p3);
     }
 
-    /** Doanh thu tối thiểu để cover P1+P2+P3 sau trừ COGS, rủi ro, hoa hồng. */
     public static double revenueTargetForFullKpi(Salary3P salary, double cogsPct, double riskPct, double commissionPct) {
         double margin = contributionMarginPct(cogsPct, riskPct, commissionPct);
         if (margin <= 0) {
@@ -34,7 +33,7 @@ public record Salary3P(double p1Position, double p2Person, double p3Performance)
         return salary.totalAtFullKpi() / (margin / 100d);
     }
 
-    /** P3 thực nhận theo % đạt KPI (0–100+). */
+
     public static double p3Earned(Salary3P salary, double achievementPct) {
         if (salary.p3Performance <= 0) {
             return 0;
@@ -43,7 +42,6 @@ public record Salary3P(double p1Position, double p2Person, double p3Performance)
         return salary.p3Performance * ratio;
     }
 
-    /** Tổng lương 3P ước tính = P1 + P2 + P3 thực + hoa hồng trên doanh thu. */
     public static double estimatedTotalComp(Salary3P salary, double achievementPct, double actualRevenue, double commissionPct) {
         return salary.fixedMonthly()
                 + p3Earned(salary, achievementPct)

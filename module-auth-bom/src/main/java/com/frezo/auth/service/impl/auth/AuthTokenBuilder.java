@@ -5,7 +5,7 @@ import com.frezo.auth.config.UserDetailService;
 import com.frezo.auth.dto.response.LoginResponse;
 import com.frezo.auth.entity.User;
 import com.frezo.auth.security.JwtTokenProvider;
-import com.frezo.common.exception.AuthException;
+import com.frezo.common.exception.QTHTException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -31,10 +31,6 @@ public class AuthTokenBuilder {
     private final UserDetailService userDetailsService;
     private final ApplicationContext applicationContext;
 
-    /** Sinh cặp token (access + refresh) từ {@link CustomUserDetail}. */
-    public LoginResponse buildTokens(CustomUserDetail userDetail, String message) {
-        return buildTokens(userDetail, message, null);
-    }
 
     public LoginResponse buildTokens(CustomUserDetail userDetail, String message, String sessionId) {
         String token = buildAccessToken(userDetail, sessionId);
@@ -46,22 +42,16 @@ public class AuthTokenBuilder {
                 .build();
     }
 
-    /** Sinh cặp token mới từ username — dùng cho verifyOtp + refreshToken. */
-    public LoginResponse buildTokensByUsername(String username, String message) {
-        return buildTokensByUsername(username, message, null);
-    }
 
     public LoginResponse buildTokensByUsername(String username, String message, String sessionId) {
         CustomUserDetail detail = (CustomUserDetail) userDetailsService.loadUserByUsername(username);
         return buildTokens(detail, message, sessionId);
     }
 
-    /**
-     * Refresh access token — giữ nguyên refresh token, embed sessionId vào access token mới.
-     */
+
     public LoginResponse refreshTokens(String refreshToken, String sessionId) {
         if (refreshToken == null || !tokenProvider.validateToken(refreshToken)) {
-            throw new AuthException("Invalid refresh token");
+            throw new QTHTException("Invalid refresh token");
         }
         String username = tokenProvider.getUsernameFromJWT(refreshToken);
         CustomUserDetail detail = (CustomUserDetail) userDetailsService.loadUserByUsername(username);
@@ -71,13 +61,6 @@ public class AuthTokenBuilder {
                 .refreshToken(refreshToken)
                 .message("Token refreshed")
                 .build();
-    }
-
-    /**
-     * Chỉ sinh access token (không refresh) — hiếm dùng, giữ để backward-compat.
-     */
-    public String buildAccessToken(CustomUserDetail userDetail) {
-        return buildAccessToken(userDetail, null);
     }
 
     public String buildAccessToken(CustomUserDetail userDetail, String sessionId) {
@@ -111,9 +94,6 @@ public class AuthTokenBuilder {
                 info.orgId(), appCode, info.isAdmin(), sessionId);
     }
 
-    // ============================================================
-    // Helpers reflection
-    // ============================================================
 
     private String extractRoleName(Object role) {
         try {
@@ -142,7 +122,6 @@ public class AuthTokenBuilder {
         return fallback;
     }
 
-    /** {@code isAdmin} + {@code orgId} của Person gắn với user, lookup qua reflection. */
     private PersonInfo resolvePersonInfo(String personId) {
         if (personId == null) return new PersonInfo(false, null);
         try {

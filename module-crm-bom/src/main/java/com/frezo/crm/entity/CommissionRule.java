@@ -26,7 +26,7 @@ public class CommissionRule extends BaseEntity {
     @Column(name = "salesperson_username", nullable = false, length = 80)
     private String salespersonUsername;
 
-    /** Phần trăm hoa hồng, vd 5.00 = 5%. */
+
     @Column(name = "rate_percent", precision = 8, scale = 4, nullable = false)
     private BigDecimal ratePercent;
 

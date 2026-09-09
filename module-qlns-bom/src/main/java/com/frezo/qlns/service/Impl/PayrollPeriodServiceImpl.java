@@ -74,6 +74,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     // CRUD
     // ============================================================
 
+    /**
+     * Tạo mới kỳ lương ở trạng thái Mở; ném lỗi nếu cùng tổ chức/tháng/năm đã tồn tại.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse create(PayrollPeriodRequest request) {
@@ -94,6 +97,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(payrollPeriodRepository.save(entity));
     }
 
+    /**
+     * Cập nhật thông tin kỳ lương; cấm sửa khi kỳ đã khoá hoặc đã đóng.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse update(String id, PayrollPeriodRequest request) {
@@ -113,6 +119,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     // Workflow-aware transitions
     // ============================================================
 
+    /**
+     * Khoá kỳ lương: chuyển sang trạng thái Đã khoá và tạo ApprovalRequest để chạy flow duyệt.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse lock(String id) {
@@ -140,6 +149,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(payrollPeriodRepository.save(entity));
     }
 
+    /**
+     * Mở khoá kỳ lương: huỷ workflow instance đang chạy và đưa kỳ về trạng thái Mở.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse unlock(String id) {
@@ -164,6 +176,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(payrollPeriodRepository.save(entity));
     }
 
+    /**
+     * Đóng kỳ lương: chuyển trực tiếp về trạng thái Đã đóng (chi lương).
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse close(String id) {
@@ -172,6 +187,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(payrollPeriodRepository.save(entity));
     }
 
+    /**
+     * Duyệt bước workflow hiện tại của kỳ lương; khi toàn bộ workflow COMPLETED thì tự đóng kỳ.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse approve(String id, String note) {
@@ -198,6 +216,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(payrollPeriodRepository.save(entity));
     }
 
+    /**
+     * Từ chối bước workflow: bắt buộc có lý do, sau đó mở khoá kỳ lương để chỉnh sửa lại.
+     */
     @Override
     @Transactional
     public PayrollPeriodResponse reject(String id, String reason) {
@@ -226,6 +247,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     // Query
     // ============================================================
 
+    /**
+     * Lấy chi tiết kỳ lương theo id, đồng bộ lại trạng thái với workflow engine trước khi trả về.
+     */
     @Override
     public PayrollPeriodResponse getById(String id) {
         PayrollPeriod entity = findOrThrow(id);
@@ -234,6 +258,9 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
         return enrich(entity);
     }
 
+    /**
+     * Lấy danh sách kỳ lương phân trang theo bộ lọc (org, tháng, năm, trạng thái).
+     */
     @Override
     public PageResponse<PayrollPeriodResponse> getAll(String orgId, Integer month, Integer year, Integer status,
                                                        Integer pageNumber, Integer pageSize) {
@@ -254,11 +281,17 @@ public class PayrollPeriodServiceImpl implements PayrollPeriodService {
     // Internal helpers
     // ============================================================
 
+    /**
+     * Tìm kỳ lương theo id, ném lỗi nếu không tồn tại.
+     */
     private PayrollPeriod findOrThrow(String id) {
         return payrollPeriodRepository.findById(id)
                 .orElseThrow(() -> new AppException(QlnsErrorCode.PAYROLL_PERIOD_NOT_FOUND));
     }
 
+    /**
+     * Tìm task workflow đang PENDING của kỳ lương để thực hiện duyệt/từ chối.
+     */
     private WorkflowTaskDto findCurrentPendingTask(PayrollPeriod entity) {
         WorkflowInstanceDto inst = workflowService
                 .findInstanceByEntity(WF_ENTITY_TYPE, entity.getId())

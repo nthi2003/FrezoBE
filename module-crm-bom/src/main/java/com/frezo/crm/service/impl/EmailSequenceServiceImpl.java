@@ -38,12 +38,19 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
     private final EmailSequenceEnrollmentRepository enrollmentRepository;
     private final LeadRepository leadRepository;
 
+    /** Lấy danh sách tất cả chuỗi email đang hoạt động kèm các bước. */
     @Override
     public List<EmailSequenceResponse> list() {
         return sequenceRepository.findByIsDeletedFalseOrderByCreatedDateDesc().stream()
                 .map(this::toDto).toList();
     }
 
+    /**
+     * Tạo mới chuỗi email kèm các bước gửi mail.
+     *
+     * @param req yêu cầu chứa thông tin chuỗi email và danh sách bước
+     * @return chuỗi email vừa được tạo dưới dạng DTO
+     */
     @Override
     @Transactional
     public EmailSequenceResponse create(EmailSequenceRequest req) {
@@ -58,6 +65,13 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
         return toDto(seq);
     }
 
+    /**
+     * Cập nhật chuỗi email: tên, mô tả, trạng thái kích hoạt và thay thế toàn bộ bước mới.
+     *
+     * @param id mã chuỗi email
+     * @param req yêu cầu cập nhật
+     * @return chuỗi email đã cập nhật dưới dạng DTO
+     */
     @Override
     @Transactional
     public EmailSequenceResponse update(String id, EmailSequenceRequest req) {
@@ -76,6 +90,13 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
         return toDto(seq);
     }
 
+    /**
+     * Đăng ký một lead vào chuỗi email để bắt đầu quá trình gửi email tự động.
+     *
+     * @param sequenceId mã chuỗi email
+     * @param req yêu cầu chứa mã lead cần đăng ký
+     * @return thông tin enrollment vừa tạo
+     */
     @Override
     @Transactional
     public EmailSequenceEnrollmentResponse enroll(String sequenceId, EmailSequenceEnrollRequest req) {
@@ -96,6 +117,7 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
         return toEnrollDto(enrollmentRepository.save(e));
     }
 
+    /** Xử lý các bước email đến hạn: gửi email tiếp theo và cập nhật trạng thái enrollment. */
     @Override
     @Transactional
     public void processDueSteps() {
@@ -124,6 +146,7 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
         }
     }
 
+    /** Lưu danh sách các bước email vào cơ sở dữ liệu cho chuỗi email đã cho. */
     private void saveSteps(String sequenceId, List<EmailSequenceStepRequest> steps) {
         if (steps == null) return;
         for (EmailSequenceStepRequest r : steps) {
@@ -139,6 +162,7 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
         }
     }
 
+    /** Chuyển đổi thực thể EmailSequence sang DTO Response kèm danh sách bước. */
     private EmailSequenceResponse toDto(EmailSequence seq) {
         List<EmailSequenceStepResponse> steps = stepRepository
                 .findBySequenceIdAndIsDeletedFalseOrderByStepOrderAsc(seq.getId())
@@ -152,6 +176,7 @@ public class EmailSequenceServiceImpl implements EmailSequenceService {
                 .active(seq.getActive()).steps(steps).build();
     }
 
+    /** Chuyển đổi thực thể EmailSequenceEnrollment sang DTO Response. */
     private EmailSequenceEnrollmentResponse toEnrollDto(EmailSequenceEnrollment e) {
         return EmailSequenceEnrollmentResponse.builder()
                 .id(e.getId()).sequenceId(e.getSequenceId()).leadId(e.getLeadId())

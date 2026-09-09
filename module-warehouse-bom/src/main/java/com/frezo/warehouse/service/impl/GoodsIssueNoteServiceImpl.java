@@ -46,6 +46,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Lấy thông tin phiếu xuất kho theo id và trả về dữ liệu phản hồi đầy đủ; báo lỗi nếu không tìm thấy.
+     */
     @Override
     public GinResponse getById(String id) {
         GoodsIssueNote gin = ginRepository.findById(id)
@@ -53,6 +56,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Lấy thông tin phiếu xuất kho theo mã phiếu và trả về dữ liệu phản hồi; báo lỗi nếu không tìm thấy.
+     */
     @Override
     public GinResponse getByCode(String ginCode) {
         GoodsIssueNote gin = ginRepository.findByGinCode(ginCode)
@@ -60,6 +66,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Lọc danh sách phiếu xuất kho theo trạng thái và từ khóa, phân trang; trả về trang phản hồi.
+     */
     @Override
     public PageResponse<GinResponse> filter(String status, String keyword, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -83,6 +92,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return PageResponse.of(page, size, ginPage, responses);
     }
 
+    /**
+     * Tạo mới phiếu xuất kho: kiểm tra đủ hàng, sinh mã phiếu, lưu phiếu cùng các dòng và tính tổng giá trị.
+     */
     @Override
     @Transactional
     public GinResponse create(GinCreateRequest request) {
@@ -113,6 +125,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Trình phiếu xuất kho từ trạng thái DRAFT sang PENDING_APPROVAL sau khi xác nhận đủ tồn kho.
+     */
     @Override
     @Transactional
     public GinResponse submit(String id) {
@@ -127,6 +142,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Duyệt phiếu xuất kho: chuyển trạng thái sang APPROVED và ghi nhận người duyệt, thời điểm duyệt.
+     */
     @Override
     @Transactional
     public GinResponse approve(String id) {
@@ -144,6 +162,10 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Xác nhận xuất kho: ghi nhận số lượng/lô/vị trí thực xuất, trừ tồn kho của lô, tạo sổ cái (ledger),
+     * phiếu giao dịch và cập nhật trạng thái phiếu thành CONFIRMED.
+     */
     @Override
     @Transactional
     public GinResponse confirm(String id, GinConfirmRequest request) {
@@ -230,6 +252,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return buildResponse(gin);
     }
 
+    /**
+     * Xác nhận xuất kho đồng loạt cho nhiều phiếu sau khi kiểm tra trạng thái hợp lệ của từng phiếu.
+     */
     @Override
     @Transactional
     public void batchConfirm(List<String> ids) {
@@ -246,6 +271,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
     }
 
+    /**
+     * Hủy phiếu xuất kho (không cho hủy phiếu đã CONFIRMED) và ghi lý do hủy.
+     */
     @Override
     @Transactional
     public void cancel(String id, String reason) {
@@ -261,6 +289,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         ginRepository.save(gin);
     }
 
+    /**
+     * Hủy đồng loạt nhiều phiếu xuất kho với cùng một lý do.
+     */
     @Override
     @Transactional
     public void batchCancel(List<String> ids, String reason) {
@@ -269,6 +300,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
     }
 
+    /**
+     * Xóa phiếu xuất kho kèm các dòng chi tiết; không cho xóa phiếu đã CONFIRMED.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -283,6 +317,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
 
     // -------------------- Stock validation --------------------
 
+    /**
+     * Kiểm tra tồn kho đủ cho các dòng trong yêu cầu tạo phiếu; ném lỗi nếu thiếu hàng.
+     */
     private void assertSufficientStockForCreate(GinCreateRequest request) {
         if (request.getItems() == null || request.getItems().isEmpty()) {
             return;
@@ -313,6 +350,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         throwIfShortages(shortages);
     }
 
+    /**
+     * Kiểm tra tồn kho đủ cho danh sách dòng phiếu (theo số lượng yêu cầu hoặc xuất) trong một kho.
+     */
     private void assertSufficientStockForGinItems(String warehouseId, List<GoodsIssueNoteItem> items, boolean useRequested) {
         Map<String, Double> requestedByKey = new LinkedHashMap<>();
         Map<String, String> productIdByKey = new LinkedHashMap<>();
@@ -341,6 +381,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         throwIfShortages(shortages);
     }
 
+    /**
+     * Kiểm tra tồn kho đủ theo các dòng xuất đã được chốt lô/vị trí trước khi xác nhận xuất kho.
+     */
     private void assertSufficientStockForConfirm(String warehouseId, List<ResolvedIssueLine> lines) {
         Map<String, Double> requestedByKey = new LinkedHashMap<>();
         Map<String, String> productIdByKey = new LinkedHashMap<>();
@@ -366,6 +409,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         throwIfShortages(shortages);
     }
 
+    /**
+     * Tính số lượng tồn khả dụng của sản phẩm theo kho và (tùy chọn) lô; ưu tiên giá trị available đã lưu.
+     */
     private double resolveAvailable(String productId, String warehouseId, String batchId) {
         Double sum;
         if (batchId != null && !batchId.isBlank()) {
@@ -386,6 +432,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         return sum;
     }
 
+    /**
+     * Định dạng thông báo thiếu hàng gồm tên/mã sản phẩm, lô và số lượng yêu cầu, khả dụng, thiếu hụt.
+     */
     private String formatShortage(String productId, String batchId, double requested, double available) {
         Product p = productRepository.findById(productId).orElse(null);
         String code = p != null && p.getCode() != null ? p.getCode() : productId;
@@ -397,20 +446,32 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
                 label, batchPart, trimQty(requested), trimQty(available), trimQty(shortfall));
     }
 
+    /**
+     * Ném lỗi thiếu tồn kho nếu danh sách thiếu hụt không rỗng.
+     */
     private void throwIfShortages(List<String> shortages) {
         if (shortages == null || shortages.isEmpty()) return;
         throw new AppException(WarehouseErrorCode.STOCK_BALANCE_INSUFFICIENT, String.join("; ", shortages));
     }
 
+    /**
+     * Loại bỏ phần thập phân thừa khi số lượng là số nguyên để hiển thị gọn gàng.
+     */
     private static String trimQty(double v) {
         if (Math.rint(v) == v) return String.valueOf((long) v);
         return String.valueOf(v);
     }
 
+    /**
+     * Chuyển giá trị null thành 0.0 để tránh lỗi khi tính tổng.
+     */
     private static double nz(Double v) {
         return v != null ? v : 0.0;
     }
 
+    /**
+     * Dựng đối tượng phản hồi phiếu xuất kho kèm tên kho, khách hàng, người thực hiện và danh sách dòng.
+     */
     private GinResponse buildResponse(GoodsIssueNote gin) {
         GinResponse response = ginMapper.toResponse(gin);
         if (gin.getWarehouseId() != null) {
@@ -440,6 +501,7 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         if (userRef == null || userRef.isBlank()) {
             return null;
         }
+
         try {
             String name = jdbcTemplate.queryForObject(
                     """
@@ -465,6 +527,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
     }
 
+    /**
+     * Tra tên khách hàng theo id; thử bảng customers rồi fallback sang bảng khs.
+     */
     private String resolveCustomerName(String customerId) {
         if (customerId == null || customerId.isBlank()) {
             return null;
@@ -484,6 +549,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         }
     }
 
+    /**
+     * Tìm phần tử xác nhận tương ứng với một dòng phiếu trong yêu cầu xác nhận; trả null nếu không có.
+     */
     private GinConfirmRequest.GinConfirmItem findConfirmItem(GinConfirmRequest request, String itemId) {
         if (request == null || request.getItems() == null) return null;
         return request.getItems().stream()
@@ -491,6 +559,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Trừ số lượng xuất khỏi tồn kho (balance) của sản phẩm theo kho/vị trí/lô sau khi kiểm tra đủ hàng.
+     */
     private void deductStockBalance(String productId, String warehouseId, String locationId, String batchId, double qty) {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(
@@ -513,6 +584,9 @@ public class GoodsIssueNoteServiceImpl implements GoodsIssueNoteService {
         stockBalanceRepository.save(balance);
     }
 
+    /**
+     * Trừ số lượng xuất khỏi tồn của lô; đánh dấu lô DEPLETED khi hết hàng.
+     */
     private void deductBatchQty(String batchId, double qty, String productId) {
         if (batchId == null || batchId.isBlank()) return;
         StockBatch batch = stockBatchRepository.findById(batchId)

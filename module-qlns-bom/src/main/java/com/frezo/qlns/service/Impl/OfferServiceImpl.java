@@ -32,6 +32,9 @@ public class OfferServiceImpl implements OfferService {
     private final JobApplicationRepository applicationRepository;
     private final JobApplicationService jobApplicationService;
 
+    /**
+     * Tạo offer mới cho một hồ sơ ứng tuyển với trạng thái DRAFT.
+     */
     @Override
     @Transactional
     public OfferResponse create(OfferRequest req) {
@@ -50,6 +53,9 @@ public class OfferServiceImpl implements OfferService {
         return toResponse(offerRepository.save(e));
     }
 
+    /**
+     * Gửi offer (DRAFT → SENT) và ghi mốc thời gian gửi.
+     */
     @Override
     @Transactional
     public OfferResponse send(String id) {
@@ -59,12 +65,18 @@ public class OfferServiceImpl implements OfferService {
         return toResponse(offerRepository.save(e));
     }
 
+    /**
+     * Chấp nhận offer không kèm thông tin tuyển dụng — delegate sang phương thức có HireRequest.
+     */
     @Override
     @Transactional
     public OfferResponse accept(String id) {
         return accept(id, null);
     }
 
+    /**
+     * Chấp nhận offer: chuyển trạng thái ACCEPTED, tự động đánh dấu Application là HIRED.
+     */
     @Override
     @Transactional
     public OfferResponse accept(String id, HireRequest hireRequest) {
@@ -77,6 +89,9 @@ public class OfferServiceImpl implements OfferService {
         return toResponse(saved);
     }
 
+    /**
+     * Từ chối offer: chuyển trạng thái REJECTED và ghi mốc thời gian trả lời.
+     */
     @Override
     @Transactional
     public OfferResponse reject(String id) {
@@ -86,6 +101,9 @@ public class OfferServiceImpl implements OfferService {
         return toResponse(offerRepository.save(e));
     }
 
+    /**
+     * Tìm offer theo id và kiểm tra trạng thái hiện tại có thuộc danh sách cho phép không.
+     */
     private Offer requireStatus(String id, Set<String> allowed) {
         Offer e = offerRepository.findById(id)
                 .filter(o -> Boolean.FALSE.equals(o.getIsDeleted()))
@@ -96,6 +114,9 @@ public class OfferServiceImpl implements OfferService {
         return e;
     }
 
+    /**
+     * Chuyển đổi entity offer sang DTO response.
+     */
     private OfferResponse toResponse(Offer e) {
         return OfferResponse.builder()
                 .id(e.getId())

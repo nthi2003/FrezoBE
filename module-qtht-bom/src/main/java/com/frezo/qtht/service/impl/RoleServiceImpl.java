@@ -30,6 +30,9 @@ public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
 
+    /**
+     * Tạo mới vai trò — kiểm tra trùng mã trong cùng appCode, xây dựng entity và lưu vào CSDL.
+     */
     @Override
     public RoleResponse create(RoleCreateRequest request) {
         validateRoleUniqueness(request.getCode(), request.getAppCode());
@@ -38,6 +41,9 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toResponse(roleRepository.save(role));
     }
 
+    /**
+     * Cập nhật vai trò — tìm theo id hoặc mã, kiểm tra trùng lặp khi thay đổi code/appCode.
+     */
     @Override
     public RoleResponse update(RoleUpdateRequest request) {
         Role role = findRole(request);
@@ -47,17 +53,26 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.toResponse(roleRepository.save(role));
     }
 
+    /**
+     * Lấy danh sách vai trò theo mã ứng dụng (appCode), chỉ lấy các vai trò chưa bị xóa.
+     */
     @Override
     public List<RoleResponse> getRoleByAppCode(String appCode) {
         return roleMapper.toResponseList(
                 roleRepository.findByAppCodeAndIsDeletedFalse(appCode));
     }
 
+    /**
+     * Lấy tất cả vai trò chưa bị xóa trong hệ thống.
+     */
     @Override
     public List<RoleResponse> getAll() {
         return roleMapper.toResponseList(roleRepository.findByIsDeletedFalse());
     }
 
+    /**
+     * Lấy danh sách vai trò dưới dạng combobox, có thể lọc theo appCode.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox(String appCode) {
@@ -73,6 +88,9 @@ public class RoleServiceImpl implements RoleService {
                 .toList();
     }
 
+    /**
+     * Xóa mềm vai trò theo mã và mã ứng dụng (đánh dấu isDeleted = true).
+     */
     @Override
     @Transactional
     public void delete(String code, String appCode) {
@@ -84,12 +102,18 @@ public class RoleServiceImpl implements RoleService {
         roleRepository.save(role);
     }
 
+    /**
+     * Kiểm tra mã vai trò có trùng lặp trong cùng appCode hay không (chỉ xét bản ghi chưa xóa).
+     */
     private void validateRoleUniqueness(String code, String appCode) {
         if (roleRepository.existsByCodeAndAppCodeAndIsDeletedFalse(code, appCode)) {
             throw new AppException(ERROR_ROLE_EXISTS, HttpStatus.BAD_REQUEST, code, appCode);
         }
     }
 
+    /**
+     * Xây dựng entity Role từ yêu cầu tạo mới với trạng thái mặc định là "A" (hoạt động).
+     */
     private Role buildRoleFromRequest(RoleCreateRequest request) {
         Role role = Role.builder()
                 .code(request.getCode())
@@ -107,6 +131,9 @@ public class RoleServiceImpl implements RoleService {
         return role;
     }
 
+    /**
+     * Tìm vai trò theo id hoặc mã/appCode từ yêu cầu cập nhật, ném ngoại lệ nếu không tìm thấy.
+     */
     private Role findRole(RoleUpdateRequest request) {
         if (request.getId() != null) {
             return roleRepository.findById(request.getId())
@@ -118,6 +145,9 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> new AppException(ERROR_ROLE_NOT_FOUND, HttpStatus.NOT_FOUND, request.getCode(), request.getAppCode()));
     }
 
+    /**
+     * Kiểm tra trùng lặp mã vai trò khi cập nhật nếu code hoặc appCode thay đổi.
+     */
     private void validateRoleUpdate(Role role, RoleUpdateRequest request) {
         boolean codeChanged = !role.getCode().equals(request.getCode());
         boolean appCodeChanged = !role.getAppCode().equals(request.getAppCode());
@@ -130,6 +160,9 @@ public class RoleServiceImpl implements RoleService {
         }
     }
 
+    /**
+     * Cập nhật các trường của vai trò từ yêu cầu (code, appCode, name, description, status).
+     */
     private void updateRoleFields(Role role, RoleUpdateRequest request) {
         role.setCode(request.getCode());
         role.setAppCode(request.getAppCode());

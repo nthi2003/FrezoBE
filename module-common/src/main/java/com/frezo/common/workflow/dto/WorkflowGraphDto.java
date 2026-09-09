@@ -6,10 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Graph visual cho React Flow — khớp FE {@code WorkflowGraphDto}.
- * Lưu DB dưới dạng JSON string trong {@code WorkflowDefinition.graphJson}.
- */
+
 @Data
 public class WorkflowGraphDto {
     private Integer version = 1;
@@ -27,7 +24,7 @@ public class WorkflowGraphDto {
     @Data
     public static class WorkflowGraphNodeDto {
         private String id;
-        /** START | ACTION | DECISION | APPROVAL | END */
+
         private String type;
         private String label;
         private String laneId;

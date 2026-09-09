@@ -9,7 +9,6 @@ public class WebSocketChannels {
 
     public static final String TOPIC_PREFIX = "/topic";
     public static final String QUEUE_PREFIX = "/queue";
-    public static final String USER_PREFIX = "/user";
 
     public static class Task {
         public static final String ALL = TOPIC_PREFIX + "/tasks";

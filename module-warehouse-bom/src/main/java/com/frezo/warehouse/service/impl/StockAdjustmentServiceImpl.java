@@ -31,6 +31,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
     private final StockBalanceRepository stockBalanceRepository;
     private final StockLedgerRepository stockLedgerRepository;
 
+    /** Tạo phiếu điều chỉnh tồn kho ở trạng thái DRAFT, lưu các dòng item và tính tổng giá trị chênh lệch. */
     @Override
     @Transactional
     public StockAdjustmentResponse create(StockAdjustmentCreateRequest request) {
@@ -73,6 +74,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return buildResponse(adj);
     }
 
+    /** Xác nhận phiếu điều chỉnh: ghi sổ cái kho, cập nhật tồn kho theo từng dòng chênh lệch và chuyển trạng thái sang CONFIRMED. */
     @Override
     @Transactional
     public StockAdjustmentResponse confirm(String id) {
@@ -125,6 +127,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return buildResponse(adj);
     }
 
+    /** Hủy phiếu điều chỉnh (chỉ phiếu chưa xác nhận), ghi lý do hủy vào ghi chú. */
     @Override
     @Transactional
     public void cancel(String id, String reason) {
@@ -138,6 +141,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         adjustmentRepository.save(adj);
     }
 
+    /** Lấy chi tiết một phiếu điều chỉnh theo id. */
     @Override
     public StockAdjustmentResponse getById(String id) {
         StockAdjustment adj = adjustmentRepository.findById(id)
@@ -145,6 +149,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return buildResponse(adj);
     }
 
+    /** Lấy chi tiết một phiếu điều chỉnh theo mã phiếu điều chỉnh. */
     @Override
     public StockAdjustmentResponse getByCode(String code) {
         StockAdjustment adj = adjustmentRepository.findByAdjustmentCode(code)
@@ -152,6 +157,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return buildResponse(adj);
     }
 
+    /** Lọc danh sách phiếu điều chỉnh theo trạng thái và kho, trả về phân trang. */
     @Override
     public PageResponse<StockAdjustmentResponse> filter(String status, String warehouseId, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -171,6 +177,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return PageResponse.of(page, size, adjPage, responses);
     }
 
+    /** Xóa phiếu điều chỉnh chưa xác nhận cùng toàn bộ dòng item liên quan. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -183,6 +190,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         adjustmentRepository.delete(adj);
     }
 
+    /** Chuyển entity phiếu điều chỉnh thành response kèm danh sách dòng item. */
     private StockAdjustmentResponse buildResponse(StockAdjustment adj) {
         StockAdjustmentResponse r = new StockAdjustmentResponse();
         r.setId(adj.getId());
@@ -215,6 +223,7 @@ public class StockAdjustmentServiceImpl implements StockAdjustmentService {
         return r;
     }
 
+    /** Cập nhật số lượng tồn kho cho sản phẩm tại kho/vị trí/lô theo lượng chênh lệch; tạo mới bản ghi tồn nếu chưa có. */
     private void updateStockBalance(String productId, String warehouseId, String locationId, String batchId, double diffQty) {
         StockBalance balance = stockBalanceRepository
                 .findByProductIdAndWarehouseIdAndLocationIdAndBatchId(

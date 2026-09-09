@@ -23,6 +23,7 @@ public class AdCampaignServiceImpl implements AdCampaignService {
 
     private final AdCampaignRepository repository;
 
+    /** Lấy danh sách chiến dịch Ads, có thể lọc theo nền tảng và trạng thái. */
     @Override
     public List<AdCampaignResponse> list(String platform, String status) {
         return repository.findAll().stream()
@@ -34,11 +35,13 @@ public class AdCampaignServiceImpl implements AdCampaignService {
                 .toList();
     }
 
+    /** Lấy thông tin chiến dịch Ads theo mã định danh. */
     @Override
     public AdCampaignResponse get(String id) {
         return toResponse(mustFind(id));
     }
 
+    /** Tạo mới chiến dịch Ads từ thông tin trong AdCampaignRequest. */
     @Override
     @Transactional
     public AdCampaignResponse create(AdCampaignRequest req) {
@@ -62,6 +65,7 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         return toResponse(repository.save(c));
     }
 
+    /** Cập nhật thông tin chiến dịch Ads theo mã định danh. */
     @Override
     @Transactional
     public AdCampaignResponse update(String id, AdCampaignRequest req) {
@@ -84,6 +88,7 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         return toResponse(repository.save(c));
     }
 
+    /** Xóa mềm chiến dịch Ads theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -92,6 +97,12 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         repository.save(c);
     }
 
+    /**
+     * Tổng hợp dữ liệu bảng điều khiển Ads: tổng chi tiêu, hiển thị, nhấp chuột,
+     * leads, doanh thu và các chỉ số hiệu suất (CTR, CPC, CPL, ROAS).
+     *
+     * @return map chứa tổng quan và phân tích theo nền tảng
+     */
     @Override
     public Map<String, Object> dashboard() {
         List<AdCampaign> all = repository.findAll().stream()
@@ -123,6 +134,7 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         return m;
     }
 
+    /** Tìm chiến dịch Ads theo mã, kiểm tra chưa bị xóa mềm và tồn tại. */
     private AdCampaign mustFind(String id) {
         AdCampaign c = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chiến dịch Ads"));
@@ -132,6 +144,7 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         return c;
     }
 
+    /** Chuyển đổi thực thể AdCampaign sang DTO Response kèm các chỉ số hiệu suất. */
     private AdCampaignResponse toResponse(AdCampaign c) {
         AdCampaignResponse r = new AdCampaignResponse();
         r.setId(c.getId());
@@ -163,19 +176,23 @@ public class AdCampaignServiceImpl implements AdCampaignService {
         return r;
     }
 
+    /** Tính tỷ lệ giữa hai số nguyên, trả về BigDecimal (4 chữ số thập phân). */
     private static BigDecimal ratio(long num, long den) {
         if (den <= 0) return BigDecimal.ZERO;
         return BigDecimal.valueOf(num).divide(BigDecimal.valueOf(den), 4, RoundingMode.HALF_UP);
     }
 
+    /** Trả về giá trị mặc định nếu chuỗi null hoặc rỗng. */
     private static String nz(String v, String def) {
         return v == null || v.isBlank() ? def : v.trim();
     }
 
+    /** Trả về BigDecimal.ZERO nếu giá trị null. */
     private static BigDecimal nzDec(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
     }
 
+    /** Trả về 0L nếu giá trị Long null. */
     private static long nzLong(Long v) {
         return v == null ? 0L : v;
     }

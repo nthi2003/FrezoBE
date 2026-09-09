@@ -17,8 +17,6 @@ public class WorkflowInstanceDto {
     private Integer currentStep;
     private String status;
     private String completedAt;
-    /** Toàn bộ tasks đã tạo (đã hoàn tất + đang xử lý) để render stepper. */
     private List<WorkflowTaskDto> tasks;
-    /** Snapshot template steps (từ definition) để FE render step name kể cả bước chưa tạo task. */
     private List<WorkflowStepDto> steps;
 }

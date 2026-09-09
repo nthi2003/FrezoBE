@@ -33,10 +33,16 @@ public class OkrWorkflowService {
     private final OkrKeyResultRepository keyResultRepository;
     private final OkrScopeResolver scopeResolver;
 
+    /**
+     * Liệt kê toàn bộ chu kỳ OKR (sắp theo ngày bắt đầu giảm dần).
+     */
     public List<Map<String, Object>> listCycles() {
         return cycleRepository.findByIsDeletedFalseOrderByStartDateDesc().stream().map(this::cycleMap).toList();
     }
 
+    /**
+     * Tạo mới một chu kỳ OKR (chỉ admin), validate dữ liệu rồi lưu vào DB.
+     */
     @Transactional
     public Map<String, Object> createCycle(OkrWorkflowRequests.Cycle req) {
         assertAdmin();
@@ -51,6 +57,9 @@ public class OkrWorkflowService {
         return cycleMap(cycleRepository.save(cycle));
     }
 
+    /**
+     * Cập nhật thông tin chu kỳ OKR (chỉ admin), nếu chu kỳ không tồn tại ném lỗi.
+     */
     @Transactional
     public Map<String, Object> updateCycle(String id, OkrWorkflowRequests.Cycle req) {
         assertAdmin();
@@ -65,6 +74,9 @@ public class OkrWorkflowService {
         return cycleMap(cycleRepository.save(cycle));
     }
 
+    /**
+     * Xoá mềm (soft delete) một chu kỳ OKR theo id (chỉ admin).
+     */
     @Transactional
     public void deleteCycle(String id) {
         assertAdmin();
@@ -75,6 +87,9 @@ public class OkrWorkflowService {
         cycleRepository.save(cycle);
     }
 
+    /**
+     * Liệt kê các bước triển khai (timeline) đang hoạt động, sắp theo thứ tự hiển thị.
+     */
     public List<Map<String, Object>> listTimeline() {
         return jdbc.query("""
                 SELECT id, step_name, department_name, time_label, detail, result, sort_order
@@ -82,6 +97,9 @@ public class OkrWorkflowService {
                 """, (rs, n) -> map(rs, "id", "stepName", "departmentName", "timeLabel", "detail", "result", "sortOrder"));
     }
 
+    /**
+     * Tạo mới một bước triển khai (timeline) — chỉ admin, bắt buộc có tên bước.
+     */
     @Transactional
     public Map<String, Object> createTimeline(OkrWorkflowRequests.TimelineStep req) {
         assertAdmin();
@@ -96,6 +114,9 @@ public class OkrWorkflowService {
         return oneTimeline(id);
     }
 
+    /**
+     * Cập nhật một bước triển khai theo id — nếu không tồn tại ném lỗi.
+     */
     @Transactional
     public Map<String, Object> updateTimeline(String id, OkrWorkflowRequests.TimelineStep req) {
         assertAdmin();
@@ -109,6 +130,9 @@ public class OkrWorkflowService {
         return oneTimeline(id);
     }
 
+    /**
+     * Xoá mềm một bước triển khai theo id — nếu không tồn tại ném lỗi.
+     */
     @Transactional
     public void deleteTimeline(String id) {
         assertAdmin();
@@ -117,12 +141,18 @@ public class OkrWorkflowService {
         }
     }
 
+    /**
+     * Liệt kê các loại phiếu góp ý đang hoạt động, sắp theo tên.
+     */
     public List<Map<String, Object>> listFeedbackTypes() {
         return jdbc.query("""
                 SELECT id, name FROM okr_feedback_type WHERE is_deleted=false ORDER BY name
                 """, (rs, n) -> map(rs, "id", "name"));
     }
 
+    /**
+     * Tạo mới một loại phiếu góp ý (chỉ admin) — tên trùng sẽ báo lỗi CONFLICT.
+     */
     @Transactional
     public Map<String, Object> createFeedbackType(OkrWorkflowRequests.FeedbackType req) {
         assertAdmin();
@@ -139,6 +169,9 @@ public class OkrWorkflowService {
         return Map.of("id", id, "name", req.getName().trim());
     }
 
+    /**
+     * Cập nhật tên một loại phiếu góp ý theo id (chỉ admin) — nếu không tồn tại ném lỗi.
+     */
     @Transactional
     public Map<String, Object> updateFeedbackType(String id, OkrWorkflowRequests.FeedbackType req) {
         assertAdmin();
@@ -152,6 +185,9 @@ public class OkrWorkflowService {
         return Map.of("id", id, "name", req.getName().trim());
     }
 
+    /**
+     * Xoá mềm một loại phiếu góp ý theo id (chỉ admin) — nếu không tồn tại ném lỗi.
+     */
     @Transactional
     public void deleteFeedbackType(String id) {
         assertAdmin();
@@ -160,6 +196,9 @@ public class OkrWorkflowService {
         }
     }
 
+    /**
+     * Liệt kê các phiếu góp ý: admin/quản lý xem toàn bộ, nhân viên chỉ xem phiếu do mình gửi.
+     */
     public List<Map<String, Object>> listFeedback() {
         String me = currentPerson();
         if (scopeResolver.isAdmin() || scopeResolver.isManager(me)) {
@@ -178,6 +217,9 @@ public class OkrWorkflowService {
                 """, this::feedbackMap, me);
     }
 
+    /**
+     * Tạo mới phiếu góp ý sau khi validate phạm vi mục tiêu, loại phiếu và quyền xem OKR liên quan.
+     */
     @Transactional
     public Map<String, Object> createFeedback(OkrWorkflowRequests.Feedback req) {
         require(req.getFeedbackTypeId(), "Loại phiếu là bắt buộc");
@@ -205,6 +247,9 @@ public class OkrWorkflowService {
         return listFeedback().stream().filter(x -> id.equals(x.get("id"))).findFirst().orElse(Map.of("id", id));
     }
 
+    /**
+     * Liệt kê các kế hoạch (action) của một key result sau khi kiểm tra quyền xem OKR.
+     */
     public List<Map<String, Object>> listActions(String keyResultId) {
         Okr okr = okrForKeyResult(keyResultId);
         scopeResolver.assertCanView(okr.getOwnerPersonId());
@@ -215,6 +260,9 @@ public class OkrWorkflowService {
                 """, this::actionMap, keyResultId);
     }
 
+    /**
+     * Tạo mới kế hoạch (action) cho key result sau khi validate dữ liệu và quyền chỉnh sửa.
+     */
     @Transactional
     public Map<String, Object> createAction(String keyResultId, OkrWorkflowRequests.Action req) {
         Okr okr = okrForKeyResult(keyResultId);
@@ -231,6 +279,9 @@ public class OkrWorkflowService {
         return oneAction(id);
     }
 
+    /**
+     * Cập nhật kế hoạch (action) theo id sau khi kiểm tra quyền chỉnh sửa và validate dữ liệu.
+     */
     @Transactional
     public Map<String, Object> updateAction(String id, OkrWorkflowRequests.Action req) {
         Map<String, Object> old = oneAction(id);
@@ -245,6 +296,9 @@ public class OkrWorkflowService {
         return oneAction(id);
     }
 
+    /**
+     * Xoá mềm một kế hoạch (action) theo id sau khi kiểm tra quyền chỉnh sửa.
+     */
     @Transactional
     public void deleteAction(String id) {
         Map<String, Object> old = oneAction(id);
@@ -253,6 +307,9 @@ public class OkrWorkflowService {
         jdbc.update("UPDATE okr_action SET is_deleted=true WHERE id=?", id);
     }
 
+    /**
+     * Liệt kê các phiên check-in của một OKR (kèm phản hồi) sau khi kiểm tra quyền xem.
+     */
     public List<Map<String, Object>> listCheckIns(String okrId) {
         Okr okr = findOkr(okrId);
         scopeResolver.assertCanView(okr.getOwnerPersonId());
@@ -266,6 +323,9 @@ public class OkrWorkflowService {
         return sessions;
     }
 
+    /**
+     * Tạo mới phiên check-in nháp (DRAFT) cho OKR sau khi kiểm tra quyền chỉnh sửa và người quản lý xác nhận.
+     */
     @Transactional
     public Map<String, Object> createCheckIn(String okrId, OkrWorkflowRequests.CheckIn req) {
         Okr okr = findOkr(okrId);
@@ -288,6 +348,9 @@ public class OkrWorkflowService {
         return oneCheckIn(id);
     }
 
+    /**
+     * Quản lý được chọn xác nhận phiên check-in (CONFIRMED/COMPLETED) và cập nhật trạng thái OKR nếu hoàn thành.
+     */
     @Transactional
     public Map<String, Object> confirmCheckIn(String id, OkrWorkflowRequests.CheckIn req) {
         Map<String, Object> session = oneCheckIn(id);
@@ -308,6 +371,9 @@ public class OkrWorkflowService {
         return oneCheckIn(id);
     }
 
+    /**
+     * Thêm phản hồi (feedback) cho một phiên check-in sau khi kiểm tra quyền xem và phản hồi cha (nếu có).
+     */
     @Transactional
     public Map<String, Object> addCheckInFeedback(String checkInId, OkrWorkflowRequests.CheckInFeedback req) {
         require(req.getContent(), "Nội dung phản hồi là bắt buộc");
@@ -331,6 +397,9 @@ public class OkrWorkflowService {
                 .filter(x -> id.equals(x.get("id"))).findFirst().orElse(Map.of("id", id));
     }
 
+    /**
+     * Liệt kê các phản hồi của một phiên check-in, sắp theo thời gian tạo.
+     */
     private List<Map<String, Object>> listCheckInFeedback(String checkInId) {
         return jdbc.query("""
                 SELECT id, parent_feedback_id, author_person_id, content, created_date
@@ -338,6 +407,9 @@ public class OkrWorkflowService {
                 """, (rs, n) -> map(rs, "id", "parentFeedbackId", "authorPersonId", "content", "createdDate"), checkInId);
     }
 
+    /**
+     * Lấy thông tin chi tiết một bước triển khai theo id, ném lỗi nếu không tồn tại.
+     */
     private Map<String, Object> oneTimeline(String id) {
         return jdbc.query("""
                 SELECT id, step_name, department_name, time_label, detail, result, sort_order
@@ -346,6 +418,9 @@ public class OkrWorkflowService {
                 .stream().findFirst().orElseThrow(() -> notFound("Bước triển khai không tồn tại"));
     }
 
+    /**
+     * Lấy thông tin chi tiết một kế hoạch theo id, ném lỗi nếu không tồn tại.
+     */
     private Map<String, Object> oneAction(String id) {
         return jdbc.query("""
                 SELECT id, key_result_id, title, plan_url, start_date, end_date, result, status,
@@ -354,6 +429,9 @@ public class OkrWorkflowService {
                 """, this::actionMap, id).stream().findFirst().orElseThrow(() -> notFound("Kế hoạch không tồn tại"));
     }
 
+    /**
+     * Lấy thông tin chi tiết một phiên check-in theo id, ném lỗi nếu không tồn tại.
+     */
     private Map<String, Object> oneCheckIn(String id) {
         return jdbc.query("""
                 SELECT id, okr_id, employee_person_id, manager_person_id, progress, delayed_work, blockers,
@@ -363,11 +441,17 @@ public class OkrWorkflowService {
                 """, this::checkInMap, id).stream().findFirst().orElseThrow(() -> notFound("Check-in không tồn tại"));
     }
 
+    /**
+     * Ánh xạ một dòng kết quả truy vấn phiếu góp ý thành map.
+     */
     private Map<String, Object> feedbackMap(ResultSet rs, int row) throws SQLException {
         return map(rs, "id", "objectiveId", "targetScope", "targetDepartmentId", "feedbackTypeId",
                 "feedbackTypeName", "content", "senderPersonId", "createdDate");
     }
 
+    /**
+     * Ánh xạ một dòng kết quả truy vấn kế hoạch thành map, chuẩn hoá danh sách người liên quan.
+     */
     private Map<String, Object> actionMap(ResultSet rs, int row) throws SQLException {
         Map<String, Object> result = map(rs, "id", "keyResultId", "title", "planUrl", "startDate",
                 "endDate", "result", "status", "relatedPersonIds", "createdDate");
@@ -377,12 +461,18 @@ public class OkrWorkflowService {
         return result;
     }
 
+    /**
+     * Ánh xạ một dòng kết quả truy vấn phiên check-in thành map.
+     */
     private Map<String, Object> checkInMap(ResultSet rs, int row) throws SQLException {
         return map(rs, "id", "okrId", "employeePersonId", "managerPersonId", "progress", "delayedWork",
                 "blockers", "solutions", "confidenceLevel", "status", "officialUpdate", "managerFeedback",
                 "nextCheckInDate", "completeOkrs", "createdDate", "confirmedAt");
     }
 
+    /**
+     * Ánh xạ các cột {@code names} từ ResultSet thành map, chuyển java.sql.Date sang LocalDate.
+     */
     private Map<String, Object> map(ResultSet rs, String... names) throws SQLException {
         Map<String, Object> out = new LinkedHashMap<>();
         for (int i = 0; i < names.length; i++) {
@@ -393,6 +483,9 @@ public class OkrWorkflowService {
         return out;
     }
 
+    /**
+     * Ánh xạ entity PerformanceCycle thành map phản hồi cho client.
+     */
     private Map<String, Object> cycleMap(PerformanceCycle cycle) {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", cycle.getId());

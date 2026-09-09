@@ -7,5 +7,4 @@ import java.util.List;
 
 public interface EmailSequenceEnrollmentRepository extends JpaRepository<EmailSequenceEnrollment, String> {
     List<EmailSequenceEnrollment> findByStatusAndIsDeletedFalse(String status);
-    List<EmailSequenceEnrollment> findBySequenceIdAndIsDeletedFalse(String sequenceId);
 }

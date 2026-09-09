@@ -18,6 +18,7 @@ public class ArticleReactionServiceImpl implements ArticleReactionService {
 
     private final ArticleReactionRepository articleReactionRepository;
     private final ArticleReactionMapper articleReactionMapper;
+    /** Đảo trạng thái phản ứng của người dùng với bài viết: nếu đã phản ứng cùng loại thì xoá bỏ, ngược lại tạo phản ứng mới. */
     @Override
     @Transactional
     public ArticleReactionResponse toggleReaction(String articleId, String userId,
@@ -41,6 +42,7 @@ public class ArticleReactionServiceImpl implements ArticleReactionService {
         }
     }
 
+    /** Đếm tổng số phản ứng của một bài viết theo articleId. */
     @Override
     @Transactional
     public Long countReactions(String articleId) {

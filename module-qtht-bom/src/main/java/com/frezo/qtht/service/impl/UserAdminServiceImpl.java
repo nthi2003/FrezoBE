@@ -52,6 +52,9 @@ public class UserAdminServiceImpl implements UserAdminService {
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Đăng ký người dùng mới — kiểm tra trùng username/email, tạo User và Person (nếu cần), gán vai trò mặc định hoặc theo yêu cầu.
+     */
     @Override
     @Transactional
     public void register(RegisterRequest request) {
@@ -75,6 +78,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         assignRoleToUser(request, user);
     }
 
+    /**
+     * Gán vai trò cho người dùng theo mã vai trò và mã ứng dụng — kiểm tra trùng lặp trước khi lưu.
+     */
     @Override
     @Transactional
     public void assignRole(String username, String roleCode, String appCode) {
@@ -89,6 +95,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         saveUserRole(user, role.getId());
     }
 
+    /**
+     * Gán vai trò cho người dùng theo userId và roleId — kiểm tra tồn tại và trùng lặp.
+     */
     @Override
     @Transactional
     public void assignRoleById(String userId, String roleId) {
@@ -105,6 +114,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         saveUserRole(user, roleId);
     }
 
+    /**
+     * Lấy danh mã vai trò (roleCode) của người dùng theo username.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<String> getRoles(String username) {
@@ -115,6 +127,9 @@ public class UserAdminServiceImpl implements UserAdminService {
                 .toList();
     }
 
+    /**
+     * Lấy danh sách entity Role của người dùng theo userId.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<Role> getRolesByUserId(String userId) {
@@ -122,6 +137,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return roleRepository.findAllById(roleIds);
     }
 
+    /**
+     * Lấy danh sách người dùng phân trang —join Person và Role để hiển thị đầy đủ thông tin.
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> getAllUsers(Integer pageNumber, Integer pageSize, String search) {
@@ -141,6 +159,9 @@ public class UserAdminServiceImpl implements UserAdminService {
                 mapToUserResponse(user, personMap.get(user.getPersonId()), userRolesMap.get(user.getId())));
     }
 
+    /**
+     * Lấy thông tin chi tiết người dùng theo id — bao gồm Person liên kết và danh sách vai trò.
+     */
     @Override
     @Transactional(readOnly = true)
     public UserResponse getUserById(String id) {
@@ -155,6 +176,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return mapToUserResponse(user, person, roles);
     }
 
+    /**
+     * Kiểm tra dữ liệu đăng ký — dataAction hợp lệ, username chưa tồn tại, email/chưa bắt buộc nếu chưa có personId.
+     */
     private void validateRegisterRequest(RegisterRequest request) {
         if (request.getDataAction() == null ||
                 (request.getDataAction() != 1 && request.getDataAction() != 2 && request.getDataAction() != 3)) {
@@ -175,6 +199,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         }
     }
 
+    /**
+     * Tạo mới entity User từ yêu cầu đăng ký, mã hóa mật khẩu và lưu vào CSDL.
+     */
     private User createUser(RegisterRequest request) {
         User user = User.builder()
                 .userName(request.getUsername())
@@ -189,6 +216,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return userRepository.save(user);
     }
 
+    /**
+     * Tạo mới entity Person từ yêu cầu đăng ký (khi không có personId), thiết lập tổ chức và phòng ban nếu có.
+     */
     private Person createPerson(RegisterRequest request) {
         Person person = Person.builder()
                 .name(request.getFullname())
@@ -214,6 +244,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return personRepository.save(person);
     }
 
+    /**
+     * Gán vai trò cho người dùng từ danh sách roleIds hoặc roleId đơn, nếu không có thì gán vai trò mặc định STAFF.
+     */
     private void assignRoleToUser(RegisterRequest request, User user) {
         List<String> roleCodes = request.getRoleIds();
         if (roleCodes != null && !roleCodes.isEmpty()) {
@@ -233,12 +266,18 @@ public class UserAdminServiceImpl implements UserAdminService {
         }
     }
 
+    /**
+     * Gán vai trò mặc định STAFF cho người dùng — tìm hoặc tạo vai trò mặc định nếu chưa có.
+     */
     private void assignDefaultRole(User user) {
         Role defaultRole = roleRepository.findByCodeAndAppCodeAndIsDeletedFalse(DEFAULT_ROLE_CODE, APP_CODE)
                 .orElseGet(this::createDefaultRole);
         saveUserRole(user, defaultRole.getId());
     }
 
+    /**
+     * Tạo vai trò mặc định STAFF trong CSDL khi chưa tồn tại.
+     */
     private Role createDefaultRole() {
         Role newRole = Role.builder()
                 .code(DEFAULT_ROLE_CODE)
@@ -249,17 +288,26 @@ public class UserAdminServiceImpl implements UserAdminService {
         newRole.setIsDeleted(false);
         return roleRepository.save(newRole);
     }
+    /**
+     * Kích hoạt tài khoản người dùng (đặt status = 1).
+     */
     public void actived (String id) {
         User user =  userRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
         user.setStatus(1);
         userRepository.save(user);
     }
+    /**
+     * Vô hiệu hóa tài khoản người dùng (đặt status = 0).
+     */
     public void inactived (String id) {
         User user =  userRepository.findById(id).orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
         user.setStatus(0);
         userRepository.save(user);
     }
     
+    /**
+     * Đặt lại mật khẩu người dùng về "123456" (mã hóa) và trả về mật khẩu mặc định.
+     */
     @Override
     @Transactional
     public String resetPassword(String id) {
@@ -273,6 +321,9 @@ public class UserAdminServiceImpl implements UserAdminService {
     }
 
 
+    /**
+     * Lưu UserRole — kiểm tra trùng lặp trước khi tạo mới bản ghi UserRole.
+     */
     private void saveUserRole(User user, String roleId) {
         if (userRoleRepository.existsByUserIdAndRoleId(user.getId(), roleId)) {
             return;
@@ -288,22 +339,34 @@ public class UserAdminServiceImpl implements UserAdminService {
         userRoleRepository.save(userRole);
     }
 
+    /**
+     * Tìm người dùng theo username, ném ngoại lệ nếu không tìm thấy.
+     */
     private User getUserByUsername(String username) {
         return userRepository.findByUserName(username)
                 .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
     }
 
+    /**
+     * Tìm người dùng theo mã định danh, ném ngoại lệ nếu không tìm thấy.
+     */
     private User getUserByIdOrThrow(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(QthtErrorCode.USER_NOT_FOUND));
     }
 
+    /**
+     * Lấy danh sách roleId của người dùng từ bảng UserRole chưa bị xóa.
+     */
     private List<String> getRoleIdsByUserId(String userId) {
         return userRoleRepository.findByUserIdAndIsDeletedFalse(userId).stream()
                 .map(UserRole::getRoleId)
                 .toList();
     }
 
+    /**
+     * Xây dựng Specification lọc người dùng — chỉ lấy bản ghi chưa xóa và tìm theo userName, name, email nếu có từ khóa.
+     */
     private Specification<User> createUserSpecification(String search) {
         Specification<User> spec = Specification.where((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
 
@@ -318,6 +381,9 @@ public class UserAdminServiceImpl implements UserAdminService {
     }
 
 
+    /**
+     * Lấy tất cả Person liên kết với danh sách User theo personId (batch query).
+     */
     private Map<String, Person> fetchPersonsForUsers(List<User> users) {
         List<String> personIds = users.stream()
                 .map(User::getPersonId)
@@ -332,6 +398,9 @@ public class UserAdminServiceImpl implements UserAdminService {
                 .collect(Collectors.toMap(Person::getId, Function.identity()));
     }
 
+    /**
+     * Lấy danh sách Role của từng người dùng trong danh sách (dùng để hiển thị trên bảng).
+     */
     private Map<String, List<Role>> fetchRolesForUsers(List<User> users) {
         List<String> userIds = users.stream().map(User::getId).toList();
 
@@ -347,6 +416,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return map;
     }
 
+    /**
+     * Cập nhật thông tin người dùng (username, email, name, personId) và thay thế danh sách vai trò.
+     */
     @Override
     @Transactional
     public UserResponse updateUser(String id, Map<String, Object> updates) {
@@ -402,6 +474,9 @@ public class UserAdminServiceImpl implements UserAdminService {
         return mapToUserResponse(user, person, roles);
     }
 
+    /**
+     * Chuyển đổi User + Person + Roles sang UserResponse DTO để hiển thị trên giao diện.
+     */
     private UserResponse mapToUserResponse(User user, Person person, List<Role> roles) {
         UserResponse.UserResponseBuilder builder = UserResponse.builder()
                 .id(user.getId())

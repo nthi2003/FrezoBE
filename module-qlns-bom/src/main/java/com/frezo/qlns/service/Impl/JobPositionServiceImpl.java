@@ -22,6 +22,9 @@ public class JobPositionServiceImpl implements JobPositionService {
 
     private final JobPositionRepository jobPositionRepository;
 
+    /**
+     * Lấy danh sách vị trí công việc chưa bị xoá, sắp xếp theo thứ tự và tên.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<JobPositionResponse> list() {
@@ -30,12 +33,18 @@ public class JobPositionServiceImpl implements JobPositionService {
                 .toList();
     }
 
+    /**
+     * Lấy chi tiết một vị trí công việc theo id.
+     */
     @Override
     @Transactional(readOnly = true)
     public JobPositionResponse getById(String id) {
         return toResponse(findOrThrow(id));
     }
 
+    /**
+     * Tạo mới một vị trí công việc từ request.
+     */
     @Override
     @Transactional
     public JobPositionResponse create(JobPositionRequest request) {
@@ -50,6 +59,9 @@ public class JobPositionServiceImpl implements JobPositionService {
         return toResponse(jobPositionRepository.save(entity));
     }
 
+    /**
+     * Cập nhật thông tin vị trí công việc theo id (chỉ cập nhật các trường không null).
+     */
     @Override
     @Transactional
     public JobPositionResponse update(String id, JobPositionRequest request) {
@@ -62,6 +74,9 @@ public class JobPositionServiceImpl implements JobPositionService {
         return toResponse(jobPositionRepository.save(entity));
     }
 
+    /**
+     * Xoá mềm một vị trí công việc theo id.
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -70,6 +85,9 @@ public class JobPositionServiceImpl implements JobPositionService {
         jobPositionRepository.save(entity);
     }
 
+    /**
+     * Kiểm tra mã phân loại (rank/title) đang được bao nhiêu vị trí công việc sử dụng trước khi xoá.
+     */
     @Override
     @Transactional(readOnly = true)
     public CategoryUsageResponse checkCategoryUsage(String categoryCode) {
@@ -93,12 +111,18 @@ public class JobPositionServiceImpl implements JobPositionService {
                 .build();
     }
 
+    /**
+     * Tìm vị trí công việc theo id, ném lỗi nếu không tồn tại hoặc đã bị xoá.
+     */
     private JobPosition findOrThrow(String id) {
         return jobPositionRepository.findById(id)
                 .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
                 .orElseThrow(() -> new AppException(QlnsErrorCode.ENTITY_NOT_FOUND));
     }
 
+    /**
+     * Chuyển đổi entity vị trí công việc sang DTO response.
+     */
     private JobPositionResponse toResponse(JobPosition e) {
         return JobPositionResponse.builder()
                 .id(e.getId())

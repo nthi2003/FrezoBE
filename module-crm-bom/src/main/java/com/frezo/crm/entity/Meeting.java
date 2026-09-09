@@ -46,11 +46,9 @@ public class Meeting extends BaseEntity {
     @Column(name = "meeting_link", length = 500)
     private String meetingLink;
 
-    /** JSON array of usernames / emails. */
     @Column(name = "attendees", length = 2000)
     private String attendees;
 
-    /** SCHEDULED / DONE / CANCELLED */
     @Column(name = "status", length = 20)
     private String status;
 

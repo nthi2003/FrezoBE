@@ -7,7 +7,6 @@ import java.time.LocalDate;
 
 @Data
 public class AssetSaveRequest {
-    /** Nullable — nếu blank, service auto-gen dạng AS-YYYY-####. */
     private String code;
     private String name;
     private String categoryCode;
@@ -18,7 +17,6 @@ public class AssetSaveRequest {
     private BigDecimal purchasePrice;
     private BigDecimal currentValue;
     private LocalDate warrantyEndDate;
-    /** Default AVAILABLE nếu null. */
     private String status;
     private String location;
     private String imageUrl;

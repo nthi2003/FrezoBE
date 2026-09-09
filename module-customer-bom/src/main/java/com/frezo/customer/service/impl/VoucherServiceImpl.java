@@ -27,7 +27,6 @@ public class VoucherServiceImpl {
 
     private final VoucherRepository voucherRepository;
 
-    // ── List ─────────────────────────────────────────────────────────────────────
     public PageResponse<Voucher> getAll(String keyword, String status, String discountType,
                                        Integer pageNumber, Integer pageSize) {
         Specification<Voucher> spec = Specification.where(null);
@@ -47,7 +46,7 @@ public class VoucherServiceImpl {
         return PageResponse.from(page);
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────────
+
     @Transactional
     public Voucher create(Voucher request) {
         if (!SystemUtils.isNotNullOrEmpty(request.getCode())) {
@@ -63,7 +62,7 @@ public class VoucherServiceImpl {
         return voucherRepository.save(request);
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────────
+
     @Transactional
     public Voucher update(String id, Voucher request) {
         Voucher existing = findById(id);
@@ -79,17 +78,14 @@ public class VoucherServiceImpl {
         return voucherRepository.save(existing);
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────────
+
     @Transactional
     public void delete(String id) {
         findById(id);
         voucherRepository.deleteById(id);
     }
 
-    // ── Validate (apply) ─────────────────────────────────────────────────────────
-    /**
-     * Kiểm tra voucher có hợp lệ không và tính giá trị giảm.
-     */
+
     public Voucher validate(String code, BigDecimal orderValue) {
         Voucher voucher = voucherRepository.findByCode(code)
                 .orElseThrow(() -> new AppException(CustomerErrorCode.VOUCHER_NOT_FOUND));
@@ -107,7 +103,7 @@ public class VoucherServiceImpl {
         return voucher;
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────────
+
     private Voucher findById(String id) {
         return voucherRepository.findById(id)
                 .orElseThrow(() -> new AppException(CustomerErrorCode.VOUCHER_NOT_FOUND));

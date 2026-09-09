@@ -34,6 +34,9 @@ public class ContractSignServiceImpl implements ContractSignService {
     private final NotificationService notificationService;
     private final SecureRandom secureRandom = new SecureRandom();
 
+    /**
+     * Tạo phiên ký và gửi OTP (qua email/log) cho người dùng để xác thực ký hợp đồng.
+     */
     @Override
     @Transactional
     public Map<String, Object> requestOtp(String contractId, String ip, String device) {
@@ -73,6 +76,9 @@ public class ContractSignServiceImpl implements ContractSignService {
         return result;
     }
 
+    /**
+     * Xác nhận OTP để hoàn tất ký hợp đồng; kiểm tra hết hạn và đối chiếu mã băm OTP, đánh dấu phiên SIGNED.
+     */
     @Override
     @Transactional
     public Map<String, Object> confirm(String contractId, String otp, String ip, String device) {
@@ -106,6 +112,9 @@ public class ContractSignServiceImpl implements ContractSignService {
         return result;
     }
 
+    /**
+     * Truy vấn trạng thái ký của hợp đồng (SIGNED/PENDING/EXPIRED/UNSIGNED).
+     */
     @Override
     @Transactional
     public Map<String, Object> status(String contractId) {
@@ -144,6 +153,9 @@ public class ContractSignServiceImpl implements ContractSignService {
         return toStatusMap(session, false);
     }
 
+    /**
+     * Chuyển phiên ký thành map thông tin trạng thái trả về cho client.
+     */
     private static Map<String, Object> toStatusMap(ContractSignSession session, boolean preferSigned) {
         boolean isSigned = "SIGNED".equals(session.getStatus()) || preferSigned;
         Map<String, Object> result = new LinkedHashMap<>();
@@ -160,6 +172,9 @@ public class ContractSignServiceImpl implements ContractSignService {
         return result;
     }
 
+    /**
+     * Băm OTP bằng SHA-256 (hex) để lưu trữ an toàn, không giữ mã gốc.
+     */
     private static String hash(String otp) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");

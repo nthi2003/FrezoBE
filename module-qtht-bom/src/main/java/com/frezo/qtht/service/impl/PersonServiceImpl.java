@@ -53,6 +53,9 @@ public class PersonServiceImpl implements PersonService {
     private final UserRepository userRepository;
     private final com.frezo.common.service.MinioService minioService;
 
+    /**
+     * Upload ảnh đại diện tạm thời lên MinIO và trả về URL(file tạm).
+     */
     @Override
     public String uploadAvatarTemp(String userName, org.springframework.web.multipart.MultipartFile file) {
         String originalFilename = file.getOriginalFilename();
@@ -64,6 +67,9 @@ public class PersonServiceImpl implements PersonService {
         return minioService.uploadFile(objectName, file);
     }
 
+    /**
+     * Lấy danh sách nhân sự phân trang theo bộ lọc (từ khóa, phòng ban, trạng thái kích hoạt, giới tính, chức danh, tổ chức).
+     */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<PersonResponse> all(PersonFilterRequest filter) {
@@ -77,6 +83,9 @@ public class PersonServiceImpl implements PersonService {
         return PageResponse.from(entities, personMapper::toResponse);
     }
 
+    /**
+     * Tạo mới nhân sự — kiểm tra trùng mã, xây dựng entity từ request và lưu vào CSDL.
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public ApiResponse<PersonResponse> createPerson(PersonAddRequest request) {
@@ -89,6 +98,9 @@ public class PersonServiceImpl implements PersonService {
         return ApiResponse.ok(response);
     }
 
+    /**
+     * Cập nhật thông tin nhân sự — cập nhật mapper, tổ chức và phòng ban.
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public ApiResponse<PersonResponse> updatePerson(String id, PersonUpdateRequest request) {
@@ -102,6 +114,9 @@ public class PersonServiceImpl implements PersonService {
         return ApiResponse.ok(personMapper.toResponse(saved));
     }
 
+    /**
+     * Kiểm tra nhân sự có phải quản trị viên (isAdmin) hay không.
+     */
     @Override
     @Transactional(readOnly = true)
     public boolean isAdmin(String id) {
@@ -110,6 +125,9 @@ public class PersonServiceImpl implements PersonService {
                 .orElse(false);
     }
 
+    /**
+     * Lấy thông tin chi tiết nhân sự theo mã định danh.
+     */
     @Override
     @Transactional(readOnly = true)
     public PersonResponse getById(String id) {
@@ -117,12 +135,18 @@ public class PersonServiceImpl implements PersonService {
         return personMapper.toResponse(person);
     }
 
+    /**
+     * Lấy danh sách nhân sự dưới dạng combobox (giá trị mặc định là id).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox(PersonFilterRequest filter) {
         return getCombobox(filter, "id");
     }
 
+    /**
+     * Lấy danh sách nhân sự dưới dạng combobox, hỗ trợ chọn trường giá trị (id hoặc username).
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox(PersonFilterRequest filter, String valueField) {
@@ -155,6 +179,9 @@ public class PersonServiceImpl implements PersonService {
         return out;
     }
 
+    /**
+     * Xóa mềm nhân sự (đánh dấu isDeleted = true).
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void delete(String id) {
@@ -163,6 +190,9 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
     }
 
+    /**
+     * Kích hoạt nhân sự (đặt activated = true).
+     */
     @Override
     @Transactional
     public void activate(String id) {
@@ -171,6 +201,9 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
     }
 
+    /**
+     * Vô hiệu hóa nhân sự (đặt activated = false).
+     */
     @Override
     @Transactional
     public void deactivate(String id) {
@@ -179,6 +212,9 @@ public class PersonServiceImpl implements PersonService {
         personRepository.save(person);
     }
 
+    /**
+     * Xuất toàn bộ nhân sự theo bộ lọc (giới hạn 10000 bản ghi) để tải xuống.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PersonResponse> exportAll(PersonFilterRequest filter) {
@@ -189,6 +225,9 @@ public class PersonServiceImpl implements PersonService {
         return page.getItems() != null ? page.getItems() : List.of();
     }
 
+    /**
+     * Import hàng loạt nhân sự từ danh sách dòng — kiểm tra dữ liệu bắt buộc, tự động tạo mã nếu thiếu và trả về kết quả.
+     */
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public PersonImportResultResponse importBatch(PersonImportBatchRequest request) {
@@ -240,6 +279,9 @@ public class PersonServiceImpl implements PersonService {
                 .build();
     }
 
+    /**
+     * Phân tích chuỗi ngày thành LocalDate, trả về null nếu rỗng hoặc sai định dạng.
+     */
     private LocalDate parseDate(String raw) {
         if (raw == null || raw.trim().isEmpty()) return null;
         try {
@@ -249,18 +291,27 @@ public class PersonServiceImpl implements PersonService {
         }
     }
 
+    /**
+     * Tìm nhân sự theo mã định danh, ném ngoại lệ nếu không tìm thấy hoặc đã bị xóa.
+     */
     @Transactional(readOnly = true)
     protected Person findPersonById(String id) {
         return personRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new AppException(QthtErrorCode.PERSON_NOT_FOUND));
     }
 
+    /**
+     * Kiểm tra mã nhân sự có trùng lặp trong CSDL hay không.
+     */
     private void validateCodeUniqueness(String code) {
         if (code != null && personRepository.existsByCode(code)) {
             throw new AppException(QthtErrorCode.PERSON_CODE_EXISTS, code);
         }
     }
 
+    /**
+     * Xây dựng entity Person từ yêu cầu thêm mới, bao gồm thiết lập tổ chức và phòng ban.
+     */
     private Person buildPersonFromRequest(PersonAddRequest request) {
         Person person = new Person();
         person.setId(UUID.randomUUID().toString());
@@ -295,6 +346,9 @@ public class PersonServiceImpl implements PersonService {
         return person;
     }
 
+    /**
+     * Thiết lập tổ chức cho nhân sự theo orgId, ném ngoại lệ nếu tổ chức không tồn tại.
+     */
     private void setOrganization(Person person, String orgId) {
         if (orgId != null && !orgId.trim().isEmpty()) {
             Organization organization = organizationRepository.findById(orgId.trim())
@@ -307,6 +361,9 @@ public class PersonServiceImpl implements PersonService {
         }
     }
 
+    /**
+     * Thiết lập phòng ban cho nhân sự theo departmentId, ném ngoại lệ nếu phòng ban không tồn tại.
+     */
     private void setDepartment(Person person, String departmentId) {
         if (departmentId != null && !departmentId.trim().isEmpty()) {
             Department department = departmentRepository.findById(departmentId.trim())
@@ -317,10 +374,16 @@ public class PersonServiceImpl implements PersonService {
         }
     }
 
+    /**
+     * Cắt khoảng trắng thừa hoặc trả về null nếu giá trị rỗng/trống.
+     */
     private String trimOrNull(String value) {
         return (value != null && !value.trim().isEmpty()) ? value.trim() : null;
     }
 
+    /**
+     * Xây dựng Specification lọc nhân sự theo từ khóa, phòng ban, trạng thái kích hoạt, giới tính, chức danh và tổ chức.
+     */
     private Specification<Person> createSpecification(PersonFilterRequest filter) {
         Specification<Person> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE));

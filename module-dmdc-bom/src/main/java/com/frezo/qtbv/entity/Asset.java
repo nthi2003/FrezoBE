@@ -35,18 +35,12 @@ import java.time.LocalDate;
 })
 public class Asset extends BaseEntity {
 
-    /** Mã tài sản — auto-gen dạng {@code AS-YYYY-####} (VD: {@code AS-2026-0007}). */
     @Column(name = "code", length = 50, nullable = false)
     private String code;
 
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
-    /**
-     * Danh mục — reference {@link Category#getCode()} với {@code groupCode='LoaiTaiSan'}.
-     * Chuỗi (không FK cứng) để admin có thể xoá/rename danh mục mà không break asset cũ.
-     * VD: {@code LAPTOP, DESK, CHAIR, CAR, PRINTER, MONITOR, PHONE, OTHER}.
-     */
     @Column(name = "category_code", length = 50)
     private String categoryCode;
 
@@ -56,7 +50,7 @@ public class Asset extends BaseEntity {
     @Column(name = "model", length = 100)
     private String model;
 
-    /** Số serial / IMEI — nên unique nhưng không bắt buộc (bàn ghế không có SN). */
+
     @Column(name = "serial_number", length = 100)
     private String serialNumber;
 
@@ -66,36 +60,21 @@ public class Asset extends BaseEntity {
     @Column(name = "purchase_price", precision = 18, scale = 2)
     private BigDecimal purchasePrice;
 
-    /** Giá trị còn lại sau khấu hao. Nếu null → dùng {@code purchasePrice}. */
     @Column(name = "current_value", precision = 18, scale = 2)
     private BigDecimal currentValue;
 
     @Column(name = "warranty_end_date")
     private LocalDate warrantyEndDate;
 
-    /**
-     * AVAILABLE | IN_USE | MAINTENANCE | BROKEN | DISPOSED | LOST
-     * <ul>
-     *   <li>AVAILABLE — sẵn sàng cấp phát</li>
-     *   <li>IN_USE — đang cấp phát cho ai đó (kèm {@code assignedPersonId})</li>
-     *   <li>MAINTENANCE — đang bảo trì / sửa chữa</li>
-     *   <li>BROKEN — hỏng, chờ thanh lý hoặc sửa</li>
-     *   <li>DISPOSED — đã thanh lý / bán</li>
-     *   <li>LOST — mất</li>
-     * </ul>
-     */
     @Column(name = "status", length = 30, nullable = false)
     private String status;
 
-    /** Vị trí đặt — VD: "Tầng 3, phòng IT", hoặc mã kho. */
     @Column(name = "location", length = 255)
     private String location;
 
-    /** ID {@code Person} đang được cấp phát. Null nếu chưa cấp. */
     @Column(name = "assigned_person_id", length = 36)
     private String assignedPersonId;
 
-    /** Ngày cấp phát hiện tại (cho asset đang IN_USE). */
     @Column(name = "assigned_at")
     private LocalDate assignedAt;
 

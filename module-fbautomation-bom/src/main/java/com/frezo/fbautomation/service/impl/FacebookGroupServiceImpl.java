@@ -20,6 +20,7 @@ public class FacebookGroupServiceImpl implements FacebookGroupService {
     private final FacebookGroupRepository groupRepository;
     private final FacebookGroupMapper groupMapper;
 
+    /** Lấy danh sách nhóm Facebook, có thể lọc theo trạng thái ("all" để lấy tất cả). */
     @Override
     public List<FacebookGroupResponse> getAll(String status) {
         List<FacebookGroup> groups;
@@ -31,11 +32,13 @@ public class FacebookGroupServiceImpl implements FacebookGroupService {
         return groups.stream().map(groupMapper::toResponse).toList();
     }
 
+    /** Lấy thông tin chi tiết nhóm Facebook theo mã định danh. */
     @Override
     public FacebookGroupResponse getById(String id) {
         return groupMapper.toResponse(findById(id));
     }
 
+    /** Xóa nhóm Facebook theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -43,11 +46,13 @@ public class FacebookGroupServiceImpl implements FacebookGroupService {
         groupRepository.deleteById(id);
     }
 
+    /** Đếm số nhóm Facebook theo trạng thái. */
     @Override
     public long countByStatus(String status) {
         return groupRepository.findByStatus(status).size();
     }
 
+    /** Tìm nhóm Facebook theo mã, ném ngoại lệ nếu không tồn tại. */
     private FacebookGroup findById(String id) {
         return groupRepository.findById(id)
                 .orElseThrow(() -> new AppException(FbAutomationErrorCode.GROUP_NOT_FOUND));

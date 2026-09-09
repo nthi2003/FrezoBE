@@ -27,6 +27,7 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
     private final FacebookLeadMapper leadMapper;
     private final CustomerRepository customerRepository;
 
+    /** Lấy danh sách lead Facebook, có thể lọc theo trạng thái và nguồn, sắp xếp lead mới nhất trước. */
     @Override
     public List<FacebookLeadResponse> getAll(String status, String source) {
         boolean noStatus = status == null || status.isBlank() || "all".equalsIgnoreCase(status);
@@ -53,6 +54,7 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
                 .toList();
     }
 
+    /** Gán lead cho một nhân viên (username) và chuyển trạng thái sang ASSIGNED nếu lead đang mới. */
     @Override
     @Transactional
     public FacebookLeadResponse assign(String id, String username) {
@@ -65,11 +67,13 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
         return leadMapper.toResponse(saved);
     }
 
+    /** Lấy thông tin chi tiết lead Facebook theo mã định danh. */
     @Override
     public FacebookLeadResponse getById(String id) {
         return leadMapper.toResponse(findById(id));
     }
 
+    /** Xóa lead Facebook theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -77,6 +81,7 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
         leadRepository.deleteById(id);
     }
 
+    /** Chuyển lead thành khách hàng trong bảng customers: sinh mã KH, lưu customer và cập nhật trạng thái lead thành IMPORTED. */
     @Override
     @Transactional
     public String importToCustomer(String id) {
@@ -128,6 +133,7 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
         return customer.getId();
     }
 
+    /** Import hàng loạt nhiều lead sang khách hàng; bỏ qua từng lead lỗi và trả về số lượng thành công. */
     @Override
     @Transactional
     public int importAllToCustomer(List<String> ids) {
@@ -143,11 +149,13 @@ public class FacebookLeadServiceImpl implements FacebookLeadService {
         return count;
     }
 
+    /** Đếm số lead Facebook theo trạng thái. */
     @Override
     public long countByStatus(String status) {
         return leadRepository.countByStatus(status);
     }
 
+    /** Tìm lead Facebook theo mã, ném ngoại lệ nếu không tồn tại. */
     private FacebookLead findById(String id) {
         return leadRepository.findById(id)
                 .orElseThrow(() -> new AppException(FbAutomationErrorCode.LEAD_NOT_FOUND));

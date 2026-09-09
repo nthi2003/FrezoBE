@@ -63,10 +63,6 @@ public class GenericSpecification {
                 cb.lessThanOrEqualTo(root.get(field), value);
     }
 
-    /**
-     * ThiNVQ : Filter LocalDate field theo tháng/năm cụ thể.
-     * Dùng between(firstday, lastday) thay vì MONTH() function để tương thích mọi DB.
-     */
     public static <T> Specification<T> monthOfDateField(String field, Integer month, Integer year) {
         return (month == null || year == null)
                 ? (root, query, cb) -> cb.conjunction()

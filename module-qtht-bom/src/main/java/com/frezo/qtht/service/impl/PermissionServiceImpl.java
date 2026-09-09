@@ -20,6 +20,9 @@ public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionRepository permissionRepository;
 
+    /**
+     * Lấy tất cả quyền (permission) dưới dạng danh sách phản hồi chi tiết.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<MenuPermissionResponse> findAll() {
@@ -28,6 +31,9 @@ public class PermissionServiceImpl implements PermissionService {
                 .toList();
     }
 
+    /**
+     * Lấy danh sách quyền dưới dạng combobox để hiển thị trên giao diện chọn.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<ComboboxResponse> getCombobox() {
@@ -38,6 +44,9 @@ public class PermissionServiceImpl implements PermissionService {
         return permissions.stream().map(this::mapToCombobox).toList();
     }
 
+    /**
+     * Tạo mới một quyền (permission) từ dữ liệu yêu cầu.
+     */
     @Override
     @Transactional
     public MenuPermissionResponse create(MenuPermissionSaveRequest request) {
@@ -52,12 +61,18 @@ public class PermissionServiceImpl implements PermissionService {
         return mapToResponse(permissionRepository.save(permission));
     }
 
+    /**
+     * Xóa vĩnh viễn một quyền theo mã định danh.
+     */
     @Override
     @Transactional
     public void delete(String id) {
         permissionRepository.deleteById(id);
     }
 
+    /**
+     * Chuyển đổi entity Permission sang MenuPermissionResponse.
+     */
     private MenuPermissionResponse mapToResponse(Permission p) {
         return MenuPermissionResponse.builder()
                 .id(p.getId())
@@ -69,6 +84,9 @@ public class PermissionServiceImpl implements PermissionService {
                 .build();
     }
 
+    /**
+     * Chuyển đổi entity Permission sang ComboboxResponse (label = tên + action, description = đường dẫn + method).
+     */
     private ComboboxResponse mapToCombobox(Permission p) {
         String name = StringUtils.hasText(p.getName()) ? p.getName() : "N/A";
         String action = StringUtils.hasText(p.getAction()) ? " (" + p.getAction() + ")" : "";

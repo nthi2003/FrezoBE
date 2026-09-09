@@ -28,6 +28,9 @@ public class TimesheetReportServiceImpl implements TimesheetReportService {
     private final AttendanceRepository attendanceRepository;
     private final PersonRepository personRepository;
 
+    /**
+     * Tạo báo cáo chấm công của một nhân viên (hoặc toàn công ty) trong tháng: thống kê từng ngày có mặt/đi muộn/vắng/nghỉ/lễ và tổng hợp cả tháng.
+     */
     @Override
     public List<TimesheetReportResponse> getTimesheet(int month, int year, String personId) {
         List<Attendance> records;
@@ -121,6 +124,9 @@ public class TimesheetReportServiceImpl implements TimesheetReportService {
         return reports;
     }
 
+    /**
+     * Xuất báo cáo chấm công tháng ra file Excel (XLSX): tiêu đề, bảng ký hiệu từng ngày cho mỗi nhân viên, dòng tổng hợp số ngày công.
+     */
     @Override
     public byte[] exportTimesheetExcel(int month, int year, String personId) {
         List<TimesheetReportResponse> reports = getTimesheet(month, year, personId);

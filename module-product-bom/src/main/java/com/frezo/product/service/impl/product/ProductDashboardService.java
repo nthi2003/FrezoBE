@@ -33,6 +33,7 @@ public class ProductDashboardService {
     private final PriceConfigRepository priceConfigRepository;
     private final MarketPriceRepository marketPriceRepository;
 
+    /** Lấy thống kê tổng quan: tổng sản phẩm, sắp hết hàng, sắp hết hạn. */
     public ProductDashboardStats getDashboardStats() {
         long total = safeCount(productRepository::countActiveProducts, "totalProducts");
         long lowStock = safeCount(productRepository::countLowStockProducts, "lowStockCount");
@@ -50,6 +51,7 @@ public class ProductDashboardService {
                 .build();
     }
 
+    /** Lấy dữ liệu biểu đồ lợi nhuận (chi phí vs doanh thu) theo số ngày. */
     public List<Map<String, Object>> getProfitChart(int days) {
         try {
             LocalDate fromDate = LocalDate.now().minusDays(days);
@@ -61,6 +63,7 @@ public class ProductDashboardService {
         }
     }
 
+    /** Lấy dữ liệu biến động giá bán so với ngày hôm trước. */
     public List<Map<String, Object>> getPriceFluctuation() {
         try {
             List<Object[]> results = priceConfigRepository.getPriceFluctuation();
@@ -71,6 +74,7 @@ public class ProductDashboardService {
         }
     }
 
+    /** Lấy dữ liệu so sánh giá nội bộ với giá thị trường. */
     public List<Map<String, Object>> getMarketComparison() {
         try {
             List<Object[]> results = marketPriceRepository.getTodayMarketComparison();
@@ -81,6 +85,7 @@ public class ProductDashboardService {
         }
     }
 
+    /** Thực hiện đếm an toàn, trả về 0 nếu có lỗi xảy ra. */
     private long safeCount(LongSupplier supplier, String label) {
         try {
             return supplier.getAsLong();
@@ -90,6 +95,7 @@ public class ProductDashboardService {
         }
     }
 
+    /** Chuyển kết quả truy vấn lợi nhuận sang danh sách Map để hiển thị biểu đồ. */
     private List<Map<String, Object>> mapProfitRows(List<Object[]> results) {
         List<Map<String, Object>> data = new ArrayList<>();
         if (results == null || results.isEmpty()) return data;
@@ -104,6 +110,7 @@ public class ProductDashboardService {
         return data;
     }
 
+    /** Chuyển kết quả truy vấn biến động giá sang danh sách Map để hiển thị. */
     private List<Map<String, Object>> mapFluctuationRows(List<Object[]> results) {
         List<Map<String, Object>> data = new ArrayList<>();
         if (results == null || results.isEmpty()) return data;
@@ -121,6 +128,7 @@ public class ProductDashboardService {
         return data;
     }
 
+    /** Chuyển kết quả so sánh giá thị trường sang danh sách Map. */
     private List<Map<String, Object>> mapMarketRows(List<Object[]> results) {
         List<Map<String, Object>> data = new ArrayList<>();
         if (results == null || results.isEmpty()) return data;
@@ -137,6 +145,7 @@ public class ProductDashboardService {
         return data;
     }
 
+    /** Parse giá trị phần trăm từ đối tượng, trả về 0 nếu không hợp lệ. */
     private double parsePercent(Object raw) {
         if (raw == null) return 0.0;
         try {

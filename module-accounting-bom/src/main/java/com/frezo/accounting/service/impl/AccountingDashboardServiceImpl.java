@@ -43,6 +43,10 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
     private final JournalEntryRepository entryRepo;
     private final AccountRepository accountRepo;
 
+    /**
+     * Tổng hợp dữ liệu tổng quan cho dashboard theo tháng: doanh thu, chi phí, lợi nhuận, công nợ,
+     * xu hướng dòng tiền và các chứng từ gần đây, kèm so sánh với tháng trước.
+     */
     @Override
     @Transactional(readOnly = true)
     public AccountingDashboardResponse getSummary(int year, int month) {
@@ -107,6 +111,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
                 .build();
     }
 
+    /**
+     * Nạp toàn bộ tài khoản chưa xóa vào Map theo mã TK để tra cứu nhanh.
+     */
     private Map<String, Account> loadAccountsByCode() {
         Map<String, Account> map = new HashMap<>();
         for (Account a : accountRepo.findByIsDeletedFalseOrderByCodeAsc()) {
@@ -115,6 +122,10 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return map;
     }
 
+    /**
+     * Cộng dồn số dư cuối kỳ của các tài khoản theo loại (tài sản/công nợ) có yêu cầu theo dõi đối tượng,
+     * trả về tổng số dư công nợ và gợi ý hiển thị.
+     */
     private PartnerBalanceSummary sumPartnerBalances(
             List<TrialBalanceRowResponse> tb,
             Map<String, Account> accountsByCode,
@@ -137,6 +148,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return new PartnerBalanceSummary(sum, hint);
     }
 
+    /**
+     * Dựng chuỗi dữ liệu xu hướng 6 tháng gần nhất (đến tháng cuối được truyền vào) cho biểu đồ dòng tiền.
+     */
     private List<AccountingDashboardResponse.MonthlyTrendPoint> buildTrend(YearMonth endYm) {
         List<AccountingDashboardResponse.MonthlyTrendPoint> out = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
@@ -155,6 +169,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return out;
     }
 
+    /**
+     * Xây dựng danh sách tối đa 6 khoản doanh thu lớn nhất từ báo cáo kết quả kinh doanh.
+     */
     private List<AccountingDashboardResponse.RevenueCategoryPoint> buildRevenueCategories(
             IncomeStatementResponse is) {
         if (is.getRevenues() == null) return List.of();
@@ -170,6 +187,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
                 .toList();
     }
 
+    /**
+     * Lấy 12 chứng từ đã hạch toán gần nhất để hiển thị danh sách giao dịch trên dashboard.
+     */
     private List<AccountingDashboardResponse.RecentTransactionPoint> buildRecentTransactions() {
         List<JournalEntry> entries = entryRepo.findByStatusOrderByPostingDateDesc(
                 JournalStatus.POSTED, PageRequest.of(0, 12));
@@ -192,6 +212,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return out;
     }
 
+    /**
+     * Tính số dư cuối kỳ của một dòng bảng cân đối thử theo tính chất Nợ/Có của loại tài khoản.
+     */
     private static BigDecimal closingBalance(TrialBalanceRowResponse row, AccountType type) {
         if (type == AccountType.ASSET || type == AccountType.EXPENSE) {
             return safe(row.getClosingDebit()).subtract(safe(row.getClosingCredit())).max(BigDecimal.ZERO);
@@ -199,6 +222,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return safe(row.getClosingCredit()).subtract(safe(row.getClosingDebit())).max(BigDecimal.ZERO);
     }
 
+    /**
+     * Kiểm tra tổng phát sinh Nợ và Có trong kỳ có cân bằng hay không (sai số <= 0.01).
+     */
     private static boolean isTrialBalanceBalanced(List<TrialBalanceRowResponse> tb) {
         BigDecimal dr = BigDecimal.ZERO;
         BigDecimal cr = BigDecimal.ZERO;
@@ -209,6 +235,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
         return dr.subtract(cr).abs().compareTo(new BigDecimal("0.01")) <= 0;
     }
 
+    /**
+     * Tính phần trăm thay đổi giữa hai giá trị; trả null nếu không có giá trị kỳ trước để so sánh.
+     */
     private static Double pctChange(BigDecimal current, BigDecimal previous) {
         if (previous == null || previous.signum() == 0) return null;
         return current.subtract(previous)
@@ -217,6 +246,9 @@ public class AccountingDashboardServiceImpl implements AccountingDashboardServic
                 .doubleValue();
     }
 
+    /**
+     * Trả về 0 nếu giá trị null, ngược lại trả về giá trị gốc (bảo vệ phép tính số học).
+     */
     private static BigDecimal safe(BigDecimal v) {
         return v != null ? v : BigDecimal.ZERO;
     }

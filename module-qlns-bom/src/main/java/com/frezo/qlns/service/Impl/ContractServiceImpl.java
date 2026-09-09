@@ -46,6 +46,9 @@ public class ContractServiceImpl implements ContractService {
     private final NotificationService notificationService;
     private final ContractRepository contractRepository;
 
+    /**
+     * Truy vấn danh sách hợp đồng đang hoạt động theo bộ lọc (từ khoá, hiệu lực, người, trạng thái), phân trang.
+     */
     public PageResponse<ContractResponse> all(ContractFilter filter) {
         Specification<Contract> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.DESC, "createdDate");
@@ -54,6 +57,9 @@ public class ContractServiceImpl implements ContractService {
         return PageResponse.from(entities, contractMapper::toResponse);
     }
 
+    /**
+     * Dựng Specification (điều kiện lọc) cho truy vấn hợp đồng từ bộ lọc đầu vào.
+     */
     private Specification<Contract> createSpecification(ContractFilter filter) {
         Specification<Contract> specification = Specification
                 .where(GenericSpecification.hasFieldIs("isDeleted", Boolean.FALSE));
@@ -77,6 +83,9 @@ public class ContractServiceImpl implements ContractService {
         return specification;
     }
 
+    /**
+     * Thêm mới một hợp đồng, tạo bản ghi lịch sử và version đầu tiên cho hợp đồng.
+     */
     public ApiResponse<com.frezo.qlns.dto.response.ContractResponse> add(ContractAddRequest request) {
         validateRequest(request);
         Contract contract = contractMapper.toEntity(request);
@@ -92,6 +101,9 @@ public class ContractServiceImpl implements ContractService {
         return ApiResponse.ok(contractMapper.toResponse(savedContract));
     }
 
+    /**
+     * Lấy danh sách hợp đồng dạng combobox (mặc định chỉ các hợp đồng đã kích hoạt).
+     */
     public ApiResponse<List<com.frezo.qlns.dto.response.ContractComboboxResponse>> combobox(ContractFilter filter) {
         Specification<Contract> specification = createSpecification(filter);
         if (!Boolean.TRUE.equals(filter.getIsDelete())) {
@@ -101,6 +113,9 @@ public class ContractServiceImpl implements ContractService {
         return ApiResponse.ok(contractMapper.toListComboboxResponse(contracts));
     }
 
+    /**
+     * Cập nhật thông tin hợp đồng hiện có và lưu version mới cho hợp đồng.
+     */
     public ApiResponse<com.frezo.qlns.dto.response.ContractResponse> edit(String id, ContractEditRequest request) {
         Contract exist = findEntityById(id);
         validateRequest(request);
@@ -111,22 +126,34 @@ public class ContractServiceImpl implements ContractService {
         return ApiResponse.ok(contractMapper.toResponse(saveContract));
     }
 
+    /**
+     * Kiểm tra mã hợp đồng đã tồn tại hay chưa trước khi thêm mới.
+     */
     private void validateRequest(ContractAddRequest request) {
         if (contractRepository.existsByCode(request.getCode())) {
             throw new AppException(QlnsErrorCode.CODE_EXISTS);
         }
     }
 
+    /**
+     * Tra cứu hợp đồng theo id, không tồn tại thì ném AppException ENTITY_NOT_FOUND.
+     */
     private Contract findEntityById(String id) {
         return contractRepository.findById(id).orElseThrow(() -> new AppException(QlnsErrorCode.ENTITY_NOT_FOUND));
     }
 
+    /**
+     * Xoá mềm (soft-delete) một hợp đồng theo id.
+     */
     public ApiResponse<?> delete(String id) {
         Contract exits = findEntityById(id);
         exits.setIsDeleted(true);
         return ApiResponse.ok(contractRepository.save(exits));
     }
 
+    /**
+     * Xem chi tiết hợp đồng; nếu có giao việc duyệt (assign work) thì chuyển trạng thái khi người phụ trách mở xem.
+     */
     public com.frezo.qlns.dto.response.ContractResponse view(String id) {
         Contract contract = findEntityById(id);
         ContractAssginWork assignWork = contractAssginWorkReposirory.findByContractId(id);
@@ -141,6 +168,9 @@ public class ContractServiceImpl implements ContractService {
         return contractMapper.toResponse(contract);
     }
 
+    /**
+     * Giao việc duyệt hợp đồng cho người phụ trách (RV) và gửi thông báo WebSocket cho họ.
+     */
     public ContractAsginWorkResponse assginWork(String contractId, ContractAssginWorkAddRequest request) {
         Contract contract = findEntityById(contractId);
         ContractAssginWork contractAssginWork = contractAssiginWorkMapper.toEntity(request);
@@ -159,6 +189,9 @@ public class ContractServiceImpl implements ContractService {
         return contractAssiginWorkMapper.toResponse(response);
     }
 
+    /**
+     * Lấy thông tin giao việc duyệt của một hợp đồng (trả null nếu chưa có).
+     */
     public ContractAsginWorkResponse getAssignWork(String contractId) {
         ContractAssginWork assignWork = contractAssginWorkReposirory.findByContractId(contractId);
         if (assignWork == null) {
@@ -168,6 +201,9 @@ public class ContractServiceImpl implements ContractService {
     }
 
 
+    /**
+     * Cập nhật trạng thái xử lý hợp đồng (OP/RV) dựa trên người dùng đang đăng nhập.
+     */
     public ContractResponse updateStatus(String id, ContractAddRequest request) {
         Contract contract = findEntityById(id);
         String currentUsername = SystemUtils.getCurrentUsername();
@@ -182,6 +218,9 @@ public class ContractServiceImpl implements ContractService {
         return contractMapper.toResponse(contract);
     }
 
+    /**
+     * Xác định trạng thái mới: OP hoàn thành khi OP duyệt, RV hoàn thành khi RV duyệt; ngược lại giữ nguyên.
+     */
     private StatusContarct determineNewStatus(String username, ContractAddRequest request,
             StatusContarct currentStatus) {
         if (username.equals(request.getAssignOP()) && currentStatus == StatusContarct.OP_PROCESSING) {
@@ -193,6 +232,9 @@ public class ContractServiceImpl implements ContractService {
         return null;
     }
 
+    /**
+     * Khi người phụ trách mở xem hợp đồng, chuyển trạng thái từ chờ xử lý sang đang xử lý (OP/RV).
+     */
     private void checkView(String contractId, ContractAssginWorkEditRequest request) {
         Contract contract = findEntityById(contractId);
         String currentUsername = SystemUtils.getCurrentUsername();
@@ -211,6 +253,9 @@ public class ContractServiceImpl implements ContractService {
         }
     }
 
+    /**
+     * Người duyệt RV từ chối/ yêu cầu sửa hợp đồng: cập nhật trạng thái RV_REJECTED và thông báo cho OP.
+     */
     public ContractResponse reject(String id) {
         Contract contract = findEntityById(id);
         String currentUsername = SystemUtils.getCurrentUsername();
@@ -239,6 +284,9 @@ public class ContractServiceImpl implements ContractService {
         return contractMapper.toResponse(contract);
     }
 
+    /**
+     * Cập nhật trạng thái AI đánh giá hợp đồng.
+     */
     @Override
     public void updateAiStatus(String id, String aiStatus) {
         Contract contract = findEntityById(id);
@@ -246,6 +294,9 @@ public class ContractServiceImpl implements ContractService {
         contractRepository.save(contract);
     }
 
+    /**
+     * Cập nhật nội dung HTML của hợp đồng.
+     */
     @Override
     public void updateHtmlContract(String id, String html) {
         Contract contract = findEntityById(id);

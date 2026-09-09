@@ -25,6 +25,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
 
+    /** Lấy thông tin kho theo id. */
     @Override
     public WarehouseResponse getById(String id) {
         Warehouse wh = warehouseRepository.findById(id)
@@ -32,6 +33,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return toResponse(wh);
     }
 
+    /** Lấy thông tin kho theo mã kho. */
     @Override
     public WarehouseResponse getByCode(String code) {
         Warehouse wh = warehouseRepository.findByCode(code)
@@ -39,11 +41,13 @@ public class WarehouseServiceImpl implements WarehouseService {
         return toResponse(wh);
     }
 
+    /** Lấy danh sách tất cả các kho. */
     @Override
     public List<WarehouseResponse> getAll() {
         return warehouseRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    /** Lọc danh sách kho theo từ khóa (tên/mã) và trạng thái, trả về phân trang. */
     @Override
     public PageResponse<WarehouseResponse> filter(String keyword, String status, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
@@ -63,6 +67,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return PageResponse.of(page, size, whPage, responses);
     }
 
+    /** Tạo mới một kho, kiểm tra mã kho không trùng trước khi lưu. */
     @Override
     @Transactional
     public WarehouseResponse create(WarehouseCreateRequest request) {
@@ -98,6 +103,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return toResponse(wh);
     }
 
+    /** Cập nhật thông tin kho (chỉ các trường được cung cấp). */
     @Override
     @Transactional
     public WarehouseResponse update(String id, WarehouseUpdateRequest request) {
@@ -129,6 +135,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         return toResponse(wh);
     }
 
+    /** Xóa một kho theo id. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -137,6 +144,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         warehouseRepository.delete(wh);
     }
 
+    /** Chuyển entity kho thành response. */
     private WarehouseResponse toResponse(Warehouse wh) {
         WarehouseResponse r = new WarehouseResponse();
         r.setId(wh.getId());

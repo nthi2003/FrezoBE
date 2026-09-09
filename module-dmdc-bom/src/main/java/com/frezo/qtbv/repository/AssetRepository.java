@@ -10,12 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface AssetRepository extends JpaRepository<Asset, String>, JpaSpecificationExecutor<Asset> {
-
     Optional<Asset> findByCode(String code);
-
     boolean existsByCode(String code);
-
-    /** Cho auto-gen code: đếm asset đã tạo trong năm để suffix number. */
     @Query("SELECT COUNT(a) FROM Asset a WHERE a.code LIKE :prefix%")
     long countByCodePrefix(String prefix);
 }

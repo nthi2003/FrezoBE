@@ -26,5 +26,5 @@ public class LoginHistory extends BaseEntity {
     private LocalDateTime loginTime;
     
     @Column(name = "status")
-    private String status; // SUCCESS, FAILED, 2FA_REQUIRED
+    private String status;
 }

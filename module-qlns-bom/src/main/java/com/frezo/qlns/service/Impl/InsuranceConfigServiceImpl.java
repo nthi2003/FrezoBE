@@ -19,6 +19,9 @@ public class InsuranceConfigServiceImpl implements InsuranceConfigService {
     private final InsuranceConfigRepository insuranceConfigRepository;
     private final InsuranceConfigMapper insuranceConfigMapper;
 
+    /**
+     * Lưu cấu hình bảo hiểm theo năm: cập nhật cấu hình đang hoạt động hoặc tạo mới nếu chưa có.
+     */
     @Override
     @Transactional
     public InsuranceConfigResponse save(InsuranceConfigRequest request) {
@@ -46,6 +49,9 @@ public class InsuranceConfigServiceImpl implements InsuranceConfigService {
         return insuranceConfigMapper.toResponse(insuranceConfigRepository.save(entity));
     }
 
+    /**
+     * Lấy cấu hình bảo hiểm đang hoạt động theo năm, không có thì báo lỗi INSURANCE_CONFIG_NOT_FOUND.
+     */
     @Override
     public InsuranceConfigResponse getByYear(Integer year) {
         return insuranceConfigRepository.findByYearAndIsActiveTrue(year)

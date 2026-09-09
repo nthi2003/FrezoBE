@@ -9,13 +9,12 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum DmdcErrorCode implements ErrorCode {
 
-    // -------------------- CATEGORY --------------------
     CATEGORY_CODE_EXISTS("category.code.exist", HttpStatus.CONFLICT, "Mã danh mục đã tồn tại"),
     CATEGORY_NAME_EXISTS("category.name.exist", HttpStatus.CONFLICT, "Tên danh mục đã tồn tại"),
     CATEGORY_NAME_EN_EXISTS("category.name.en.exist", HttpStatus.CONFLICT, "Tên EN danh mục đã tồn tại"),
     ENTITY_NOT_FOUND("valid.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy dữ liệu"),
 
-    // -------------------- ASSET --------------------
+
     ASSET_NOT_FOUND("error.asset.not.found", HttpStatus.NOT_FOUND, "Không tìm thấy tài sản"),
     ASSET_CODE_DUPLICATE("error.asset.code.duplicate", HttpStatus.CONFLICT, "Mã tài sản đã tồn tại"),
     ASSET_IN_USE_CANNOT_DELETE("error.asset.in.use.cannot.delete", HttpStatus.CONFLICT,
@@ -29,7 +28,6 @@ public enum DmdcErrorCode implements ErrorCode {
             "Tài sản không đang bảo trì"),
     ASSET_ALREADY_DISPOSED("error.asset.already.disposed", HttpStatus.CONFLICT, "Tài sản đã được thanh lý"),
 
-    // -------------------- ASSET TRANSFER --------------------
     TRANSFER_ACTIVE_EXISTS("error.asset.transfer.active.exists", HttpStatus.CONFLICT,
             "Đã có yêu cầu điều chuyển đang xử lý"),
     TRANSFER_TYPE_INVALID("error.asset.transfer.type.invalid", HttpStatus.BAD_REQUEST,

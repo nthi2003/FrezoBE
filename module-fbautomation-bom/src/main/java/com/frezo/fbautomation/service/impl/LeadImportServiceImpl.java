@@ -81,6 +81,7 @@ public class LeadImportServiceImpl implements LeadImportService {
     // ============================================================
     //  IMPORT
     // ============================================================
+    /** Đọc file CSV/XLSX, chuẩn hóa header, dedupe theo phone/email (nếu bật), lưu lead thành batch và trả về kết quả import. */
     @Override
     @Transactional
     public LeadImportBatchResponse importLeads(MultipartFile file, String source, boolean dedupe) {
@@ -184,6 +185,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         return toResponse(batch);
     }
 
+    /** Hoàn tác một batch đã import bằng cách đánh dấu xóa mềm toàn bộ lead thuộc batch đó. */
     @Override
     @Transactional
     public void rollback(String batchId) {
@@ -202,6 +204,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         log.info("Rolled back batch {} — soft-deleted {} leads", batchId, leads.size());
     }
 
+    /** Trả về tối đa PREVIEW_ROWS dòng dữ liệu đầu tiên của file (kèm header) để người dùng xem trước. */
     @Override
     public List<List<String>> preview(MultipartFile file) {
         try {
@@ -212,6 +215,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         }
     }
 
+    /** Lấy danh sách lịch sử import (các batch) sắp xếp theo thời gian upload giảm dần. */
     @Override
     public List<LeadImportBatchResponse> history() {
         return batchRepository.findAll().stream()
@@ -228,6 +232,7 @@ public class LeadImportServiceImpl implements LeadImportService {
     // ============================================================
     //  PARSER
     // ============================================================
+    /** Đọc toàn bộ dòng dữ liệu từ file, tự nhận diện định dạng CSV hay Excel theo phần mở rộng. */
     private List<List<String>> readAllRows(MultipartFile file) throws Exception {
         String filename = Objects.requireNonNullElse(file.getOriginalFilename(), "").toLowerCase(Locale.ROOT);
         try (InputStream in = file.getInputStream()) {
@@ -238,6 +243,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         }
     }
 
+    /** Đọc file CSV mã hóa UTF-8 thành danh sách các dòng, bỏ qua dòng trống. */
     private List<List<String>> readCsv(InputStream in) throws Exception {
         List<List<String>> out = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
@@ -275,6 +281,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         return cells;
     }
 
+    /** Đọc sheet đầu tiên của file Excel thành danh sách các dòng chuỗi, bỏ qua dòng rỗng hoàn toàn. */
     private List<List<String>> readExcel(InputStream in) throws Exception {
         List<List<String>> out = new ArrayList<>();
         try (Workbook wb = new XSSFWorkbook(in)) {
@@ -297,6 +304,7 @@ public class LeadImportServiceImpl implements LeadImportService {
     // ============================================================
     //  HELPERS
     // ============================================================
+    /** Ánh xạ vị trí cột trong file sang tên chuẩn (name/phone/email...) thông qua bảng HEADER_ALIAS. */
     private Map<Integer, String> mapHeaders(List<String> header) {
         Map<Integer, String> map = new HashMap<>();
         for (int i = 0; i < header.size(); i++) {
@@ -307,6 +315,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         return map;
     }
 
+    /** Chuẩn hóa tên cột: bỏ dấu tiếng Việt, chuyển về chữ thường và loại bỏ ký tự đặc biệt. */
     private String normalizeHeader(String s) {
         if (s == null) return "";
         String noAccent = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
@@ -316,6 +325,7 @@ public class LeadImportServiceImpl implements LeadImportService {
                 .replaceAll("[^a-z0-9]", "");
     }
 
+    /** Trích xuất dữ liệu của một dòng theo bản đồ cột đã ánh xạ, bỏ qua các ô rỗng. */
     private Map<String, String> extractRow(List<String> row, Map<Integer, String> colMap) {
         Map<String, String> data = new HashMap<>();
         for (var e : colMap.entrySet()) {
@@ -327,6 +337,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         return data;
     }
 
+    /** Chuẩn hóa số điện thoại: chỉ giữ chữ số và dấu cộng, đổi đầu +84/84 thành 0. */
     private String normalizePhone(String s) {
         if (s == null) return null;
         String digits = s.replaceAll("[^0-9+]", "");
@@ -335,6 +346,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         return digits.isBlank() ? null : digits;
     }
 
+    /** Lấy username người dùng hiện tại từ SecurityContext, mặc định "system" nếu không xác định được. */
     private String currentUsername() {
         try {
             var auth = SecurityContextHolder.getContext().getAuthentication();
@@ -342,6 +354,7 @@ public class LeadImportServiceImpl implements LeadImportService {
         } catch (Exception ex) { return "system"; }
     }
 
+    /** Ghi thêm một lỗi dạng JSON vào log, chỉ giữ tối đa MAX_ERROR_LOG lỗi đầu tiên để tránh lỗi quá dài. */
     private void appendError(StringBuilder buf, int row, String msg) {
         // Tránh log log quá dài — chỉ giữ 100 lỗi đầu.
         long commas = buf.chars().filter(ch -> ch == ',').count();
@@ -351,6 +364,7 @@ public class LeadImportServiceImpl implements LeadImportService {
                 .append(msg == null ? "" : msg.replace("\"", "'")).append("\"}");
     }
 
+    /** Chuyển đổi thực thể LeadImportBatch sang DTO Response. */
     private LeadImportBatchResponse toResponse(LeadImportBatch b) {
         LeadImportBatchResponse r = new LeadImportBatchResponse();
         r.setId(b.getId());

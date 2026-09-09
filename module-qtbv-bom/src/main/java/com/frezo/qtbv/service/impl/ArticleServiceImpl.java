@@ -67,6 +67,7 @@ public class ArticleServiceImpl implements ArticleService {
     private final CodeSequenceService codeSequenceService;
     private final NewsCategoryRepository newsCategoryRepository;
 
+    /** Tạo mới một bài viết với mã tự sinh (nếu bỏ trống), trạng thái ban đầu là DRAFT và trả về dữ liệu bài viết đã lưu. */
     @Override
     @Transactional
     public ArticleResponse create(ArticleCreateRequest request) {
@@ -129,6 +130,7 @@ public class ArticleServiceImpl implements ArticleService {
         return generated;
     }
 
+    /** Cập nhật nội dung bài viết khi nó đang ở trạng thái DRAFT hoặc REJECTED và chỉ khi có quyền của tác giả. */
     @Override
     @Transactional
     public ArticleResponse update(String id, ArticleUpdateRequest request, String authorId) {
@@ -158,6 +160,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Gửi bài viết đi phê duyệt: chuyển trạng thái sang WAITING_APPROVAL sau khi kiểm tra quyền tác giả và có quản lý được chỉ định. */
     @Override
     @Transactional
     public void submitForApproval(String id, String authorId) {
@@ -177,6 +180,7 @@ public class ArticleServiceImpl implements ArticleService {
         articleRepository.save(article);
     }
 
+    /** Xoá mềm bài viết: đánh dấu trạng thái DELETED, isDeleted=true và ghi thời gian xoá. */
     @Override
     @Transactional
     public void delete(String id, String authorId) {
@@ -190,6 +194,7 @@ public class ArticleServiceImpl implements ArticleService {
         articleRepository.save(article);
     }
 
+    /** Xuất bản bài viết đã được duyệt: áp dụng nội dung bản sửa đổi mới nhất (nếu có) và chuyển trạng thái sang PUBLISHED. */
     @Override
     @Transactional
     public ArticleResponse publish(String id, String managerId) {
@@ -219,6 +224,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Lấy danh sách bài viết đã xuất bản, lọc theo phạm vi PUBLIC hoặc cùng tổ chức với organizationId được truyền vào. */
     @Override
     public List<ArticleResponse> getPublishedArticles(String organizationId) {
         List<ArticleResponse> responses = articleRepository.findPublishedArticles().stream()
@@ -231,6 +237,7 @@ public class ArticleServiceImpl implements ArticleService {
         return responses;
     }
 
+    /** Trả về danh sách bài viết trên trang chủ nội bộ (intranet), kèm số lượt tim và thông tin chuyên mục. */
     @Override
     @Transactional(readOnly = true)
     public List<ArticleResponse> getHomeFeed() {
@@ -242,6 +249,7 @@ public class ArticleServiceImpl implements ArticleService {
         return responses;
     }
 
+    /** Lấy chi tiết bài viết trên trang chủ theo id, chỉ hiển thị bài đã xuất bản, đang hoạt động và được bật hiển thị trên tin tức. */
     @Override
     @Transactional(readOnly = true)
     public ArticleResponse getHomeFeedById(String id) {
@@ -258,6 +266,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Bật hoặc tắt cờ hiển thị bài viết trên trang tin tức (displayOnNews). */
     @Override
     @Transactional
     public ArticleResponse updateDisplayOnNews(String id, Boolean displayOnNews) {
@@ -270,6 +279,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Phê duyệt hoặc từ chối bài viết đang chờ duyệt: khi duyệt chuyển sang APPROVED, ngược lại chuyển sang REJECTED kèm ghi chú. */
     @Override
     @Transactional
     public ArticleResponse review(String id, ArticleReviewRequest request, String managerId) {
@@ -297,6 +307,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Lấy chi tiết bài viết công khai theo id, chỉ trả về bài thuộc phạm vi PUBLIC và đang hoạt động. */
     @Override
     @Transactional(readOnly = true)
     public ArticleResponse getPublicArticleById(String id) {
@@ -313,6 +324,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Tìm một bài viết theo id (không xoá) và trả về chi tiết kèm số lượt tim. */
     @Override
     public ArticleResponse findById(String id) {
         Article article = getArticleByIdOrThrow(id);
@@ -321,6 +333,7 @@ public class ArticleServiceImpl implements ArticleService {
         return response;
     }
 
+    /** Lọc bài viết theo các tiêu chí trong request (tiêu đề, mã, trạng thái, phạm vi...) và trả về danh sách phân trang kèm số lượt tim. */
     @Override
     public Map<String, Object> filter(ArticleFilterRequest request) {
         final ArticleFilterRequest filter = (request == null) ? new ArticleFilterRequest() : request;
@@ -348,6 +361,7 @@ public class ArticleServiceImpl implements ArticleService {
                 "pageSize", page.getSize());
     }
 
+    /** Lấy danh sách bài viết công khai theo phân trang (PUBLIC scope). */
     @Override
     @Transactional(readOnly = true)
     public PageResponse<ArticleResponse> getPublicArticles(Integer pageNumber, Integer pageSize) {
@@ -361,6 +375,7 @@ public class ArticleServiceImpl implements ArticleService {
         return PageResponse.from(responses);
     }
 
+    /** Lấy danh sách bài nháp (chưa xoá) của một tác giả theo phân trang. */
     @Override
     public PageResponse<ArticleResponse> getMyDrafts(Integer pageNumber, Integer pageSize, String authorId) {
         Pageable pageable = PageRequest.of(
@@ -373,6 +388,7 @@ public class ArticleServiceImpl implements ArticleService {
         return PageResponse.from(responses);
     }
 
+    /** Lấy danh sách bài viết đang chờ phê duyệt thuộc quản lý được chỉ định theo phân trang. */
     @Override
     public PageResponse<ArticleResponse> getPendingApproval(Integer pageNumber, Integer pageSize, String managerId) {
         Pageable pageable = PageRequest.of(
@@ -387,6 +403,7 @@ public class ArticleServiceImpl implements ArticleService {
 
     // --- Helper Methods ---
 
+    /** Tìm bài viết chưa bị xoá theo id, nếu không tồn tại thì ném lỗi NOT_FOUND. */
     private Article getArticleByIdOrThrow(String id) {
         Article article = articleRepository.findByIdNotDeleted(id);
         if (article == null) {
@@ -395,6 +412,7 @@ public class ArticleServiceImpl implements ArticleService {
         return article;
     }
 
+    /** Kiểm tra tác giả hiện tại có quyền thao tác trên bài viết hay không, nếu không thì ném lỗi FORBIDDEN. */
     private void validateAuthorPermission(Article article, String authorId, String errorMsg) {
         if (!article.getAuthorId().equals(authorId)) {
             throw new AppException(errorMsg, HttpStatus.FORBIDDEN);
@@ -407,6 +425,7 @@ public class ArticleServiceImpl implements ArticleService {
         article.setIsPublic(isPublic);
     }
 
+    /** Kiểm tra manager thao tác có đúng là manager được chỉ định cho bài viết hay không, nếu không thì ném lỗi FORBIDDEN. */
     private void assertIsDesignatedManager(Article article, String managerId, String errorMsg) {
         String designated = article.getManagerId();
         if (designated == null || designated.isBlank() || managerId == null || !designated.equals(managerId)) {
@@ -414,6 +433,7 @@ public class ArticleServiceImpl implements ArticleService {
         }
     }
 
+    /** Gán số lượt tim (heart count) cho danh sách bài viết bằng cách truy vấn tập trung theo các id. */
     private void enrichArticlesWithHeartCount(List<ArticleResponse> responses) {
         if (responses == null || responses.isEmpty())
             return;
@@ -434,6 +454,7 @@ public class ArticleServiceImpl implements ArticleService {
         }
     }
 
+    /** Dựng Specification JPA từ các tiêu chí lọc của ArticleFilterRequest để truy vấn bài viết. */
     private Specification<Article> createSpecification(ArticleFilterRequest f) {
         Specification<Article> spec = Specification.where(GenericSpecification.hasFieldIs("isDeleted", false));
 
@@ -467,6 +488,7 @@ public class ArticleServiceImpl implements ArticleService {
         return spec;
     }
 
+    /** Bổ sung tên và màu chuyên mục cho danh sách bài viết dựa trên categoryId tương ứng. */
     private void enrichCategoryMeta(List<ArticleResponse> articles) {
         if (articles == null || articles.isEmpty()) return;
         Set<String> catIds = articles.stream()

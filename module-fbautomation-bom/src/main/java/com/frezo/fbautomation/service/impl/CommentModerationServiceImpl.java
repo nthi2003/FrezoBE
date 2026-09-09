@@ -30,6 +30,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
     private final ModeratedCommentRepository commentRepository;
 
     // ---- Rules ----
+    /** Lấy danh sách tất cả rule kiểm duyệt chưa bị xóa, sắp xếp mới nhất trước. */
     @Override
     public List<CommentRuleResponse> listRules() {
         return ruleRepository.findAll().stream()
@@ -39,11 +40,13 @@ public class CommentModerationServiceImpl implements CommentModerationService {
                 .toList();
     }
 
+    /** Lấy thông tin chi tiết một rule kiểm duyệt theo mã định danh. */
     @Override
     public CommentRuleResponse getRule(String id) {
         return toRuleResponse(mustFindRule(id));
     }
 
+    /** Tạo mới rule kiểm duyệt bình luận từ thông tin trong CommentRuleRequest. */
     @Override
     @Transactional
     public CommentRuleResponse createRule(CommentRuleRequest req) {
@@ -59,6 +62,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return toRuleResponse(ruleRepository.save(r));
     }
 
+    /** Cập nhật thông tin rule kiểm duyệt theo mã định danh. */
     @Override
     @Transactional
     public CommentRuleResponse updateRule(String id, CommentRuleRequest req) {
@@ -72,6 +76,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return toRuleResponse(ruleRepository.save(r));
     }
 
+    /** Xóa mềm rule kiểm duyệt theo mã định danh. */
     @Override
     @Transactional
     public void deleteRule(String id) {
@@ -81,6 +86,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
     }
 
     // ---- Comments ----
+    /** Lấy danh sách bình luận cần kiểm duyệt, có thể lọc theo trạng thái. */
     @Override
     public List<ModeratedCommentResponse> listComments(String status) {
         return commentRepository.findAll().stream()
@@ -91,11 +97,13 @@ public class CommentModerationServiceImpl implements CommentModerationService {
                 .toList();
     }
 
+    /** Lấy thông tin chi tiết bình luận theo mã định danh. */
     @Override
     public ModeratedCommentResponse getComment(String id) {
         return toCommentResponse(mustFindComment(id));
     }
 
+    /** Tạo mới bình luận và tự động đối chiếu các rule để gắn kết quả kiểm duyệt ban đầu. */
     @Override
     @Transactional
     public ModeratedCommentResponse createComment(ModeratedCommentRequest req) {
@@ -113,6 +121,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return toCommentResponse(commentRepository.save(c));
     }
 
+    /** Cập nhật thông tin bình luận theo mã định danh. */
     @Override
     @Transactional
     public ModeratedCommentResponse updateComment(String id, ModeratedCommentRequest req) {
@@ -128,6 +137,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return toCommentResponse(commentRepository.save(c));
     }
 
+    /** Xóa mềm bình luận theo mã định danh. */
     @Override
     @Transactional
     public void deleteComment(String id) {
@@ -136,6 +146,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         commentRepository.save(c);
     }
 
+    /** Xử lý thủ công một bình luận theo hành động HIDE, IGNORE, FLAG hoặc REPLY. */
     @Override
     @Transactional
     public ModeratedCommentResponse moderate(String id, String action, String replyText) {
@@ -154,6 +165,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return toCommentResponse(commentRepository.save(c));
     }
 
+    /** Tổng hợp số liệu bảng điều khiển kiểm duyệt: tổng bình luận, rule và phân loại theo trạng thái. */
     @Override
     public Map<String, Object> dashboard() {
         List<ModeratedComment> comments = commentRepository.findAll().stream()
@@ -172,6 +184,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return m;
     }
 
+    /** Đối chiếu nội dung bình luận với các rule đang bật; nếu khớp keyword thì gắn rule, cập nhật trạng thái và tăng bộ đếm hit. */
     private void matchRules(ModeratedComment c) {
         String content = c.getContent() == null ? "" : c.getContent().toLowerCase(Locale.ROOT);
         for (CommentModerationRule rule : ruleRepository.findByEnabledTrue()) {
@@ -196,6 +209,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         }
     }
 
+    /** Tìm rule kiểm duyệt theo mã, ném ngoại lệ nếu không tồn tại hoặc đã xóa mềm. */
     private CommentModerationRule mustFindRule(String id) {
         CommentModerationRule r = ruleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy rule"));
@@ -203,6 +217,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return r;
     }
 
+    /** Tìm bình luận theo mã, ném ngoại lệ nếu không tồn tại hoặc đã xóa mềm. */
     private ModeratedComment mustFindComment(String id) {
         ModeratedComment c = commentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy comment"));
@@ -210,6 +225,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return c;
     }
 
+    /** Chuyển đổi thực thể CommentModerationRule sang DTO Response. */
     private CommentRuleResponse toRuleResponse(CommentModerationRule r) {
         CommentRuleResponse out = new CommentRuleResponse();
         out.setId(r.getId());
@@ -224,6 +240,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return out;
     }
 
+    /** Chuyển đổi thực thể ModeratedComment sang DTO Response. */
     private ModeratedCommentResponse toCommentResponse(ModeratedComment c) {
         ModeratedCommentResponse out = new ModeratedCommentResponse();
         out.setId(c.getId());
@@ -241,6 +258,7 @@ public class CommentModerationServiceImpl implements CommentModerationService {
         return out;
     }
 
+    /** Trả về giá trị mặc định nếu chuỗi null hoặc rỗng. */
     private static String nz(String v, String def) {
         return v == null || v.isBlank() ? def : v.trim();
     }

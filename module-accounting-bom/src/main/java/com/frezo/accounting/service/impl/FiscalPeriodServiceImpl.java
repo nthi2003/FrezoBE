@@ -26,6 +26,9 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
     private final FiscalYearRepository yearRepo;
     private final FiscalPeriodRepository periodRepo;
 
+    /**
+     * Đảm bảo năm tài chính và 12 kỳ kế toán của năm đó tồn tại; trả về kỳ hiện tại (hoặc kỳ 1 nếu khác năm hiện tại).
+     */
     @Override
     @Transactional
     public FiscalPeriodResponse ensureYear(int year) {
@@ -61,6 +64,9 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
         return toResponse(periodRepo.findByMonthAndYear(mnow, year).orElseThrow());
     }
 
+    /**
+     * Tìm kỳ kế toán chứa ngày cho trước; nếu chưa tồn tại thì tự động tạo năm và kỳ tương ứng.
+     */
     @Override
     @Transactional
     public FiscalPeriod findOrCreateByDate(LocalDate date) {
@@ -72,6 +78,9 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
                 });
     }
 
+    /**
+     * Lấy kỳ kế toán theo id; ném lỗi nếu không tồn tại.
+     */
     @Override
     @Transactional(readOnly = true)
     public FiscalPeriod getRequired(String periodId) {
@@ -79,12 +88,18 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
                 .orElseThrow(() -> new AppException(AccountingErrorCode.PERIOD_NOT_FOUND, periodId));
     }
 
+    /**
+     * Liệt kê các kỳ kế toán của một năm, sắp xếp theo tháng tăng dần.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<FiscalPeriodResponse> listByYear(int year) {
         return periodRepo.findByYearOrderByMonthAsc(year).stream().map(this::toResponse).toList();
     }
 
+    /**
+     * Khóa (đóng) kỳ kế toán: ghi thời gian và người đóng, từ chối nếu kỳ đã LOCKED hoặc đã CLOSED.
+     */
     @Override
     @Transactional
     public FiscalPeriodResponse closePeriod(String periodId) {
@@ -102,6 +117,9 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
         return toResponse(periodRepo.save(p));
     }
 
+    /**
+     * Mở lại kỳ kế toán đã đóng, xóa thông tin thời gian và người đóng.
+     */
     @Override
     @Transactional
     public FiscalPeriodResponse reopenPeriod(String periodId) {
@@ -116,6 +134,9 @@ public class FiscalPeriodServiceImpl implements FiscalPeriodService {
         return toResponse(periodRepo.save(p));
     }
 
+    /**
+     * Chuyển entity FiscalPeriod thành DTO phản hồi.
+     */
     private FiscalPeriodResponse toResponse(FiscalPeriod p) {
         return FiscalPeriodResponse.builder()
                 .id(p.getId())

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "token_blacklist")
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

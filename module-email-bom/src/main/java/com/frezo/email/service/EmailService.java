@@ -24,6 +24,5 @@ public interface EmailService {
 
     void testConnection(String configId);
 
-    /** Lịch sử gửi email (SUCCESS + FAILED) cho admin theo dõi. */
     PageResponse<SendEmailLogResponse> getSendLogs(SendEmailLogFilter filter);
 }

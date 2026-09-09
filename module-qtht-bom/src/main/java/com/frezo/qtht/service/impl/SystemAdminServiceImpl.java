@@ -13,6 +13,9 @@ public class SystemAdminServiceImpl implements SystemAdminService {
 
     private final DatabaseBackupJob databaseBackupJob;
 
+    /**
+     * Kích hoạt thủ công việc sao lưu database bằng cách gọi DatabaseBackupJob.
+     */
     @Override
     public void triggerBackup() {
         databaseBackupJob.executeBackup();

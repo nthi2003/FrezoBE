@@ -44,6 +44,9 @@ public class ContractVersionServiceImpl implements ContractVersionService {
             "htmlContract", "Nội dung hợp đồng"
     );
 
+    /**
+     * Tạo version mới cho hợp đồng: chụp snapshot dữ liệu hiện tại và lưu lịch sử thay đổi.
+     */
     @Override
     public ContractSnapshotResponse createVersion(Contract contract, String updateType, String description) {
         try {
@@ -66,6 +69,9 @@ public class ContractVersionServiceImpl implements ContractVersionService {
         }
     }
 
+    /**
+     * Lấy danh sách version của hợp đồng theo thứ tự version giảm dần.
+     */
     @Override
     public List<ContractVersionListResponse> getVersionsByContractId(String contractId) {
         List<ContractVersionHistory> versions =
@@ -84,6 +90,9 @@ public class ContractVersionServiceImpl implements ContractVersionService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * So sánh hai version của hợp đồng và trả về danh sách các field đã thay đổi.
+     */
     @Override
     public ContractDiffResponse diffVersions(String contractId, Integer fromVersion, Integer toVersion) {
         ContractVersionHistory from = versionHistoryRepository
@@ -151,6 +160,9 @@ public class ContractVersionServiceImpl implements ContractVersionService {
         return changes;
     }
 
+    /**
+     * Chuyển entity Contract thành chuỗi JSON snapshot (mô tả trạng thái hợp đồng tại thời điểm chụp).
+     */
     private String buildSnapshot(Contract contract) {
         try {
             ContractSnapshotResponse snapshot = contractVersionMapper.toSnapshotResponse(contract);

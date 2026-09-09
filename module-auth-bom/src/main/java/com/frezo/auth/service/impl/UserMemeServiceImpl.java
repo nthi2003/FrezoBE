@@ -3,7 +3,7 @@ package com.frezo.auth.service.impl;
 import com.frezo.auth.entity.UserMeme;
 import com.frezo.auth.repository.UserMemeRepository;
 import com.frezo.auth.service.UserMemeService;
-import com.frezo.common.exception.AuthException;
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +31,13 @@ public class UserMemeServiceImpl implements UserMemeService {
     private final UserMemeRepository userMemeRepository;
     private final MinioService minioService;
 
+
     @Override
     @Transactional(readOnly = true)
     public List<UserMeme> listMine(String username) {
         return userMemeRepository.findByUsernameAndIsDeletedFalseOrderByCreatedDateDesc(username);
     }
+
 
     @Override
     @Transactional
@@ -44,7 +46,7 @@ public class UserMemeServiceImpl implements UserMemeService {
 
         long count = userMemeRepository.countByUsernameAndIsDeletedFalse(username);
         if (count >= MAX_MEMES_PER_USER) {
-            throw new AuthException("Bạn đã đạt giới hạn " + MAX_MEMES_PER_USER + " meme. Xoá bớt để tải thêm.");
+            throw new QTHTException("Bạn đã đạt giới hạn " + MAX_MEMES_PER_USER + " meme. Xoá bớt để tải thêm.");
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -66,13 +68,14 @@ public class UserMemeServiceImpl implements UserMemeService {
         return saved;
     }
 
+
     @Override
     @Transactional
     public void delete(String username, String memeId) {
         UserMeme meme = userMemeRepository.findById(memeId)
-                .orElseThrow(() -> new AuthException("Meme not found"));
+                .orElseThrow(() -> new QTHTException("Meme not found"));
         if (!username.equals(meme.getUsername())) {
-            throw new AuthException("Không có quyền xoá meme này");
+            throw new QTHTException("Không có quyền xoá meme này");
         }
         if (Boolean.TRUE.equals(meme.getIsDeleted())) {
             return;
@@ -92,16 +95,17 @@ public class UserMemeServiceImpl implements UserMemeService {
         log.info("Meme deleted: id={}, user={}", memeId, username);
     }
 
+
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new AuthException("File meme trống");
+            throw new QTHTException("File meme trống");
         }
         if (file.getSize() > MAX_BYTES) {
-            throw new AuthException("Meme tối đa 2MB");
+            throw new QTHTException("Meme tối đa 2MB");
         }
         String contentType = normalizeContentType(file.getContentType(), extractExtension(file.getOriginalFilename()));
         if (!ALLOWED_TYPES.contains(contentType)) {
-            throw new AuthException("Chỉ hỗ trợ ảnh JPG, PNG, GIF, WebP");
+            throw new QTHTException("Chỉ hỗ trợ ảnh JPG, PNG, GIF, WebP");
         }
     }
 
@@ -124,6 +128,7 @@ public class UserMemeServiceImpl implements UserMemeService {
         }
         return filename.substring(filename.lastIndexOf('.')).toLowerCase(Locale.ROOT);
     }
+
 
     private static String stripExtension(String filename) {
         if (!StringUtils.hasText(filename)) {

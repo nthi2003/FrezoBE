@@ -45,6 +45,9 @@ public class EventServiceImpl implements EventService {
     private final EventRegistrationRepository registrationRepository;
     private final NotificationService notificationService;
 
+    /**
+     * Liệt kê tất cả sự kiện cho trang quản trị, có thể lọc theo trạng thái.
+     */
     @Override
     public FePage<EventDto> listAdmin(String status) {
         List<Event> all = eventRepository.findByIsDeletedFalseOrderByStartAtDesc();
@@ -54,11 +57,17 @@ public class EventServiceImpl implements EventService {
         return FePage.all(all.stream().map(e -> toDto(e, null)).toList());
     }
 
+    /**
+     * Lấy thông tin chi tiết một sự kiện theo mã định danh.
+     */
     @Override
     public EventDto get(String id) {
         return toDto(find(id), null);
     }
 
+    /**
+     * Tạo mới sự kiện ở trạng thái nháp (DRAFT).
+     */
     @Override
     @Transactional
     public EventDto create(EventSaveRequest req) {
@@ -79,6 +88,9 @@ public class EventServiceImpl implements EventService {
         return toDto(eventRepository.save(e), null);
     }
 
+    /**
+     * Cập nhật thông tin sự kiện. Không cho phép sửa sự kiện đã bị huỷ.
+     */
     @Override
     @Transactional
     public EventDto update(String id, EventSaveRequest req) {
@@ -97,6 +109,9 @@ public class EventServiceImpl implements EventService {
         return toDto(eventRepository.save(e), null);
     }
 
+    /**
+     * Xóa mềm sự kiện (đánh dấu isDeleted = true).
+     */
     @Override
     @Transactional
     public void delete(String id) {
@@ -105,6 +120,9 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(e);
     }
 
+    /**
+     * Công bố sự kiện (PUBLISHED) và gửi thông báo cho người tổ chức.
+     */
     @Override
     @Transactional
     public EventDto publish(String id) {
@@ -120,6 +138,9 @@ public class EventServiceImpl implements EventService {
         return toDto(saved, null);
     }
 
+    /**
+     * Huỷ sự kiện và thông báo cho tất cả người tham gia đã đăng ký.
+     */
     @Override
     @Transactional
     public EventDto cancel(String id) {
@@ -143,6 +164,9 @@ public class EventServiceImpl implements EventService {
         return toDto(saved, null);
     }
 
+    /**
+     * Lấy danh sách sự kiện trong khoảng ngày cho chế độ xem lịch.
+     */
     @Override
     public List<EventDto> calendar(String from, String to) {
         LocalDateTime f = from != null ? parseDt(from.contains("T") ? from : from + "T00:00:00")
@@ -154,6 +178,9 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
+    /**
+     * Liệt kê danh sách đăng ký tham gia của một sự kiện.
+     */
     @Override
     public List<EventRegistrationDto> listRegistrations(String eventId) {
         find(eventId);
@@ -161,6 +188,9 @@ public class EventServiceImpl implements EventService {
                 .stream().map(r -> toRegDto(r, null)).toList();
     }
 
+    /**
+     * Lấy danh sách sự kiện đã công bố hiển thị cho người dùng trên portal.
+     */
     @Override
     public FePage<EventDto> listPortal() {
         String me = SystemUtils.getCurrentUsername();
@@ -177,6 +207,9 @@ public class EventServiceImpl implements EventService {
         return FePage.all(list);
     }
 
+    /**
+     * Lấy chi tiết sự kiện trên portal, chỉ cho phép xem sự kiện đã công bố.
+     */
     @Override
     public EventDto getPortal(String id) {
         Event e = find(id);
@@ -189,6 +222,10 @@ public class EventServiceImpl implements EventService {
         return toDto(e, my);
     }
 
+    /**
+     * Đăng ký / thay đổi trạng thái RSVP của người dùng cho một sự kiện.
+     * Kiểm tra dung lượng trước khi xác nhận tham gia (GOING).
+     */
     @Override
     @Transactional
     public EventRegistrationDto rsvp(String eventId, RsvpRequest req) {
@@ -252,6 +289,9 @@ public class EventServiceImpl implements EventService {
         return toRegDto(reg, e.getTitle());
     }
 
+    /**
+     * Hủy đăng ký RSVP của người dùng hiện tại cho sự kiện.
+     */
     @Override
     @Transactional
     public void cancelRsvp(String eventId) {
@@ -265,6 +305,9 @@ public class EventServiceImpl implements EventService {
         refreshRegisteredCount(e);
     }
 
+    /**
+     * Lấy danh sách các sự kiện mà người dùng hiện tại đã đăng ký tham gia.
+     */
     @Override
     public List<EventRegistrationDto> myRegistrations() {
         String me = SystemUtils.getCurrentUsername();
@@ -279,6 +322,7 @@ public class EventServiceImpl implements EventService {
                 .toList();
     }
 
+    /** Cập nhật số lượng người đăng ký (GOING) lên sự kiện. */
     private void refreshRegisteredCount(Event e) {
         long going = registrationRepository
                 .countByEventIdAndRsvpStatusAndIsDeletedFalse(e.getId(), RSVP_GOING);
@@ -286,6 +330,7 @@ public class EventServiceImpl implements EventService {
         eventRepository.save(e);
     }
 
+    /** Gửi thông báo cho người tổ chức sự kiện. */
     private void notifyOrganizer(Event e, String title, String msg) {
         if (e.getOrganizerUsername() == null) return;
         try {
@@ -299,6 +344,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /** Kiểm tra dữ liệu đầu vào khi tạo / cập nhật sự kiện (title và startAt bắt buộc). */
     private void validateSave(EventSaveRequest req) {
         if (req == null || req.getTitle() == null || req.getTitle().isBlank()) {
             throw new AppException(CommonErrorCode.INVALID_REQUEST, "title bắt buộc");
@@ -308,12 +354,14 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /** Tìm sự kiện theo mã, ném ngoại lệ nếu không tồn tại hoặc đã bị xóa. */
     private Event find(String id) {
         return eventRepository.findById(id)
                 .filter(e -> Boolean.FALSE.equals(e.getIsDeleted()) || e.getIsDeleted() == null)
                 .orElseThrow(() -> new AppException(CommonErrorCode.NOT_FOUND, "Event không tồn tại"));
     }
 
+    /** Phân tích chuỗi thời gian ISO-8601, hỗ trợ cả định dạng ngày thuần túy. */
     private LocalDateTime parseDt(String raw) {
         try {
             return LocalDateTime.parse(raw.length() == 10 ? raw + "T00:00:00" : raw, ISO);
@@ -326,6 +374,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
+    /** Chuyển entity sự kiện sang DTO, bao gồm số chỗ trống và trạng thái RSVP của người dùng. */
     private EventDto toDto(Event e, String myRsvp) {
         Integer seats = null;
         if (e.getCapacity() != null) {
@@ -352,6 +401,7 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
+    /** Chuyển entity đăng ký sự kiện sang DTO. */
     private EventRegistrationDto toRegDto(EventRegistration r, String eventTitle) {
         return EventRegistrationDto.builder()
                 .id(r.getId())

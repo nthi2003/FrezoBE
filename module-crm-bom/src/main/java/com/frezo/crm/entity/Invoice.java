@@ -63,22 +63,22 @@ public class Invoice extends BaseEntity {
     @Column(nullable = false, length = 20)
     private InvoiceStatus status;
 
-    /** Đã hạch toán sang GL (accounting.journal_entry_id). */
+
     @Column(name = "gl_journal_entry_id", length = 36)
     private String glJournalEntryId;
 
     @Column(length = 2000)
     private String notes;
 
-    /** Sale phụ trách nhận hoa hồng (username). */
+
     @Column(name = "salesperson_username", length = 80)
     private String salespersonUsername;
 
-    /** % hoa hồng áp dụng cho HĐ này (EU có thể override). */
+
     @Column(name = "commission_rate_percent", precision = 8, scale = 4)
     private BigDecimal commissionRatePercent;
 
-    /** Số tiền hoa hồng ước tính = total × rate / 100. */
+
     @Column(name = "commission_amount", precision = 20, scale = 2)
     private BigDecimal commissionAmount;
 }

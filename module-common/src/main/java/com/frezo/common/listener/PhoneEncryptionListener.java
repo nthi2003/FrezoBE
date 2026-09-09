@@ -16,7 +16,7 @@ public class PhoneEncryptionListener {
                 encryptable.setPhoneEncrypted(CryptoUtils.encryptAESGCM(phone));
                 encryptable.setPhoneHash(CryptoUtils.hashSHA256(phone));
                 encryptable.setPhoneLast4(CryptoUtils.getLast4Digits(phone));
-                encryptable.setPhone(null); // Clear raw phone before saving to DB
+                encryptable.setPhone(null);
             }
         }
     }

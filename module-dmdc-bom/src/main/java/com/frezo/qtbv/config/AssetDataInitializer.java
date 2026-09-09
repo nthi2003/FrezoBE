@@ -16,24 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Seed dữ liệu mẫu cho Quản lý tài sản (QLTS).
- * <p>
- * Seed 2 layer:
- * <ol>
- *   <li>{@code CategoryGroup(code='LoaiTaiSan')} + {@code Category} (Laptop, Desk, Chair, ...)
- *       — để dropdown loại tài sản có option chọn. Group code là <b>LoaiTaiSan</b> để nhất
- *       quán với convention FE ({@code GROUP_CODE_OPTIONS} trong {@code category.schema.ts})
- *       và để trang <code>/admin/category-management</code> hiển thị đúng nhóm.</li>
- *   <li>{@link Asset} — ~15 tài sản mẫu (đa dạng loại + status) để trang có content ngay khi
- *       demo.</li>
- * </ol>
- * <p>
- * <b>Idempotent</b>: skip nếu bảng {@code asset} đã có row (chống ghi đè khi restart).
- * <p>
- * <b>Migration</b>: nếu đã seed nhầm với {@code groupCode='QLTS'} ở version trước, seeder này
- * sẽ tự move sang {@code LoaiTaiSan} rồi xoá group QLTS mồ côi.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -41,7 +24,6 @@ public class AssetDataInitializer {
 
     private static final String GROUP_CODE = "LoaiTaiSan";
     private static final String GROUP_NAME = "Loại Tài Sản";
-    /** Group code cũ đã seed ở phiên bản trước (deprecated) — cần migrate sang LoaiTaiSan. */
     private static final String LEGACY_GROUP_CODE = "QLTS";
 
     private final AssetRepository assetRepository;
@@ -109,11 +91,7 @@ public class AssetDataInitializer {
         seedAssets();
     }
 
-    /**
-     * Migration one-shot: nếu tồn tại category nào có {@code group_code='QLTS'} (di sản từ
-     * phiên bản seeder cũ) → chuyển sang {@code LoaiTaiSan}, sau đó xoá group QLTS mồ côi.
-     * Dùng {@link JdbcTemplate} thay vì JPA để cập nhật hàng loạt nhanh và không đụng cache.
-     */
+
     private void migrateLegacyGroup() {
         try {
             // Đảm bảo group mới tồn tại TRƯỚC khi update FK
@@ -124,7 +102,7 @@ public class AssetDataInitializer {
             if (moved > 0) {
                 log.info("[migrate] Đã chuyển {} category từ QLTS → LoaiTaiSan.", moved);
             }
-            // Xoá group cũ nếu không còn ai reference
+
             Long remain = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM categories WHERE group_code = ?",
                     Long.class, LEGACY_GROUP_CODE);
@@ -138,7 +116,7 @@ public class AssetDataInitializer {
         }
     }
 
-    /** Ensure {@code category_group(code='LoaiTaiSan')} tồn tại để FK không văng. */
+
     private void seedGroup() {
         if (categoryGroupRepository.findById(GROUP_CODE).isPresent()) return;
         CategoryGroup g = new CategoryGroup();
@@ -167,7 +145,7 @@ public class AssetDataInitializer {
     }
 
     private void seedAssets() {
-        // Idempotent — chỉ seed khi bảng asset còn trống (không tính soft-deleted)
+
         long existing = assetRepository.count();
         if (existing > 0) {
             log.info("[seed] Asset đã có {} record → skip.", existing);

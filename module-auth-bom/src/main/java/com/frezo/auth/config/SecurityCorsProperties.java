@@ -40,7 +40,6 @@ import java.util.List;
 @Setter
 public class SecurityCorsProperties {
 
-    /** Whitelist origins. KHÔNG dùng {@code "*"} cho production. */
     private List<String> allowedOrigins = List.of(
             "http://localhost:5173",
             "http://localhost:3000",
@@ -72,6 +71,5 @@ public class SecurityCorsProperties {
 
     private boolean allowCredentials = true;
 
-    /** Preflight cache TTL (giây). */
     private long maxAge = 3600L;
 }

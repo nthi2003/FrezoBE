@@ -3,12 +3,7 @@ package com.frezo.common.mapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Base Mapper Interface for MapStruct
- *
- * @param <D> DTO type
- * @param <E> Entity type
- */
+
 public interface BaseMapper<D, E> {
 
     E toEntity(D dto);

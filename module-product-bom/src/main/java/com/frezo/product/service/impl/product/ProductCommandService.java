@@ -2,6 +2,7 @@ package com.frezo.product.service.impl.product;
 
 import com.frezo.common.audit.AuditAction;
 import com.frezo.common.exception.AppException;
+import com.frezo.common.exception.QTHTException;
 import com.frezo.common.helper.GenericSpecification;
 import com.frezo.common.helper.SystemUtils;
 import com.frezo.common.response.PageResponse;
@@ -33,7 +34,6 @@ public class ProductCommandService {
     private final ProductMapper productMapper;
     private final ProductPricingService pricingService;
 
-    /** Phân lọc sản phẩm theo từ khóa, danh mục, trạng thái hoạt động với phân trang. */
     public PageResponse<ProductResponse> filter(ProductFilterRequest request) {
         int pageNum = request.getPage() != null ? request.getPage() : 0;
         int pageSize = request.getSize() != null ? request.getSize() : 10;
@@ -43,7 +43,6 @@ public class ProductCommandService {
         return PageResponse.of(pageNum, pageSize, page, responses);
     }
 
-    /** Lấy chi tiết sản phẩm theo ID và tăng bộ đếm lượt xem. */
     @Transactional
     public ProductResponse getById(String id) {
         Product product = productRepository.findById(id)
@@ -52,12 +51,12 @@ public class ProductCommandService {
             productRepository.incrementViewCount(id);
             product.setViewCount(product.getViewCount() == null ? 1L : product.getViewCount() + 1);
         } catch (Exception ignored) {
-            // không chặn xem SP nếu tăng counter lỗi
+
         }
         return productMapper.toResponse(product);
     }
 
-    /** Tạo mới sản phẩm, chuẩn hóa mã và ghi lịch sử giá ban đầu nếu có. */
+
     @Transactional
     @AuditAction(value = "Thêm mới sản phẩm", entity = "Product", action = "CREATE")
     public ProductResponse create(ProductCreateRequest request) {
@@ -73,12 +72,12 @@ public class ProductCommandService {
         return productMapper.toResponse(saved);
     }
 
-    /** Cập nhật thông tin sản phẩm, kiểm tra trùng mã và ghi nhận thay đổi giá bán. */
+
     @Transactional
     @AuditAction(value = "Cập nhật sản phẩm", entity = "Product", action = "UPDATE")
     public ProductResponse update(String id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("product.not.found"));
+                .orElseThrow(() -> new QTHTException("product.not.found"));
         Double oldPrice = product.getPrice();
         if (request.getCode() != null) {
             String code = normalizeRequiredCode(request.getCode());
@@ -86,7 +85,7 @@ public class ProductCommandService {
             productRepository.findByCode(code)
                     .filter(existing -> !existing.getId().equals(id))
                     .ifPresent(existing -> {
-                        throw new AppException("product.code.already.exists", HttpStatus.CONFLICT, code);
+                        throw new QTHTException("product.code.already.exists");
                     });
         }
         productMapper.updateEntity(request, product);
@@ -97,26 +96,26 @@ public class ProductCommandService {
         return productMapper.toResponse(saved);
     }
 
-    /** Xóa mềm sản phẩm: đánh dấu isDeleted = true và isActive = false. */
+
     @Transactional
     @AuditAction(value = "Xóa sản phẩm", entity = "Product", action = "DELETE")
     public void delete(String id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("product.not.found"));
+                .orElseThrow(() -> new QTHTException("product.not.found"));
         product.setIsActive(false);
         product.setIsDeleted(true);
         productRepository.save(product);
     }
 
-    /** Chuẩn hóa mã sản phẩm:trim và kiểm tra không được để trống. */
+
     private String normalizeRequiredCode(String raw) {
         if (raw == null || raw.isBlank()) {
-            throw new AppException("product.code.required", HttpStatus.BAD_REQUEST);
+            throw new QTHTException("product.code.required");
         }
         return raw.trim();
     }
 
-    /** Tạo JPA Specification từ bộ lọc để query sản phẩm. */
+
     private Specification<Product> createSpecification(ProductFilterRequest f) {
         Specification<Product> spec = Specification.where(GenericSpecification.hasFieldIs("isDeleted", false));
 

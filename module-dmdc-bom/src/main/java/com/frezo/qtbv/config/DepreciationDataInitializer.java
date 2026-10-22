@@ -15,16 +15,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Seed lịch khấu hao demo (idempotent) — để trang {@code /assets/depreciation} có dòng ngay sau restart.
- * <p>Chỉ tạo schedule cho một số tài sản mẫu có giá mua; bỏ qua nếu đã có schedule (unique asset_id).
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DepreciationDataInitializer {
 
-    /** Mã TS demo ưu tiên (khớp AssetDataInitializer). */
+
     private static final List<String> DEMO_ASSET_CODES = List.of(
             "AS-2026-0001",
             "AS-2026-0002",

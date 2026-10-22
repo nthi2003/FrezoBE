@@ -13,7 +13,5 @@ public interface PipelineService {
     Pipeline get(String id);
     List<Pipeline> list();
     List<Stage> stages(String pipelineId);
-
-    /** Đảm bảo có ít nhất 1 pipeline mặc định + 5 stage chuẩn. Idempotent. */
     Pipeline ensureDefault();
 }

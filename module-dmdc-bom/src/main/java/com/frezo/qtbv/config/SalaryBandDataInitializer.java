@@ -11,26 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Seed data cho Bậc lương (SalaryBand) — hiển thị ở /qlns/salary-bands.
- * <p>
- * <b>Vì sao dùng Category?</b> — FE {@code SalaryBandsPage} persist qua endpoint
- * {@code /qtbv/category} với {@code groupCode='SalaryBand'} và pack meta
- * ({@code min/max/target/function/currency}) vào field {@code description} dạng JSON compact.
- * <p>
- * <b>FK constraint</b>: {@code categories.group_code → category_group.code} — nên phải
- * seed row {@code CategoryGroup(code='SalaryBand')} TRƯỚC khi insert categories, nếu không
- * sẽ dính {@code fk47ciexmcyhg1g1wljbg472f13}.
- * <p>
- * <b>Không dùng {@code @Transactional} ở {@code @PostConstruct}</b>: proxy chưa init xong
- * khi hook chạy → transaction advice bị bypass. Thay vì thế, dựa vào tính chất
- * {@code JpaRepository#save} tự có transaction (defined trong {@code SimpleJpaRepository})
- * để mỗi INSERT tự commit — đủ cho use case seeder này.
- * <p>
- * <b>Số liệu tham khảo</b>: Radford Vietnam Q2/2026, Robert Half, Anphabe report.
- * <p>
- * <b>Idempotent</b>: chỉ seed khi chưa có band nào — không ghi đè nếu admin đã tạo tay.
- */
+
 @Slf4j
 @Component
 @RequiredArgsConstructor

@@ -1,8 +1,6 @@
 package com.frezo.profit.common;
 
-/**
- * Cost center codes — extensible per market (VN default set; EU markets add via DB seed).
- */
+
 public enum CostCategoryCode {
     SALES_VARIABLE,
     FIXED_IT,

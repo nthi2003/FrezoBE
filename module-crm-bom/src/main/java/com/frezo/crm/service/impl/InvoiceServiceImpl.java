@@ -36,12 +36,6 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final JournalService journalService;
     private final CommissionService commissionService;
 
-    /**
-     * Tạo mới hóa đơn bán hàng kèm các mục (items), tự động tính tổng và áp dụng hoa hồng.
-     *
-     * @param r yêu cầu chứa thông tin hóa đơn và danh sách mục
-     * @return hóa đơn vừa được tạo
-     */
     @Override
     @Transactional
     public Invoice create(InvoiceRequest r) {
@@ -69,14 +63,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceRepo.save(inv);
     }
 
-    /**
-     * Cập nhật hóa đơn: thông tin chung và danh sách mục.
-     * Không cho phép cập nhật nếu hóa đơn đã được ghi sổ kế toán.
-     *
-     * @param id mã hóa đơn
-     * @param r yêu cầu cập nhật
-     * @return hóa đơn đã cập nhật
-     */
     @Override
     @Transactional
     public Invoice update(String id, InvoiceRequest r) {
@@ -101,7 +87,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceRepo.save(inv);
     }
 
-    /** Xóa mềm hóa đơn theo mã định danh. */
+
     @Override
     @Transactional
     public void delete(String id) {
@@ -110,7 +96,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoiceRepo.save(inv);
     }
 
-    /** Lấy thông tin hóa đơn theo mã định danh, ném ngoại lệ nếu không tìm thấy. */
+
     @Override
     @Transactional(readOnly = true)
     public Invoice get(String id) {
@@ -118,21 +104,20 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElseThrow(() -> new AppException(CrmErrorCode.INVOICE_NOT_FOUND, id));
     }
 
-    /** Lấy danh sách tất cả hóa đơn đang hoạt động, sắp xếp theo ngày phát hành giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Invoice> list() {
         return invoiceRepo.findByIsDeletedFalseOrderByIssuedDateDesc();
     }
 
-    /** Lấy danh sách mục (items) của hóa đơn, sắp xếp theo số thứ tự dòng. */
+
     @Override
     @Transactional(readOnly = true)
     public List<InvoiceItem> items(String invoiceId) {
         return itemRepo.findByInvoiceIdOrderByLineNoAsc(invoiceId);
     }
 
-    /** Phát hành hóa đơn: chuyển trạng thái từ DRAFT sang ISSUED nếu đang ở trạng thái DRAFT. */
     @Override
     @Transactional
     public Invoice issue(String id) {
@@ -142,16 +127,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
         return invoiceRepo.save(inv);
     }
-
-    /**
-     * Ghi nhận thanh toán cho hóa đơn: cập nhật số tiền đã thu, trạng thái hóa đơn,
-     * tạo bút toán kế toán thu tiền và tính toán hoa hồng.
-     *
-     * @param id mã hóa đơn
-     * @param amount số tiền thanh toán
-     * @param paymentAccountCode mã tài khoản ngân hàng/quỹ nhận tiền
-     * @return hóa đơn đã cập nhật
-     */
     @Override
     @Transactional
     public Invoice recordPayment(String id, BigDecimal amount, String paymentAccountCode) {
@@ -165,7 +140,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
         invoiceRepo.save(inv);
 
-        // Ghi bút toán thu tiền: Nợ 111/112 (paymentAccountCode) | Có 131
+
         List<JournalLineRequest> lines = new ArrayList<>();
         JournalLineRequest dr = new JournalLineRequest();
         dr.setAccountCode(paymentAccountCode != null ? paymentAccountCode : "1121");
@@ -204,13 +179,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         return inv;
     }
 
-    /**
-     * Ghi sổ kế toán cho hóa đơn: tạo bút toán Nợ 131 (Phải thu KH),
-     * Có 5113 (Doanh thu) và Có 33311 (Thuế GTGT đầu ra).
-     *
-     * @param id mã hóa đơn
-     * @return hóa đơn đã ghi sổ
-     */
     @Override
     @Transactional
     public Invoice postToGL(String id) {
@@ -224,7 +192,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
         List<JournalLineRequest> lines = new ArrayList<>();
 
-        // Nợ 131 (Phải thu KH) — tổng total
+
         JournalLineRequest dr = new JournalLineRequest();
         dr.setAccountCode("131");
         dr.setDebit(safe(inv.getTotal()));
@@ -235,8 +203,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         dr.setPartnerName(inv.getCustomerName());
         lines.add(dr);
 
-        // Có 5113 (leaf postable) — subtotal chưa thuế.
-        // Không dùng 511: trên TT133 đây là TK cha (postable=false) → ACCOUNT_NOT_POSTABLE.
+
         JournalLineRequest cr = new JournalLineRequest();
         cr.setAccountCode("5113");
         cr.setDebit(BigDecimal.ZERO);
@@ -244,7 +211,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         cr.setDescription("Doanh thu bán hàng HĐ " + inv.getCode());
         lines.add(cr);
 
-        // Có 3331 — thuế GTGT đầu ra
+
         if (safe(inv.getTaxAmount()).signum() > 0) {
             JournalLineRequest crTax = new JournalLineRequest();
             crTax.setAccountCode("33311");
@@ -270,9 +237,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         return invoiceRepo.save(inv);
     }
 
-    // ---- Helpers ----
 
-    /** Lưu danh sách mục (items) vào cơ sở dữ liệu cho hóa đơn đã cho. */
     private void saveItems(Invoice inv, List<InvoiceRequest.Item> items) {
         if (items == null) return;
         int lineNo = 1;
@@ -296,7 +261,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         }
     }
 
-    /** Tính lại tổng cộng hóa đơn: tổng tiền chưa thuế, thuế và tổng cộng. */
+
     private void recalcTotals(Invoice inv) {
         List<InvoiceItem> items = itemRepo.findByInvoiceIdOrderByLineNoAsc(inv.getId());
         BigDecimal sub = BigDecimal.ZERO;
@@ -312,10 +277,9 @@ public class InvoiceServiceImpl implements InvoiceService {
         inv.setTotal(sub.add(tax));
     }
 
-    /** Trả về BigDecimal.ZERO nếu giá trị null. */
+
     private static BigDecimal safe(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 
-    /** Tạo mã hóa đơn tự động theo định dạng INV-{năm}-{6 ký tự ngẫu nhiên}. */
     private String nextCode() {
         return "INV-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }

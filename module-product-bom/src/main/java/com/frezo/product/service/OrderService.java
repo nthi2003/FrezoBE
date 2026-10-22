@@ -38,8 +38,7 @@ public class OrderService {
                 .build();
 
         SaleOrder savedOrder = saleOrderRepository.save(order);
-        
-        // Clear cart after order creation
+
         cartService.clearCart(customerId);
         
         return savedOrder;

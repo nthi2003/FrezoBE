@@ -4,13 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
-/**
- * Error code dùng chung cho toàn hệ thống — các trường hợp không thuộc business domain cụ thể.
- * <p>
- * Module business (qtht, customer, warehouse...) tạo enum riêng ({@code QthtErrorCode}...) cho error thuộc domain đó.
- * <p>
- * i18n key tương ứng phải tồn tại trong {@code module-server/src/main/resources/i18n/messages*.properties}.
- */
+
 @Getter
 @RequiredArgsConstructor
 public enum CommonErrorCode implements ErrorCode {

@@ -25,13 +25,6 @@ public class DealServiceImpl implements DealService {
     private final StageRepository stageRepo;
     private final PipelineService pipelineService;
 
-    /**
-     * Tạo mới một thương vụ (deal) từ thông tin trong DealRequest.
-     * Tự động gán pipeline và stage mặc định nếu không được chỉ định.
-     *
-     * @param r yêu cầu chứa thông tin thương vụ
-     * @return thương vụ vừa được tạo
-     */
     @Override
     @Transactional
     public Deal create(DealRequest r) {
@@ -59,14 +52,7 @@ public class DealServiceImpl implements DealService {
         return dealRepo.save(d);
     }
 
-    /**
-     * Cập nhật thông tin thương vụ theo mã định danh.
-     * Chỉ cập nhật các trường có giá trị khác null trong request.
-     *
-     * @param id mã định danh thương vụ
-     * @param r yêu cầu chứa thông tin cập nhật
-     * @return thương vụ đã cập nhật
-     */
+
     @Override
     @Transactional
     public Deal update(String id, DealRequest r) {
@@ -86,7 +72,7 @@ public class DealServiceImpl implements DealService {
         return dealRepo.save(d);
     }
 
-    /** Xóa mềm thương vụ theo mã định danh. */
+
     @Override
     @Transactional
     public void delete(String id) {
@@ -95,7 +81,7 @@ public class DealServiceImpl implements DealService {
         dealRepo.save(d);
     }
 
-    /** Lấy thông tin thương vụ theo mã định danh, ném ngoại lệ nếu không tìm thấy. */
+
     @Override
     @Transactional(readOnly = true)
     public Deal get(String id) {
@@ -103,42 +89,32 @@ public class DealServiceImpl implements DealService {
                 .orElseThrow(() -> new AppException(CrmErrorCode.DEAL_NOT_FOUND, id));
     }
 
-    /** Lấy danh sách thương vụ theo pipeline, sắp xếp theo ngày tạo giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Deal> byPipeline(String pipelineId) {
         return dealRepo.findByPipelineIdAndIsDeletedFalseOrderByCreatedDateDesc(pipelineId);
     }
 
-    /** Lấy danh sách thương vụ theo trạng thái, sắp xếp theo ngày tạo giảm dần. */
     @Override
     @Transactional(readOnly = true)
     public List<Deal> byStatus(DealStatus status) {
         return dealRepo.findByStatusAndIsDeletedFalseOrderByCreatedDateDesc(status);
     }
 
-    /** Lấy danh sách thương vụ theo chủ sở hữu, sắp xếp theo ngày tạo giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Deal> byOwner(String owner) {
         return dealRepo.findByOwnerUsernameAndIsDeletedFalseOrderByCreatedDateDesc(owner);
     }
 
-    /** Lấy danh sách thương vụ theo mã khách hàng, sắp xếp theo ngày tạo giảm dần. */
     @Override
     @Transactional(readOnly = true)
     public List<Deal> byCustomer(String customerId) {
         return dealRepo.findByCustomerIdAndIsDeletedFalseOrderByCreatedDateDesc(customerId);
     }
 
-    /**
-     * Di chuyển thương vụ sang stage mới.
-     * Tự động cập nhật trạng thái WON/LOST/OPEN dựa trên thuộc tính của stage đích.
-     *
-     * @param dealId mã thương vụ
-     * @param toStageId mã stage đích
-     * @return thương vụ đã cập nhật
-     */
     @Override
     @Transactional
     public Deal moveStage(String dealId, String toStageId) {
@@ -159,7 +135,7 @@ public class DealServiceImpl implements DealService {
         return dealRepo.save(d);
     }
 
-    /** Đánh dấu thương vụ là đã thắng (WON), đặt ngày đóng và xác suất 100%. */
+
     @Override
     @Transactional
     public Deal markWon(String dealId) {
@@ -170,13 +146,7 @@ public class DealServiceImpl implements DealService {
         return dealRepo.save(d);
     }
 
-    /**
-     * Đánh dấu thương vụ là đã thua (LOST), ghi nhận lý do và đặt xác suất 0%.
-     *
-     * @param dealId mã thương vụ
-     * @param reason lý do thua
-     * @return thương vụ đã cập nhật
-     */
+
     @Override
     @Transactional
     public Deal markLost(String dealId, String reason) {

@@ -27,7 +27,6 @@ public class ProductInventoryService {
     private final BatchRepository batchRepository;
     private final InventoryLogRepository inventoryLogRepository;
 
-    /** Nhập kho theo chuyến xe: tạo lô hàng và ghi nhật ký nhập kho cho từng sản phẩm. */
     @Transactional
     public void importBatch(BatchImportRequest request) {
         for (BatchImportRequest.BatchItem item : request.getItems()) {
@@ -58,9 +57,7 @@ public class ProductInventoryService {
         }
     }
 
-    /**
-     * Lịch sử giá vốn theo lô nhập NCC (product_batches).
-     */
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getCostHistory(String productId) {
         if (productId == null || productId.isBlank()) {

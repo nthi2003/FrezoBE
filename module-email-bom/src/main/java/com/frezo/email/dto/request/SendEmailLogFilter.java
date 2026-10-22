@@ -14,17 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SendEmailLogFilter extends PagingBase {
-
-    /** Tìm trong tiêu đề / người nhận / lý do lỗi. */
     private String keyword;
-
-    /** SUCCESS | FAILED — bỏ trống để xem tất cả. */
     private String status;
-
-    /** Kênh gửi: EMAIL (mặc định của hệ thống hiện tại). */
     private String type;
-
     private LocalDateTime fromDate;
-
     private LocalDateTime toDate;
 }

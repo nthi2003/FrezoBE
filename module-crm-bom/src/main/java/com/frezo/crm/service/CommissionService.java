@@ -16,13 +16,10 @@ public interface CommissionService {
 
     void deleteRule(String id);
 
-    /** Resolve %: rule theo sale → rule mặc định (*) → 5%. */
     BigDecimal resolveRatePercent(String salespersonUsername);
 
-    /** Gắn salesperson + rate + amount lên invoice (khi tạo/sửa). */
     void applyCommissionFields(Invoice invoice, String salespersonOverride, BigDecimal rateOverride);
 
-    /** Accrue entry khi HĐ đã thu tiền (PAID / PARTIALLY_PAID). */
     CommissionEntry accrueFromInvoice(Invoice invoice);
 
     List<CommissionEntry> listEntries(String salespersonUsername);

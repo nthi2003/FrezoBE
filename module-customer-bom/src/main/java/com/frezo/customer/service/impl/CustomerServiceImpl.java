@@ -155,7 +155,7 @@ public class CustomerServiceImpl implements CustomerService {
 
 
     public byte[] exportToExcel(CustomerFilterRequest filter) {
-        filter.setPageNumber(null); // lấy toàn bộ
+        filter.setPageNumber(null);
         filter.setPageSize(null);
         Specification<Customer> spec = buildSpec(filter);
         List<Customer> all = customerRepository.findAll(spec);
@@ -164,12 +164,11 @@ public class CustomerServiceImpl implements CustomerService {
             Sheet sheet = wb.createSheet("Khách hàng");
             // Header
             Row header = sheet.createRow(0);
-            String[] cols = {"Mã KH", "Tên KH", "SĐT (4 số cuối)", "Email", "Địa chỉ", "MST", "Loại", "Trạng thái"};
+            String[] cols = {"Mã KH", "Tên KH", "SĐT", "Email", "Địa chỉ", "MST", "Loại", "Trạng thái"};
             for (int i = 0; i < cols.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(cols[i]);
             }
-            // Data rows
             int rowIdx = 1;
             for (Customer c : all) {
                 Row row = sheet.createRow(rowIdx++);

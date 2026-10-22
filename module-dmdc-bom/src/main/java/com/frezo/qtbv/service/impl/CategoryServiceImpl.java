@@ -29,7 +29,6 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
-    /** Liệt kê danh mục theo bộ lọc (nhóm, từ khóa) với phân trang, sắp xếp theo orderIndex. */
     public PageResponse<CategoryResponse> all(CategoryFilter filter) {
         Specification<Category> specification = createSpecification(filter);
         Sort sort = Sort.by(Sort.Direction.ASC , "orderIndex");

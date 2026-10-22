@@ -142,7 +142,6 @@ public class AssetServiceImpl implements AssetService {
     @Transactional
     public AssetResponse update(String id, AssetSaveRequest req) {
         Asset e = findOrThrow(id);
-        // Không cho đổi code
         if (req.getName() != null) e.setName(req.getName());
         if (req.getCategoryCode() != null) e.setCategoryCode(req.getCategoryCode());
         if (req.getBrand() != null) e.setBrand(req.getBrand());
@@ -178,7 +177,6 @@ public class AssetServiceImpl implements AssetService {
         if (req.getPersonId() == null || req.getPersonId().isBlank()) {
             throw new AppException(DmdcErrorCode.ASSET_ASSIGN_PERSON_REQUIRED);
         }
-        // Enrich personName nếu client không truyền
         String personName = req.getPersonName();
         if (personName == null || personName.isBlank()) {
             personName = lookupPersonName(req.getPersonId());

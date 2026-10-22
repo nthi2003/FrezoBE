@@ -44,7 +44,6 @@ public class ProductPricingService {
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
-    /** Cập nhật hàng loạt giá bán theo đơn vị và nhóm giá. */
     @Transactional
     public void bulkUpdatePrices(List<PriceUpdateRequest> requests) {
         for (PriceUpdateRequest req : requests) {
@@ -60,9 +59,7 @@ public class ProductPricingService {
         }
     }
 
-    //cải tiến
 
-    /** Tính giá bán theo mã sản phẩm, tên đơn vị và mã nhóm giá. */
     public Double calculatePrice(String productCode, String unitName, String priceGroupCode) {
         Product product = productRepository.findByCode(productCode)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -76,7 +73,7 @@ public class ProductPricingService {
         return configs.isEmpty() ? null : configs.get(0).getPrice();
     }
 
-    /** Tìm đơn vị sản phẩm theo tên, tạo mới nếu chưa tồn tại. */
+
     private ProductUnit resolveOrCreateUnit(String productId, String unitName) {
         return productUnitRepository.findByProductId(productId).stream()
                 .filter(u -> u.getUnitName().equalsIgnoreCase(unitName))
@@ -88,7 +85,7 @@ public class ProductPricingService {
                         .build()));
     }
 
-    /** Tạo mới hoặc cập nhật giá đang hiệu lực cho tổ hợp đơn vị + nhóm giá. */
+
     private void upsertActivePrice(String productUnitId, String priceGroupId, Double newPrice) {
         List<PriceConfig> active = priceConfigRepository.findActivePrice(productUnitId, priceGroupId);
         PriceConfig config;
@@ -105,8 +102,7 @@ public class ProductPricingService {
         }
         priceConfigRepository.save(config);
     }
- // cải tiến
-       /** Cập nhật giá bán lẻ sản phẩm và ghi nhận lịch sử thay đổi giá. */
+
     @Transactional
     public ProductResponse updateSalePrice(String productId, ProductSalePriceUpdateRequest request) {
         Product product = productRepository.findById(productId)
@@ -125,7 +121,7 @@ public class ProductPricingService {
         return productMapper.toResponse(product);
     }
 
-    /** Lấy lịch sử thay đổi giá bán lẻ của sản phẩm, sắp xếp theo thời gian giảm dần. */
+
     public List<ProductSalePriceHistoryResponse> getSalePriceHistory(String productId) {
         if (!productRepository.existsById(productId)) {
             throw new RuntimeException("product.not.found");
@@ -136,7 +132,7 @@ public class ProductPricingService {
                 .toList();
     }
 
-    /** Ghi nhận lịch sử thay đổi giá chỉ khi giá mới khác giá cũ. */
+
     public void recordSalePriceChangeIfDifferent(String productId, Double oldPrice, Double newPrice, String note) {
         if (newPrice == null || Objects.equals(oldPrice, newPrice)) {
             return;
@@ -144,7 +140,6 @@ public class ProductPricingService {
         recordSalePriceChange(productId, oldPrice, newPrice, note);
     }
 
-    /** Lưu bản ghi lịch sử thay đổi giá bán lẻ. */
     private void recordSalePriceChange(String productId, Double oldPrice, Double newPrice, String note) {
         ProductSalePriceHistory history = ProductSalePriceHistory.builder()
                 .productId(productId)
@@ -155,7 +150,7 @@ public class ProductPricingService {
         salePriceHistoryRepository.save(history);
     }
 
-    /** Chuyển entity lịch sử giá sang DTO response. */
+
     private ProductSalePriceHistoryResponse toHistoryResponse(ProductSalePriceHistory history) {
         return ProductSalePriceHistoryResponse.builder()
                 .id(history.getId())
@@ -168,8 +163,6 @@ public class ProductPricingService {
                 .build();
     }
 
-
-    /** Tra cứu tên người dùng từ createdBy (UUID), trả về chính createdBy nếu không tìm thấy. */
     private String resolveUpdatedBy(String createdBy) {
         if (createdBy == null || createdBy.isBlank() || !UUID_PATTERN.matcher(createdBy).matches()) {
             return createdBy;

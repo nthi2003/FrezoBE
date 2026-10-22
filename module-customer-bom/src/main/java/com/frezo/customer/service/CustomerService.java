@@ -20,13 +20,11 @@ public interface CustomerService {
 
     String revealPhone(String id);
 
-    // Import từ Excel
     void importFromExcel(MultipartFile file);
 
-    // Export ra Excel
+
     byte[] exportToExcel(CustomerFilterRequest filter);
 
-    // Đồng bộ khách hàng tiềm năng từ AI Scraper
     int syncLeadsFromAi(String keyword, String city, String ward, Integer limit);
 
 

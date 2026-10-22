@@ -17,12 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * Khấu hao TSCĐ & post GL định kỳ.
- * <p>Endpoint mount song song {@code /qtbv/depreciation} và {@code /asset/depreciation}
- * để backward-compat với FE (giống pattern AssetController).
- * <p>Permission key canonical: {@code /asset/depreciation/...} (khớp seed STAFF deny / role filters).
- */
 @RestController
 @RequestMapping({"/qtbv/depreciation", "/asset/depreciation"})
 @RequiredArgsConstructor

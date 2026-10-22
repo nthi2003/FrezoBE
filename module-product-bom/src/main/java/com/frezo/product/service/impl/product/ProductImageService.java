@@ -16,10 +16,8 @@ public class ProductImageService {
 
     private static final String BUCKET = "freo-prod";
     private static final String PREFIX = "products/";
-
     private final MinioService minioService;
 
-    /** Upload hình ảnh sản phẩm lên MinIO bucket, trả về URL và tên file. */
     public Map<String, Object> uploadImage(MultipartFile file) {
         String objectName = PREFIX + UUID.randomUUID() + "_" + file.getOriginalFilename();
         String url = minioService.uploadFile(objectName, file, BUCKET);

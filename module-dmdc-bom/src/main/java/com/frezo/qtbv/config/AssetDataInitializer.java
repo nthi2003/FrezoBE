@@ -94,7 +94,7 @@ public class AssetDataInitializer {
 
     private void migrateLegacyGroup() {
         try {
-            // Đảm bảo group mới tồn tại TRƯỚC khi update FK
+
             seedGroup();
             int moved = jdbcTemplate.update(
                     "UPDATE categories SET group_code = ? WHERE group_code = ?",
@@ -164,7 +164,7 @@ public class AssetDataInitializer {
                     .serialNumber(a.sn())
                     .purchaseDate(a.purchaseDate())
                     .purchasePrice(BigDecimal.valueOf(a.price()))
-                    .currentValue(BigDecimal.valueOf(a.price())) // simplified: currentValue = purchase (chưa depreciate)
+                    .currentValue(BigDecimal.valueOf(a.price()))
                     .warrantyEndDate(a.warranty())
                     .status(a.status())
                     .location(a.location())

@@ -14,11 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/**
- * REST cho Quản lý tài sản.
- * <p>
- * Mapping cả {@code /qlts/asset} lẫn {@code /qlts/assets} để backward-compat với FE.
- */
+
 @RestController
 @RequestMapping({"/qlts/asset", "/qlts/assets"})
 @RequiredArgsConstructor

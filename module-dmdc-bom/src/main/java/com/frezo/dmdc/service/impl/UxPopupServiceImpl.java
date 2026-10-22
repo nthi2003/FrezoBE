@@ -23,7 +23,7 @@ public class UxPopupServiceImpl implements UxPopupService {
     private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
 
-    /** Tìm và trả về nội dung popup UX theo mã sự kiện (eventCode) nếu đangactive. */
+
     @Override
     @Transactional(readOnly = true)
     public Optional<UxPopupResponse> resolve(String eventCode) {
@@ -37,7 +37,6 @@ public class UxPopupServiceImpl implements UxPopupService {
                 .map(this::toResponse);
     }
 
-    /** Chuyển entity Category sang UxPopupResponse, parse JSON body nếu cần. */
     private UxPopupResponse toResponse(Category category) {
         String body = category.getDescription();
         String imageUrl = null;

@@ -29,12 +29,7 @@ public class LeadServiceImpl implements LeadService {
     private final DealRepository dealRepo;
     private final PipelineService pipelineService;
 
-    /**
-     * Tạo mới một lead (khách hàng tiềm năng) từ thông tin trong LeadRequest.
-     *
-     * @param r yêu cầu chứa thông tin lead
-     * @return lead vừa được tạo
-     */
+
     @Override
     @Transactional
     public Lead create(LeadRequest r) {
@@ -53,13 +48,7 @@ public class LeadServiceImpl implements LeadService {
         return leadRepo.save(l);
     }
 
-    /**
-     * Cập nhật thông tin lead theo mã định danh.
-     *
-     * @param id mã lead
-     * @param r yêu cầu cập nhật
-     * @return lead đã cập nhật
-     */
+
     @Override
     @Transactional
     public Lead update(String id, LeadRequest r) {
@@ -76,7 +65,6 @@ public class LeadServiceImpl implements LeadService {
         return leadRepo.save(l);
     }
 
-    /** Xóa mềm lead theo mã định danh. */
     @Override
     @Transactional
     public void delete(String id) {
@@ -85,7 +73,7 @@ public class LeadServiceImpl implements LeadService {
         leadRepo.save(l);
     }
 
-    /** Lấy thông tin lead theo mã định danh, ném ngoại lệ nếu không tìm thấy. */
+
     @Override
     @Transactional(readOnly = true)
     public Lead get(String id) {
@@ -93,38 +81,28 @@ public class LeadServiceImpl implements LeadService {
                 .orElseThrow(() -> new AppException(CrmErrorCode.LEAD_NOT_FOUND, id));
     }
 
-    /** Lấy danh sách tất cả lead đang hoạt động, sắp xếp theo ngày tạo giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Lead> list() {
         return leadRepo.findByIsDeletedFalseOrderByCreatedDateDesc();
     }
 
-    /** Lấy danh sách lead theo trạng thái, sắp xếp theo ngày tạo giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Lead> byStatus(LeadStatus status) {
         return leadRepo.findByStatusAndIsDeletedFalseOrderByCreatedDateDesc(status);
     }
 
-    /** Lấy danh sách lead theo chủ sở hữu, sắp xếp theo ngày tạo giảm dần. */
+
     @Override
     @Transactional(readOnly = true)
     public List<Lead> byOwner(String owner) {
         return leadRepo.findByOwnerUsernameAndIsDeletedFalseOrderByCreatedDateDesc(owner);
     }
 
-    /**
-     * Chuyển đổi lead thành deal (thương vụ).
-     * Tạo deal mới trong pipeline/stage được chỉ định, đánh dấu lead là đã chuyển đổi.
-     *
-     * @param leadId mã lead cần chuyển
-     * @param pipelineId mã pipeline (có thể null để dùng mặc định)
-     * @param stageId mã stage (có thể null để dùng stage đầu tiên)
-     * @param customerId mã khách hàng
-     * @param amount giá trị deal
-     * @return mã deal vừa được tạo
-     */
+
     @Override
     @Transactional
     public String convert(String leadId, String pipelineId, String stageId,
